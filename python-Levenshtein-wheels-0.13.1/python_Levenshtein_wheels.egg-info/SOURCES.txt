@@ -1,0 +1,12 @@
+MANIFEST.in
+README.rst
+setup.cfg
+setup.py
+Levenshtein/StringMatcher.py
+Levenshtein/__init__.py
+Levenshtein/_levenshtein.c
+Levenshtein/_levenshtein.h
+python_Levenshtein_wheels.egg-info/PKG-INFO
+python_Levenshtein_wheels.egg-info/SOURCES.txt
+python_Levenshtein_wheels.egg-info/dependency_links.txt
+python_Levenshtein_wheels.egg-info/top_level.txt

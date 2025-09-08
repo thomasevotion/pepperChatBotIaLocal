@@ -1,0 +1,21 @@
+FROM python:2.7-slim
+
+# Installez les paquets système nécessaires
+RUN apt-get update && apt-get install -y libglib2.0-0 libsm6 libxext6 libxrender1 wget unzip && rm -rf /var/lib/apt/lists/*
+
+# Copiez les wheels locaux (si vous en avez) et installez-les
+COPY wheels /wheels
+RUN pip install --no-index --find-links=/wheels numpy==1.16.6
+
+# Copiez le SDK NAOqi (dossier ou wheel) dans /sdk et installez
+COPY pynaoqi-python2.7-2.5.7.1-bin-sdk /sdk
+RUN pip install /sdk
+
+# Copiez le code
+WORKDIR /app
+COPY . .
+
+# Installez les dépendances Python restantes
+RUN pip install --no-index --find-links=/wheels -r requirements.py2.txt
+
+CMD ["python", "module_speechrecognition.py", "--pip", "192.168.1.188"]

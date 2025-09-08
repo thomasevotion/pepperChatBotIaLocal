@@ -1,0 +1,15 @@
+*.pyc
+*.dump
+
+# Virtual environment
+venv*
+
+# Notebook
+.ipynb_checkpoints/*
+
+# Visual Studio and VS Code
+.vs/*
+.vscode/*
+dialogue.log
+*.log
+.env
