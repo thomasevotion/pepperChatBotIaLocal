@@ -18,6 +18,7 @@ ROBOT_IP = "pepper.local"
 
 from optparse import OptionParser
 import re
+import codecs
 import naoqi
 import time
 import sys, os
@@ -36,6 +37,34 @@ def safe_decode(s):
             return unicode(s, errors='replace')
     else:
         return unicode(s)
+
+def write_console(text):
+    if isinstance(text, unicode):
+        try:
+            sys.stdout.write(text.encode('utf-8', 'replace'))
+        except Exception:
+            try:
+                sys.stdout.write(text.encode('cp1252', 'replace'))
+            except Exception:
+                return
+    else:
+        try:
+            sys.stdout.write(text)
+        except Exception:
+            try:
+                sys.stdout.write(unicode(text, errors='replace').encode('utf-8', 'replace'))
+            except Exception:
+                return
+    try:
+        sys.stdout.flush()
+    except Exception:
+        pass
+
+# Ensure stdout can emit UTF-8 on Windows/Python2
+try:
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+except Exception:
+    pass
 
 START_PROMPT_PATH = os.getenv('DIALOGUE_START_PROMPTFILE')
 if START_PROMPT_PATH and os.path.isfile(START_PROMPT_PATH):
@@ -93,21 +122,28 @@ class DialogueModule(naoqi.ALModule):
 
     def configureSpeechRecognition(self):
         self.speechRecognition = ALProxy("SpeechRecognition")
-        AUTODEC = True
+        # Allow runtime overrides via environment variables
+        AUTODEC = os.getenv('SPEECH_AUTODEC', 'true').lower() == 'true'
+        hold_time = float(os.getenv('SPEECH_HOLD_TIME', '2.5'))
+        idle_release = float(os.getenv('SPEECH_IDLE_RELEASE', '2.0'))
+        max_rec = int(float(os.getenv('SPEECH_MAX_RECORDING', '10')))
+        lookahead = float(os.getenv('SPEECH_LOOKAHEAD', '0.5'))
+        language = os.getenv('SPEECH_LANGUAGE', 'fr-fr')
+        threshold = int(os.getenv('SPEECH_AUTODETECTION_THRESHOLD', '6'))
         if not AUTODEC:
             print(u"False, auto-detection not available")
-            self.speechRecognition.setHoldTime(5)
-            self.speechRecognition.setIdleReleaseTime(1.7)
-            self.speechRecognition.setMaxRecordingDuration(10)
+            self.speechRecognition.setHoldTime(hold_time)
+            self.speechRecognition.setIdleReleaseTime(idle_release)
+            self.speechRecognition.setMaxRecordingDuration(max_rec)
         else:
             print(u"True, auto-detection selected")
-            self.speechRecognition.setHoldTime(2.5)
-            self.speechRecognition.setIdleReleaseTime(2.0)
-            self.speechRecognition.setMaxRecordingDuration(10)
-            self.speechRecognition.setLookaheadDuration(0.5)
-            self.speechRecognition.setLanguage("fr-fr")
+            self.speechRecognition.setHoldTime(hold_time)
+            self.speechRecognition.setIdleReleaseTime(idle_release)
+            self.speechRecognition.setMaxRecordingDuration(max_rec)
+            self.speechRecognition.setLookaheadDuration(lookahead)
+            self.speechRecognition.setLanguage(language)
             self.speechRecognition.calibrate()
-            self.speechRecognition.setAutoDetectionThreshold(6)
+            self.speechRecognition.setAutoDetectionThreshold(threshold)
         self.listen(False)
 
     def listen(self, enable):
@@ -129,27 +165,52 @@ class DialogueModule(naoqi.ALModule):
         self.log.write(u'INP: ' + message + u'\n')
         if message == u'error':
             return
-        self.listen(False)
-        print(u"USER:\n" + message)
-        if message == u'error':
-            self.misunderstandings += 1
-            if self.misunderstandings == 1:
-                answer = u"Je n'ai pas compris, peux-tu répéter ?"
-            elif self.misunderstandings == 2:
-                answer = u"Désolé, je n’ai pas compris. Pourrais-tu répéter encore ?"
-            elif self.misunderstandings == 3:
-                answer = u"Aujourd'hui j'ai des difficultés à comprendre, désolé."
-            else:
-                answer = u"Peux-tu répéter cela ?"
-            print(u'ERREUR, REPONSE PAR DEFAUT:\n' + answer)
-        else:
+        
+        self.listen(False)  # Couper l'écoute
+        write_console(u"USER:\n" + message + u"\n")
+        
+        if message != u'error':
             self.misunderstandings = 0
-            answer = safe_decode(chatbot.respond(message))
-            print(u'ROBOT:\n' + answer)
-        self.log.write(u'ANS: ' + answer + u'\n')
-        self.speak(answer)
-        self.react(answer)
+            complete_answer = self.stream_and_speak(message)
+            self.log.write(u'ANS: ' + complete_answer + u'\n')
+        
+        # Réactiver l'écoute seulement APRÈS que Pepper ait fini de parler
         self.listen(True)
+
+    def stream_and_speak(self, message):
+        """Génère en streaming, parle immédiatement, retourne la réponse complète"""
+        word_buffer = ""
+        sentence_buffer = ""
+        complete_response = ""
+        
+        write_console(u'ROBOT (streaming):\n')
+        
+        for token in chatbot.stream_respond(message):
+            complete_response += token  # Accumule pour les logs
+            word_buffer += token
+            
+            # Parler par segments de 4-6 mots ou à la ponctuation forte
+            if token.endswith(' ') or token in '.!?,:':
+                sentence_buffer += word_buffer
+                word_buffer = ""
+                
+                # Critères pour parler un segment
+                word_count = len(sentence_buffer.split())
+                if word_count >= 5 or token in '.!?' or token == ',':
+                    segment = sentence_buffer.strip()
+                    if segment:
+                        write_console(segment + ' ')
+                        self.speak(segment)      # Pepper parle immédiatement
+                    sentence_buffer = ""
+        
+        # Parler le dernier segment s'il reste quelque chose
+        if sentence_buffer.strip():
+            self.speak(sentence_buffer.strip())
+            print(sentence_buffer.strip())
+        
+        write_console(u'\n')  # Nouvelle ligne après la réponse complète
+        return complete_response
+
 
     def react(self, s):
         s = safe_decode(s)

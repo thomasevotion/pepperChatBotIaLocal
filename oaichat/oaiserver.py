@@ -13,6 +13,7 @@
 """Zmq server interface for the OpenAI chatbot"""
 
 import zmq, os
+import requests
 import datetime
 from threading import Thread
 from oaichat.openaichat import OaiChat
@@ -29,6 +30,8 @@ class OaiServer(OaiChat):
     def start(self):
         self.thread = Thread(target=self._run)
         self.thread.start()
+    
+    # keep server logic minimal; routing is handled in OaiChat.respond
 
     def _run(self): 
         print('Starting OpenAI chat server...')

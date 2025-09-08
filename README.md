@@ -100,6 +100,8 @@ Erik Billing, Julia Rosén, and Maurice Lamb. 2023. [Language Models for Human-R
 * Anthony Zang (Uberi) and his [SpeechRecognition](https://github.com/Uberi/speech_recognition)
 
 
+$env:OPENAI_API_KEY="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"
+
 $env:DIALOGUE_START_PROMPTFILE = "default_start.prompt"
 
 $env:DIALOGUE_LOG_DIR = "logs"
@@ -107,3 +109,26 @@ $env:DIALOGUE_LOG_DIR = "logs"
 $env:CHATBOT_SERVER_ADDRESS = "tcp://127.0.0.1:5555"
 
 $env:DIALOGUE_LOG_DIR = ".\\logs"
+
+### Using a local LLM instead of OpenAI
+
+Set the following environment variables to route all generations to a local API compatible with ChatGPT/Ollama:
+
+Windows PowerShell example:
+
+```powershell
+$env:LOCAL_LLM_URL = "http://localhost:11434"
+$env:LOCAL_LLM_MODEL = "gemma2:9b"
+$env:USE_STREAMING = "true"   # or "false" to disable streaming
+
+python3 startDialogueServer.py
+```
+
+Behavior:
+- If `LOCAL_LLM_URL` is set, PepperChat uses `${LOCAL_LLM_URL}/api/generate` with the provided `LOCAL_LLM_MODEL`.
+- Streaming is supported; when `USE_STREAMING` is `true`, the client consumes line-delimited JSON tokens from the local server.
+- If `LOCAL_LLM_URL` is not set, PepperChat falls back to OpenAI as before.
+
+$env:LOCAL_LLM_URL = "http://localhost:11434"
+$env:LOCAL_LLM_MODEL = "gemma2:9b"
+$env:USE_STREAMING = "true"

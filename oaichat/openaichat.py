@@ -12,6 +12,7 @@
 # License: Copyright reserved to the author. 
 ###########################################################
 import os, sys, codecs, json
+import requests
 from datetime import datetime
 from threading import Thread
 from oaichat.oairesponse import OaiResponse
@@ -29,7 +30,14 @@ class OaiChat:
   def __init__(self,user,prompt=None):
     self.log = None
     self.reset(user,prompt)
-    self.client = OpenAI(api_key = os.getenv('OPENAI_KEY'))
+    # Defer OpenAI client creation unless needed (allows local LLM without OpenAI key)
+    self.client = None
+    self._local_llm_url = os.getenv('LOCAL_LLM_URL')
+    self._local_llm_model = os.getenv('LOCAL_LLM_MODEL') or 'gemma2:9b'
+    self._use_streaming = (os.getenv('USE_STREAMING','false').lower() == 'true')
+    if not self._local_llm_url:
+      # Only init OpenAI client if we're not using a local LLM
+      self.client = OpenAI(api_key = os.getenv('OPENAI_KEY'))
 
   def reset(self,user,prompt=None):
     self.user = user
@@ -51,26 +59,87 @@ class OaiChat:
     #moderator = Thread(target=self.getModeration,args=(inputText,))
     #moderator.start()
     self.history.append({'role':'user','content':inputText})
-    #print(self.history)
-    response = self.client.chat.completions.create(
-      model="gpt-3.5-turbo-1106",
-      #response_format={ "type": "json_object" },
-      #user=self.user,
-      messages=self.history,
-      # temperature=0.7,
-      max_tokens=150,
-      # top_p=1,
-      # frequency_penalty=1,
-      # presence_penalty=0
-    )
+    # Route either to local LLM (if configured) or OpenAI
+    if self._local_llm_url:
+      text = self._respond_local_llm()
+      # Synthesize an OpenAI-like response structure for compatibility
+      response = {
+        'choices': [
+          {
+            'message': {
+              'content': text
+            }
+          }
+        ]
+      }
+    else:
+      if self.client is None:
+        self.client = OpenAI(api_key = os.getenv('OPENAI_KEY'))
+      response = self.client.chat.completions.create(
+        model="gpt-3.5-turbo-1106",
+        #response_format={ "type": "json_object" },
+        #user=self.user,
+        messages=self.history,
+        # temperature=0.7,
+        max_tokens=150,
+        # top_p=1,
+        # frequency_penalty=1,
+        # presence_penalty=0
+      )
     #moderator.join()
     #print('Moderation:',self.moderation)
     #print(response.choices[0].message.content)
-    r = OaiResponse(response.model_dump_json())
+    r = OaiResponse(response.model_dump_json() if hasattr(response, 'model_dump_json') else json.dumps(response))
 
     self.history.append({'role':'assistant','content':r.getText()})
     print('Request delay',datetime.now()-start)
     return r
+
+  def _build_local_prompt(self):
+    # Concatenate chat history into a single prompt compatible with simple generate APIs
+    parts = []
+    for message in self.history:
+      role = message.get('role','user')
+      content = message.get('content','')
+      if role == 'system':
+        parts.append('System: ' + content)
+      elif role == 'assistant':
+        parts.append('Assistant: ' + content)
+      else:
+        parts.append('User: ' + content)
+    return '\n'.join(parts).strip()
+
+  def _respond_local_llm(self):
+    url = self._local_llm_url.rstrip('/')
+    model = self._local_llm_model
+    prompt = self._build_local_prompt()
+    payload = {
+      'model': model,
+      'prompt': prompt,
+      'stream': self._use_streaming
+    }
+    if self._use_streaming:
+      response_text = ''
+      with requests.post(f"{url}/api/generate", json=payload, stream=True, timeout=600) as resp:
+        resp.raise_for_status()
+        for line in resp.iter_lines():
+          if not line:
+            continue
+          try:
+            data = json.loads(line.decode('utf-8'))
+          except Exception:
+            continue
+          token = data.get('response') or ''
+          if token:
+            response_text += token
+          if data.get('done'):
+            break
+      return response_text.strip()
+    else:
+      resp = requests.post(f"{url}/api/generate", json=payload, timeout=600)
+      resp.raise_for_status()
+      data = resp.json()
+      return (data.get('response') or '').strip()
 
   def loadPrompt(self,promptFile):
     promptFile = promptFile or 'openai.prompt'
