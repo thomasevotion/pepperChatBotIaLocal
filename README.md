@@ -100,8 +100,6 @@ Erik Billing, Julia Rosén, and Maurice Lamb. 2023. [Language Models for Human-R
 * Anthony Zang (Uberi) and his [SpeechRecognition](https://github.com/Uberi/speech_recognition)
 
 
-$env:OPENAI_API_KEY="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"
-
 $env:DIALOGUE_START_PROMPTFILE = "default_start.prompt"
 
 $env:DIALOGUE_LOG_DIR = "logs"
