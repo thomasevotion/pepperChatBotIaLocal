@@ -105,3 +105,7 @@ $env:OPENAI_API_KEY="sk-proj-VQUwEnuV483zbfbe3irQ25oOUc46VUSEvXNysWviS4VW9zj6VMN
 $env:DIALOGUE_START_PROMPTFILE = "default_start.prompt"
 
 $env:DIALOGUE_LOG_DIR = "logs"
+
+$env:CHATBOT_SERVER_ADDRESS = "tcp://127.0.0.1:5555"
+
+$env:DIALOGUE_LOG_DIR = ".\\logs"
