@@ -6,10 +6,10 @@
 # Syntax:
 #    python scriptname --pip <ip> --pport <port>
 #
-#    --pip <ip>: specify the ip of your robot (without specification it will use the ROBOT_IP defined below
+#    --pip <ip>: specify the IP of your robot (without specification it will use the ROBOT_IP defined below)
 #
-# Author: Erik Billing, University of Skovde based on code from Johannes Bramauer, Vienna University of Technology
-# Created: May 30, 2018 and updated spring progressively during in the period 2022-05 to 2024-04. 
+# Author: Erik Billing, University of Skovde, etc.
+# Adapted for always-on, no autonomous life, always standing, animated speech, French accents handled.
 # License: MIT
 ###########################################################
 
@@ -25,10 +25,8 @@ import codecs
 from naoqi import ALProxy
 from oaichat.oaiclient import OaiClient
 
+# --- Robust UTF-8 decoder ---
 def safe_decode(s):
-    """
-    Décodage unicode robuste pour tout texte externe.
-    """
     if isinstance(s, unicode):
         return s
     elif isinstance(s, str):
@@ -47,16 +45,14 @@ else:
     START_PROMPT = None
 
 participantId = raw_input('Participant ID: ')
-ALIVE = int(participantId) % 2 == 1
 
 chatbot = OaiClient(user=participantId)
 chatbot.reset()
 
 class DialogueModule(naoqi.ALModule):
     """
-    Main dialogue module. Depends on both the ChatGPT service and the Speech Recognion module.
+    Main dialogue module. Depends on both the ChatGPT service and the Speech Recognition module.
     """
-
     def __init__(self, strModuleName, strNaoIp):
         self.misunderstandings = 0
         self.log = codecs.open('dialogue.log', 'a', encoding='utf-8')
@@ -78,10 +74,7 @@ class DialogueModule(naoqi.ALModule):
         print(u"INF: ReceiverModule: started!")
         try:
             self.posture = ALProxy("ALRobotPosture", self.strNaoIp, ROBOT_PORT)
-            if ALIVE:
-                self.aup = ALProxy("ALAnimatedSpeech",  self.strNaoIp, ROBOT_PORT)
-            else:
-                self.aup = ALProxy("ALTextToSpeech",  self.strNaoIp, ROBOT_PORT)
+            self.aup = ALProxy("ALAnimatedSpeech", self.strNaoIp, ROBOT_PORT)
         except RuntimeError:
             print(u"Can't connect to Naoqi at ip \"%s\" on port %d.\nPlease check your script arguments. Run with -h option for help." % (self.strNaoIp, ROBOT_PORT))
         if START_PROMPT:
@@ -126,22 +119,18 @@ class DialogueModule(naoqi.ALModule):
             self.speechRecognition.pause()
 
     def speak(self, text):
-        """
-        To avoid NAOqi ALTextToSpeech errors, always encode as UTF-8 bytes before say()
-        """
+        # Always encode as UTF-8 bytes before say()
         if isinstance(text, unicode):
             text = text.encode('utf-8')
         self.aup.say(text)
-
 
     def processRemote(self, signalName, message):
         message = safe_decode(message)
         self.log.write(u'INP: ' + message + u'\n')
         if message == u'error':
-            # print(u'Input not recognized, continue listen')
             return
         self.listen(False)
-        print(u"USER: \n" + message)
+        print(u"USER:\n" + message)
         if message == u'error':
             self.misunderstandings += 1
             if self.misunderstandings == 1:
@@ -163,7 +152,6 @@ class DialogueModule(naoqi.ALModule):
         self.listen(True)
 
     def react(self, s):
-        # S'assure que s est unicode
         s = safe_decode(s)
         if re.match(u".*je.*m.*asseoir.*", s):
             self.posture.goToPosture("Sit", 1.0)
@@ -174,7 +162,7 @@ class DialogueModule(naoqi.ALModule):
 
 def main():
     parser = OptionParser()
-    parser.add_option("--pip", help="Parent broker port. The IP address or your robot", dest="pip")
+    parser.add_option("--pip", help="Parent broker port. The IP address of your robot", dest="pip")
     parser.add_option("--pport", help="Parent broker port. The port NAOqi is listening to", dest="pport", type="int")
     parser.set_defaults(
         pip=ROBOT_IP,
@@ -188,25 +176,20 @@ def main():
 
     try:
         p = ALProxy("dialogueModule")
-        p.exit()  # kill previous instance
+        p.exit()
     except:
         pass
 
     audio = ALProxy("ALAudioDevice")
     audio.setOutputVolume(70)
 
+    # Toujours DESACTIVER AutonomousLife et mettre debout :
     AutonomousLife = ALProxy('ALAutonomousLife')
-    AutonomousLife.setState('disabled')
+    if AutonomousLife.getState() != 'disabled':
+        AutonomousLife.setState('disabled')
     RobotPosture = ALProxy('ALRobotPosture')
-    if ALIVE:
-        AutonomousLife.setState('solitary')
-        AutonomousLife.stopAll()
-        print(u'Numéro de participant impair, vie autonome activée.')
-    else:
-        if AutonomousLife.getState() != 'disabled':
-            AutonomousLife.setState('disabled')
-        RobotPosture.goToPosture('Stand', 0.5)
-        print(u'Numéro de participant pair, vie autonome désactivée.')
+    RobotPosture.goToPosture('Stand', 0.5)
+    print(u'Vie autonome désactivée. Robot debout, prêt à interagir avec gestuelle animée.')
 
     TabletService = ALProxy('ALTabletService')
     TabletService.goToSleep()

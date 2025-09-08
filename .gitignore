@@ -13,3 +13,6 @@ venv*
 dialogue.log
 *.log
 .env
+
+vosk-model-fr-0.22
+env

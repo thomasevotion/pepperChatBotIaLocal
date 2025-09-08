@@ -1,32 +1,222 @@
 # -*- coding: utf-8 -*-
 
 ###########################################################
-# Retrieve robot audio buffer and do google speech recognition
+# Retrieve robot audio buffer and save to wav for Vosk recognition
 #
 # Syntax:
-#    python scriptname --pip <ip> --pport <port>
+#    python2 module_speechrecognition.py --pip <ip> --pport <port>
 #
-#    --pip <ip>: specify the ip of your robot (without specification it will use the ROBOT_IP defined below)
-#
-# Author: Johannes Bramauer, Vienna University of Technology and Erik Billing, University of Skovde
-# Created: May 30, 2018 and updated spring 2022. 
-# License: MIT
-###########################################################
+# Author: Johannes Bramauer & Erik Billing, adapté offline Vosk
 ###########################################################
 
-ROBOT_IP = "pepper.local" # default, for running on Pepper
-ROBOT_PORT = 9559
-
-import sys, time
-sys.path.insert(0, "C:\\Users\\thoma\\pynaoqi-python2.7-2.5.7.1-win32-vs2013\\lib")
-import naoqi
+import socket
 from optparse import OptionParser
-from pepperspeechrecognition import SpeechRecognitionModule
+import naoqi
+import numpy as np
+import time
+import sys
+import threading
+from naoqi import ALProxy
+from numpy import sqrt, mean, square
+import traceback
+import wave
+
+RECORDING_DURATION = 10
+LOOKAHEAD_DURATION = 1.0
+IDLE_RELEASE_TIME = 2.0
+HOLD_TIME = 3.0
+SAMPLE_RATE = 48000
+CALIBRATION_DURATION = 4
+CALIBRATION_THRESHOLD_FACTOR = 1.5
+DEFAULT_LANGUAGE = "fr"
+PRINT_RMS = False
+PREBUFFER_WHEN_STOP = False
+
+AUDIO_FILENAME = "audio_pepper.wav"
+
+class SpeechRecognitionModule(naoqi.ALModule):
+    def __init__(self, moduleName, naoIp, naoPort=9559):
+        try:
+            print("DEBUG: SpeechRecognitionModule __init__")
+            naoqi.ALModule.__init__(self, moduleName)
+            self.BIND_PYTHON(self.getName(),"callback")
+            self.naoIp = naoIp
+            self.naoPort = naoPort
+            self.memory = naoqi.ALProxy("ALMemory")
+            self.memory.declareEvent("SpeechRecognition")
+            self.isStarted = False
+            self.isRecording = False
+            self.startRecordingTimestamp = 0
+            self.recordingDuration = RECORDING_DURATION
+            self.isAutoDetectionEnabled = False
+            self.autoDetectionThreshold = 10
+            self.isCalibrating = False
+            self.startCalibrationTimestamp = 0
+            self.framesCount = 0
+            self.rmsSum = 0
+            self.lastTimeRMSPeak = 0
+            self.buffer = []
+            self.preBuffer = []
+            self.preBufferLength = 0
+            self.language = DEFAULT_LANGUAGE
+            self.idleReleaseTime = IDLE_RELEASE_TIME
+            self.holdTime = HOLD_TIME
+            self.lookaheadBufferSize = LOOKAHEAD_DURATION * SAMPLE_RATE
+            self.fileCounter = 0
+        except BaseException, err:
+            print("ERR: SpeechRecognitionModule: loading error: %s" % str(err))
+
+    def __del__(self):
+        print("INF: SpeechRecognitionModule.__del__: cleaning everything")
+        self.stop()
+
+    def start(self):
+        if self.isStarted:
+            print("INF: SpeechRecognitionModule.start: already running")
+            return
+        print("INF: SpeechRecognitionModule: starting!")
+        self.isStarted = True
+        audio = naoqi.ALProxy("ALAudioDevice")
+        nNbrChannelFlag = 0
+        nDeinterleave = 0
+        audio.setClientPreferences(self.getName(), SAMPLE_RATE, nNbrChannelFlag, nDeinterleave)
+        audio.subscribe(self.getName())
+
+    def pause(self):
+        print("INF: SpeechRecognitionModule.pause: stopping")
+        if not self.isStarted:
+            print("INF: SpeechRecognitionModule.stop: not running")
+            return
+        self.isStarted = False
+        audio = naoqi.ALProxy("ALAudioDevice", self.naoIp, self.naoPort)
+        audio.unsubscribe(self.getName())
+        print("INF: SpeechRecognitionModule: stopped!")
+
+    def stop(self):
+        self.pause()
+
+    def processRemote(self, nbOfChannels, nbrOfSamplesByChannel, aTimeStamp, buffer):
+        print("DEBUG: processRemote called")
+        timestamp = float(str(aTimeStamp[0]) + "." + str(aTimeStamp[1]))
+        try:
+            aSoundDataInterlaced = np.fromstring(str(buffer), dtype=np.int16)
+            aSoundData = np.reshape(aSoundDataInterlaced, (nbOfChannels, nbrOfSamplesByChannel), 'F')
+            rmsMicFront = self.calcRMSLevel(self.convertStr2SignedInt(aSoundData[0]))
+            if (self.isCalibrating or self.isAutoDetectionEnabled or self.isRecording):
+                if (rmsMicFront >= self.autoDetectionThreshold):
+                    self.lastTimeRMSPeak = timestamp
+                    if (self.isAutoDetectionEnabled and not self.isRecording and not self.isCalibrating):
+                        self.startRecording()
+                        print("threshold surpassed: %s more than %s" % (rmsMicFront, self.autoDetectionThreshold))
+                if (self.isCalibrating):
+                    if(self.startCalibrationTimestamp <= 0):
+                        self.startCalibrationTimestamp = timestamp
+                    elif(timestamp - self.startCalibrationTimestamp >= CALIBRATION_DURATION):
+                        self.stopCalibration()
+                    self.rmsSum += rmsMicFront
+                    self.framesCount += 1
+            if not self.isCalibrating:
+                if self.isRecording:
+                    self.buffer.append(aSoundData)
+                    if (self.startRecordingTimestamp <= 0):
+                        self.startRecordingTimestamp = timestamp
+                    elif ((timestamp - self.startRecordingTimestamp) > self.recordingDuration):
+                        print('stop after max recording duration')
+                        self.stopRecordingAndRecognize()
+                    if (timestamp - self.lastTimeRMSPeak >= self.idleReleaseTime) and (
+                        timestamp - self.startRecordingTimestamp >= self.holdTime):
+                        print('stopping after idle/hold time')
+                        self.stopRecordingAndRecognize()
+                else:
+                    self.preBuffer.append(aSoundData)
+                    self.preBufferLength += len(aSoundData[0])
+                    overshoot = (self.preBufferLength - self.lookaheadBufferSize)
+                    if((overshoot > 0) and (len(self.preBuffer) > 0)):
+                        self.preBufferLength -= len(self.preBuffer.pop(0)[0])
+        except:
+            traceback.print_exc()
+
+    def calcRMSLevel(self, data):
+        rms = (sqrt(mean(square(data))))
+        return rms
+
+    def version(self):
+        return "1.1"
+
+    def startRecording(self):
+        if self.isRecording:
+            print("INF: SpeechRecognitionModule.startRecording: already recording")
+            return
+        print("INF: Starting to record audio")
+        self.startRecordingTimestamp = 0
+        self.lastTimeRMSPeak = 0
+        self.buffer = self.preBuffer
+        self.isRecording = True
+        return
+
+    def stopRecordingAndRecognize(self):
+        if not self.isRecording:
+            print("INF: SpeechRecognitionModule.stopRecordingAndRecognize: not recording")
+            return
+        print("INF: stopping recording and recognizing")
+        slice = np.concatenate(self.buffer, axis=1)[0]
+
+        # Sauvegarde le buffer audio en WAV (Python2 compatible)
+        wf = wave.open(AUDIO_FILENAME, "wb")
+        wf.setnchannels(1)
+        wf.setsampwidth(2)  # 16-bit PCM
+        wf.setframerate(SAMPLE_RATE)
+        wf.writeframes(slice.tostring())
+        wf.close()
+        print("Audio écrit :", AUDIO_FILENAME)
+
+        self.isRecording = False
+        return
+
+    def calibrate(self):
+        self.isCalibrating = True
+        self.framesCount = 0
+        self.startCalibrationTimestamp = 0
+        print("INF: starting calibration")
+        if(self.isStarted == False):
+            self.start()
+        return
+
+    def stopCalibration(self):
+        if not self.isCalibrating:
+            print("INF: SpeechRecognitionModule.stopCalibration: not calibrating")
+            return
+        self.isCalibrating = False
+        self.autoDetectionThreshold = CALIBRATION_THRESHOLD_FACTOR * (self.rmsSum / self.framesCount)
+        print('calibration done, RMS threshold is: ' + str(self.autoDetectionThreshold))
+        return
+
+    def enableAutoDetection(self):
+        self.isAutoDetectionEnabled = True
+        print("INF: autoDetection enabled")
+        return
+
+    def disableAutoDetection(self):
+        self.isAutoDetectionEnabled = False
+        print('INF: AutoDetection Disabled ')
+        return
+
+    def setLanguage(self, language = DEFAULT_LANGUAGE):
+        self.language = language
+        print('SET: language set to ' + language)
+        return
+
+    def convertStr2SignedInt(self, data):
+        lsb = data[0::2]
+        msb = data[1::2]
+        rms_data = np.add(lsb, np.multiply(msb, 256.0))
+        sign_correction = np.select([rms_data>=32768], [-65536])
+        rms_data = np.add(rms_data, sign_correction)
+        rms_data = np.divide(rms_data, 32768.0)
+        return rms_data
 
 def main():
-    """ Main entry point
-
-    """
+    print("=== DEBUT MAIN ===")
     parser = OptionParser()
     parser.add_option("--pip",
         help="Parent broker port. The IP address or your robot",
@@ -36,21 +226,18 @@ def main():
         dest="pport",
         type="int")
     parser.set_defaults(
-        pip=ROBOT_IP,
-        pport=ROBOT_PORT)
+        pip="pepper.local",
+        pport=9559)
 
     (opts, args_) = parser.parse_args()
     pip   = opts.pip
     pport = opts.pport
 
-    # We need this broker to be able to construct
-    # NAOqi modules and subscribe to other modules
-    # The broker must stay alive until the program exists
     myBroker = naoqi.ALBroker("myBroker",
-       "0.0.0.0",   # listen to anyone
-       0,           # find a free port and use it
-       pip,         # parent broker IP
-       pport)       # parent broker port
+       "0.0.0.0",
+       0,
+       pip,
+       pport)
 
     try:
         p = ALProxy("SpeechRecognition")
@@ -58,34 +245,27 @@ def main():
     except:
         pass
 
-    # Reinstantiate module
-
-    # Warning: SpeechRecognition must be a global variable
-    # The name given to the constructor must be the name of the
-    # variable
     global SpeechRecognition
     SpeechRecognition = SpeechRecognitionModule("SpeechRecognition", pip, pport)
-
-    # uncomment for debug purposes
-    # usually a subscribing client will call start() from ALProxy
-    #SpeechRecognition.start()
-    #SpeechRecognition.startRecording()
-    #SpeechRecognition.calibrate()
-    #SpeechRecognition.enableAutoDetection()
-    #SpeechRecognition.startRecording()
-
+    SpeechRecognition.start()              # <-- démarre l'audio
+    SpeechRecognition.calibrate()
+    SpeechRecognition.enableAutoDetection()
+    print("Calibration et auto-détection activée.")
     print('Speech recognition running.')
 
     try:
         while True:
             time.sleep(1)
+    except Exception as e:
+        print("Exception principale :", e)
     except KeyboardInterrupt:
-        print
         print("Interrupted by user, shutting down")
-        myBroker.shutdown()
+    finally:
+        try:
+            myBroker.shutdown()
+        except Exception as e:
+            print("Exception à l'arrêt broker :", e)
         sys.exit(0)
-
-
 
 if __name__ == "__main__":
     main()
