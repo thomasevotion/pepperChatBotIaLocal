@@ -12,9 +12,10 @@ PEPPER_PORT = 9559
 TTS_RESPONSE_DIR = "tts_responses"
 TTS_ACTIVE_FLAG = "pepper_speaking.flag"
 
-tts = ALProxy("ALTextToSpeech", PEPPER_IP, PEPPER_PORT)
-posture = ALProxy("ALRobotPosture", PEPPER_IP, PEPPER_PORT)
-leds = ALProxy("ALLeds", PEPPER_IP, PEPPER_PORT)
+anim_tts = ALProxy("ALAnimatedSpeech", PEPPER_IP, PEPPER_PORT)
+posture  = ALProxy("ALRobotPosture",    PEPPER_IP, PEPPER_PORT)
+leds      = ALProxy("ALLeds",            PEPPER_IP, PEPPER_PORT)
+motion    = ALProxy("ALMotion",          PEPPER_IP, PEPPER_PORT)
 
 def clean_text_for_tts(text):
     if isinstance(text, unicode):
@@ -27,9 +28,12 @@ def clean_text_for_tts(text):
     return re.sub(r'[\x00-\x1f\x7f]', '', text.decode('latin-1')).strip()
 
 def init_pepper_tts():
-    tts.setLanguage("French")
+    # Met Pepper debout et active la rigidité
     posture.goToPosture("Stand", 0.8)
-    time.sleep(2)
+    motion.setStiffnesses("Body", 1.0)
+    # Active les mouvements contextuels
+    anim_tts.setBodyLanguageMode(1)  # 1 = contextual gestures
+    time.sleep(1)
     leds.fadeRGB("FaceLeds", 0.0, 0.0, 0.0, 1.0)
 
 def get_all_response_files():
@@ -40,56 +44,53 @@ def get_all_response_files():
     return [os.path.join(TTS_RESPONSE_DIR, f) for f in files]
 
 def monitor_tts_responses_led():
-    """Version avec LED et TTS phrase par phrase"""
+    """TTS avec ALAnimatedSpeech, LEDs et mouvements contextuels."""
     init_pepper_tts()
-    
+
     while True:
-        # Mode ecoute : yeux verts
+        # Mode écoute : yeux verts
         leds.fadeRGB("FaceLeds", 0.0, 1.0, 0.0, 0.5)
-        
+
         files = get_all_response_files()
         if files:
             # Mode parole : yeux violets
             leds.fadeRGB("FaceLeds", 1.0, 0.0, 1.0, 0.5)
-            
-            # Cree flag anti-boucle
+            # Bloque STT
             with open(TTS_ACTIVE_FLAG, "w") as f:
                 f.write("speaking")
-            
-            # Dit chaque phrase
+
             for path in files:
                 try:
                     with codecs.open(path, "r", encoding="utf-8") as f:
                         sentence = f.read().strip()
                     os.remove(path)
-                    
-                    clean_sentence = clean_text_for_tts(sentence)
-                    if clean_sentence:
-                        print("Pepper dit: {}".format(clean_sentence))
-                        tts.say(str(clean_sentence))  # TTS bloquant
-                        time.sleep(0.3)  # Pause entre phrases
-                except Exception as e:
-                    print("Erreur TTS: {}".format(e))
-                    try:
-                        os.remove(path)
-                    except:
-                        pass
-            
-            # Supprime flag et eteint violets
+                except:
+                    continue
+
+                clean_sentence = clean_text_for_tts(sentence)
+                if clean_sentence:
+                    print("Pepper dit:", clean_sentence)
+                    # ALAnimatedSpeech gère les gestes automatiquement
+                    anim_tts.say(clean_sentence.encode('utf-8'))
+                    time.sleep(0.2)
+
+            # Fin parole : LEDs off + libère STT
+            leds.fadeRGB("FaceLeds", 0.0, 0.0, 0.0, 1.0)
             if os.path.exists(TTS_ACTIVE_FLAG):
                 os.remove(TTS_ACTIVE_FLAG)
-            leds.fadeRGB("FaceLeds", 0.0, 0.0, 0.0, 1.0)
-            
-        time.sleep(0.2)
+
+        time.sleep(0.1)
 
 if __name__ == "__main__":
-    if os.path.exists(TTS_ACTIVE_FLAG): 
+    # Nettoyage initial
+    if os.path.exists(TTS_ACTIVE_FLAG):
         os.remove(TTS_ACTIVE_FLAG)
     if os.path.isdir(TTS_RESPONSE_DIR):
         for f in os.listdir(TTS_RESPONSE_DIR):
-            try: 
+            try:
                 os.remove(os.path.join(TTS_RESPONSE_DIR, f))
-            except: 
+            except:
                 pass
-    print("TTS Pepper avec LED - phrases completes pret")
+
+    print("TTS Pepper avec ALAnimatedSpeech contextuel prêt.")
     monitor_tts_responses_led()
