@@ -9,7 +9,11 @@ import datetime
 GEMMA2_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "gemma2:9b"
 STT_FILE = "stt_result.txt"
-TTS_RESPONSE_DIR = "tts_responses"  # Dossier au lieu d'un fichier unique
+TTS_RESPONSE_DIR = "tts_responses"
+
+# PROMPT SYSTÈME PEPPER
+with open("pepper_prompt.txt", "r", encoding="utf-8") as f:
+    PEPPER_SYSTEM_PROMPT = f.read()
 
 def clean_response_for_windows(text):
     """Nettoie la reponse pour l'affichage Windows"""
@@ -22,7 +26,7 @@ def create_tts_response_file(text):
     if not os.path.exists(TTS_RESPONSE_DIR):
         os.makedirs(TTS_RESPONSE_DIR)
     
-    timestamp = int(time.time() * 1000)  # millisecondes
+    timestamp = int(time.time() * 1000)
     filename = os.path.join(TTS_RESPONSE_DIR, f"response_{timestamp}.txt")
     
     try:
@@ -34,11 +38,19 @@ def create_tts_response_file(text):
         print(f"Erreur sauvegarde: {e}")
         return None
 
-def send_to_gemma2_streaming(prompt):
+def send_to_gemma2_streaming(user_input):
+    # Construit le prompt complet avec le contexte Pepper
+    full_prompt = PEPPER_SYSTEM_PROMPT + user_input
+    
     payload = {
         "model": MODEL_NAME,
-        "prompt": prompt,
-        "stream": True
+        "prompt": full_prompt,
+        "stream": True,
+        "options": {
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_tokens": 150  # Limite pour des réponses courtes
+        }
     }
     
     try:
@@ -58,9 +70,9 @@ def send_to_gemma2_streaming(prompt):
                             if chunk.endswith(('.', '!', '?')) and len(full_text.strip()) > 10:
                                 clean_text = clean_response_for_windows(full_text)
                                 create_tts_response_file(clean_text)
-                                print("Chunk envoye:", clean_text[:50] + "...")
+                                print("Pepper repond:", clean_text[:50] + "...")
                                 full_text = ""
-                                time.sleep(0.2)  # Pause pour le TTS
+                                time.sleep(0.2)
                     except Exception as e:
                         continue
             
@@ -68,7 +80,7 @@ def send_to_gemma2_streaming(prompt):
             if full_text.strip():
                 clean_text = clean_response_for_windows(full_text)
                 create_tts_response_file(clean_text)
-                print("Reponse finale:", clean_text[:50] + "...")
+                print("Reponse finale Pepper:", clean_text[:50] + "...")
             
             return True
         else:
@@ -81,7 +93,8 @@ def send_to_gemma2_streaming(prompt):
 
 def monitor_stt_and_respond():
     last_text = ""
-    print("Surveillance active du fichier:", STT_FILE)
+    print("Pepper AI Pipeline actif - Surveillance:", STT_FILE)
+    print("Prompt système:", PEPPER_SYSTEM_PROMPT[:100] + "...")
     
     while True:
         if os.path.exists(STT_FILE):
@@ -90,12 +103,12 @@ def monitor_stt_and_respond():
                     text = f.read().strip()
                 
                 if text and text != last_text:
-                    print("Nouvelle transcription:", text)
+                    print("Utilisateur dit:", text)
                     result = send_to_gemma2_streaming(text)
-                    print("Resultat Gemma2:", result)
+                    print("Traitement Pepper:", "OK" if result else "ERREUR")
                     last_text = text
                     
-                    # Efface de maniere plus agressive
+                    # Efface le fichier
                     try:
                         os.remove(STT_FILE)
                     except:
@@ -111,14 +124,26 @@ def monitor_stt_and_respond():
         time.sleep(0.2)
 
 if __name__ == "__main__":
-    print("Demarrage pipeline Gemma2 streaming...")
+    print("=== PEPPER AI CHATBOT ===")
+    print("Demarrage pipeline Pepper avec personnalite...")
     
-    # Nettoie le dossier de reponses au demarrage
+    # Nettoie le dossier au demarrage
     if os.path.exists(TTS_RESPONSE_DIR):
         for f in os.listdir(TTS_RESPONSE_DIR):
             try:
                 os.remove(os.path.join(TTS_RESPONSE_DIR, f))
             except:
                 pass
+    
+    # Test connexion Ollama
+    try:
+        test_response = requests.get("http://localhost:11434/api/tags", timeout=5)
+        if test_response.status_code == 200:
+            print("Connexion Ollama/Gemma2 OK")
+        else:
+            print("Ollama non accessible, code:", test_response.status_code)
+    except Exception as e:
+        print("Erreur connexion Ollama:", str(e).encode('ascii', 'ignore').decode('ascii'))
+        print("Verifiez qu'Ollama tourne sur localhost:11434")
     
     monitor_stt_and_respond()
