@@ -1,15 +1,6 @@
 # -*- coding: utf-8 -*-
-
-###########################################################
-# Retrieve robot audio buffer and save to wav for Vosk recognition
-#
-# Syntax:
-#    python2 module_speechrecognition.py --pip <ip> --pport <port>
-#
-# Author: Johannes Bramauer & Erik Billing, adapté offline Vosk
-###########################################################
-
 import socket
+import os
 from optparse import OptionParser
 import naoqi
 import numpy as np
@@ -31,8 +22,25 @@ CALIBRATION_THRESHOLD_FACTOR = 1.5
 DEFAULT_LANGUAGE = "fr"
 PRINT_RMS = False
 PREBUFFER_WHEN_STOP = False
-
 AUDIO_FILENAME = "audio_pepper.wav"
+
+def disable_recording_during_tts():
+    """Desactive l'enregistrement quand Pepper parle"""
+    # Verifie le flag cree par pepper_tts_handler
+    if os.path.exists("pepper_speaking.flag"):
+        return True
+    
+    # Backup: verifie aussi le fichier response
+    if os.path.exists("tts_response.txt"):
+        try:
+            with open("tts_response.txt", "r") as f:
+                content = f.read().strip()
+            if content:
+                return True
+        except:
+            pass
+    
+    return False
 
 class SpeechRecognitionModule(naoqi.ALModule):
     def __init__(self, moduleName, naoIp, naoPort=9559):
@@ -96,18 +104,25 @@ class SpeechRecognitionModule(naoqi.ALModule):
         self.pause()
 
     def processRemote(self, nbOfChannels, nbrOfSamplesByChannel, aTimeStamp, buffer):
-        print("DEBUG: processRemote called")
+        # Ignore si Pepper parle (fonction corrigee)
+        if disable_recording_during_tts():
+            # print("DEBUG: Recording disabled - Pepper speaking")
+            return
+        
         timestamp = float(str(aTimeStamp[0]) + "." + str(aTimeStamp[1]))
+        
         try:
             aSoundDataInterlaced = np.fromstring(str(buffer), dtype=np.int16)
             aSoundData = np.reshape(aSoundDataInterlaced, (nbOfChannels, nbrOfSamplesByChannel), 'F')
             rmsMicFront = self.calcRMSLevel(self.convertStr2SignedInt(aSoundData[0]))
+            
             if (self.isCalibrating or self.isAutoDetectionEnabled or self.isRecording):
                 if (rmsMicFront >= self.autoDetectionThreshold):
                     self.lastTimeRMSPeak = timestamp
                     if (self.isAutoDetectionEnabled and not self.isRecording and not self.isCalibrating):
                         self.startRecording()
                         print("threshold surpassed: %s more than %s" % (rmsMicFront, self.autoDetectionThreshold))
+                
                 if (self.isCalibrating):
                     if(self.startCalibrationTimestamp <= 0):
                         self.startCalibrationTimestamp = timestamp
@@ -115,6 +130,7 @@ class SpeechRecognitionModule(naoqi.ALModule):
                         self.stopCalibration()
                     self.rmsSum += rmsMicFront
                     self.framesCount += 1
+            
             if not self.isCalibrating:
                 if self.isRecording:
                     self.buffer.append(aSoundData)
@@ -161,14 +177,14 @@ class SpeechRecognitionModule(naoqi.ALModule):
         print("INF: stopping recording and recognizing")
         slice = np.concatenate(self.buffer, axis=1)[0]
 
-        # Sauvegarde le buffer audio en WAV (Python2 compatible)
+        # Sauvegarde le buffer audio en WAV
         wf = wave.open(AUDIO_FILENAME, "wb")
         wf.setnchannels(1)
-        wf.setsampwidth(2)  # 16-bit PCM
+        wf.setsampwidth(2)
         wf.setframerate(SAMPLE_RATE)
         wf.writeframes(slice.tostring())
         wf.close()
-        print("Audio écrit :", AUDIO_FILENAME)
+        print("Audio ecrit :", AUDIO_FILENAME)
 
         self.isRecording = False
         return
@@ -218,39 +234,32 @@ class SpeechRecognitionModule(naoqi.ALModule):
 def main():
     print("=== DEBUT MAIN ===")
     parser = OptionParser()
-    parser.add_option("--pip",
-        help="Parent broker port. The IP address or your robot",
-        dest="pip")
-    parser.add_option("--pport",
-        help="Parent broker port. The port NAOqi is listening to",
-        dest="pport",
-        type="int")
-    parser.set_defaults(
-        pip="pepper.local",
-        pport=9559)
+    parser.add_option("--pip", help="IP du robot", dest="pip")
+    parser.add_option("--pport", help="Port NAOqi", dest="pport", type="int")
+    parser.set_defaults(pip="pepper.local", pport=9559)
 
     (opts, args_) = parser.parse_args()
-    pip   = opts.pip
+    pip = opts.pip
     pport = opts.pport
 
-    myBroker = naoqi.ALBroker("myBroker",
-       "0.0.0.0",
-       0,
-       pip,
-       pport)
+    # Nettoie les anciens flags au demarrage
+    if os.path.exists("pepper_speaking.flag"):
+        os.remove("pepper_speaking.flag")
+
+    myBroker = naoqi.ALBroker("myBroker", "0.0.0.0", 0, pip, pport)
 
     try:
         p = ALProxy("SpeechRecognition")
-        p.exit()  # kill previous instance, useful for developing ;)
+        p.exit()
     except:
         pass
 
     global SpeechRecognition
     SpeechRecognition = SpeechRecognitionModule("SpeechRecognition", pip, pport)
-    SpeechRecognition.start()              # <-- démarre l'audio
+    SpeechRecognition.start()
     SpeechRecognition.calibrate()
     SpeechRecognition.enableAutoDetection()
-    print("Calibration et auto-détection activée.")
+    print("Calibration et auto-detection activee.")
     print('Speech recognition running.')
 
     try:
@@ -264,7 +273,7 @@ def main():
         try:
             myBroker.shutdown()
         except Exception as e:
-            print("Exception à l'arrêt broker :", e)
+            print("Exception arret broker :", e)
         sys.exit(0)
 
 if __name__ == "__main__":
