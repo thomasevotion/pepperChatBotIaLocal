@@ -1,0 +1,20 @@
+{
+    "pepper": {
+        "ip": "pepper.local",
+        "port": 9559
+    },
+    "gemma2": {
+        "url": "http://localhost:11434/api/generate",
+        "model": "gemma2:9b",
+        "timeout": 30
+    },
+    "vosk": {
+        "model_path": "C:\\Users\\thoma\\Travail\\pepperchat-master\\vosk-model-fr-0.22",
+        "sample_rate": 48000
+    },
+    "files": {
+        "audio": "audio_pepper.wav",
+        "stt_result": "stt_result.txt",
+        "tts_response": "tts_response.txt"
+    }
+}
