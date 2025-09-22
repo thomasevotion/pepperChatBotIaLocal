@@ -1,45 +1,45 @@
-# recognize_local.py -- Python 3 STT Vosk + envoi vers pipeline IA
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
 import time
-from vosk import Model, KaldiRecognizer
-import wave
-import json
+import torch
+import whisper
 
-SAMPLE_RATE = 48000
-MODEL_PATH = r"C:\Users\thoma\Travail\pepperchat-master\vosk-model-fr-0.22"
+# Fichiers et paramètres
 AUDIO_FILENAME = "audio_pepper.wav"
+STT_RESULT_FILE = "stt_result.txt"
+LANGUAGE = "fr"
 
-print("Chargement modèle Vosk...")
-vosk_model = Model(MODEL_PATH)
-print("Vosk model loaded.")
+# Choix du device GPU/CPU
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Chargement du modèle Whisper large sur {device}...")
+model = whisper.load_model("large").to(device)
+print("Modèle chargé.")
 
-def recognize_wav(path):
-    wf = wave.open(path, "rb")
-    rec = KaldiRecognizer(vosk_model, wf.getframerate())
-    txt = ''
-    while True:
-        buf = wf.readframes(4000)
-        if len(buf) == 0:
-            break
-        if rec.AcceptWaveform(buf):
-            txt += json.loads(rec.Result()).get('text','')
-    txt += json.loads(rec.FinalResult()).get('text','')
-    txt = txt.strip()
-    print("---RESULT---: " + txt)
-    
-    # Écrit le résultat dans un fichier pour le pipeline
-    if txt:
-        with open("stt_result.txt", "w", encoding="utf-8") as f:
-            f.write(txt)
-    
-    return txt
+def transcribe(path):
+    """Transcrit un fichier audio en texte français avec Whisper."""
+    result = model.transcribe(path, language=LANGUAGE)
+    text = result.get("text", "").strip()
+    print("---RESULT---:", text)
+    return text
 
-print("Attente de fichiers audio (Ctrl+C pour quitter)...")
-while True:
-    if os.path.exists(AUDIO_FILENAME):
-        try:
-            recognize_wav(AUDIO_FILENAME)
-            os.remove(AUDIO_FILENAME)
-        except Exception as e:
-            print("Erreur reco :", e)
-    time.sleep(0.5)
+def main():
+    print("Attente de fichiers audio (Ctrl+C pour quitter)...")
+    try:
+        while True:
+            if os.path.exists(AUDIO_FILENAME):
+                try:
+                    text = transcribe(AUDIO_FILENAME)
+                    if text:
+                        with open(STT_RESULT_FILE, "w", encoding="utf-8") as f:
+                            f.write(text)
+                    os.remove(AUDIO_FILENAME)
+                except Exception as e:
+                    print("Erreur transcription:", e)
+            time.sleep(0.2)
+    except KeyboardInterrupt:
+        print("Arrêt par l'utilisateur.")
+
+if __name__ == "__main__":
+    main()
