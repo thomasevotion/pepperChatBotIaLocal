@@ -1,45 +1,83 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+recognize_local.py
 
-import os
+Écoute des chunks audio 48 kHz, 16 bits mono de 50 ms,
+enregistre le flux brut en WAV, regroupe 1 s d’audio pour Whisper.
+"""
+
+import socket
 import time
-import torch
-import whisper
+import wave
+import os
+import numpy as np
+import librosa
+from faster_whisper import WhisperModel
 
-# Fichiers et paramètres
-AUDIO_FILENAME = "audio_pepper.wav"
-STT_RESULT_FILE = "stt_result.txt"
-LANGUAGE = "fr"
+HOST         = "0.0.0.0"
+PORT         = 11434
+ORIG_SR      = 48000             # Fréquence d’origine
+TARGET_SR    = 16000             # Fréquence attendue par Whisper
+SAMPWIDTH    = 2                 # 16 bits = 2 octets
+CHANNELS     = 1
+CHUNK_BYTES  = int(ORIG_SR * 0.05 * SAMPWIDTH)  # 50 ms
+WINDOW_SEC   = 1.0
+WINDOW_BYTES = int(ORIG_SR * WINDOW_SEC * SAMPWIDTH)
+OUTPUT_WAV   = "received_full.wav"
 
-# Choix du device GPU/CPU
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Chargement du modèle Whisper large sur {device}...")
-model = whisper.load_model("large").to(device)
-print("Modèle chargé.")
-
-def transcribe(path):
-    """Transcrit un fichier audio en texte français avec Whisper."""
-    result = model.transcribe(path, language=LANGUAGE)
-    text = result.get("text", "").strip()
-    print("---RESULT---:", text)
-    return text
+model = WhisperModel("small", device="cpu", compute_type="int8")
 
 def main():
-    print("Attente de fichiers audio (Ctrl+C pour quitter)...")
+    # Supprime l'ancien WAV
+    if os.path.exists(OUTPUT_WAV):
+        os.remove(OUTPUT_WAV)
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((HOST, PORT))
+    sock.listen(1)
+    print(f"🎧 En attente de connexion sur {HOST}:{PORT}…")
+    conn, addr = sock.accept()
+    print("🔌 Connecté par", addr)
+
+    buffer = b""
+    all_frames = []
+
     try:
         while True:
-            if os.path.exists(AUDIO_FILENAME):
-                try:
-                    text = transcribe(AUDIO_FILENAME)
-                    if text:
-                        with open(STT_RESULT_FILE, "w", encoding="utf-8") as f:
-                            f.write(text)
-                    os.remove(AUDIO_FILENAME)
-                except Exception as e:
-                    print("Erreur transcription:", e)
-            time.sleep(0.2)
-    except KeyboardInterrupt:
-        print("Arrêt par l'utilisateur.")
+            data = conn.recv(CHUNK_BYTES)
+            if not data:
+                break
+            all_frames.append(data)
+            buffer += data
+
+            # Dès qu’on a 1 s, on transcrit
+            while len(buffer) >= WINDOW_BYTES:
+                segment = buffer[:WINDOW_BYTES]
+                buffer = buffer[WINDOW_BYTES:]
+
+                # Bytes→int16→float32[-1,1]
+                audio48 = np.frombuffer(segment, dtype=np.int16).astype(np.float32) / 32768.0
+                # Resample 48 kHz→16 kHz
+                audio16 = librosa.resample(audio48, orig_sr=ORIG_SR, target_sr=TARGET_SR)
+                # Transcription
+                segments, _ = model.transcribe(audio16, beam_size=5, language="fr")
+                text = " ".join(s.text.strip() for s in segments)
+                timestamp = time.strftime("%H:%M:%S")
+                print(f"[{timestamp}] {text or '<silence>'}")
+
+    except Exception as e:
+        print("ERR :", e)
+    finally:
+        conn.close()
+        sock.close()
+        # Sauvegarde du WAV complet reçu
+        wf = wave.open(OUTPUT_WAV, 'wb')
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(SAMPWIDTH)
+        wf.setframerate(ORIG_SR)
+        wf.writeframes(b"".join(all_frames))
+        wf.close()
+        print(f"🔒 Fin de la connexion, audio brut sauvegardé dans {OUTPUT_WAV}")
 
 if __name__ == "__main__":
     main()
