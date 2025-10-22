@@ -75,6 +75,8 @@ class DialogueModule(naoqi.ALModule):
         try:
             self.posture = ALProxy("ALRobotPosture", self.strNaoIp, ROBOT_PORT)
             self.aup = ALProxy("ALAnimatedSpeech", self.strNaoIp, ROBOT_PORT)
+            # Ajouter le proxy pour les LEDs
+            self.leds = ALProxy("ALLeds", self.strNaoIp, ROBOT_PORT)
         except RuntimeError:
             print(u"Can't connect to Naoqi at ip \"%s\" on port %d.\nPlease check your script arguments. Run with -h option for help." % (self.strNaoIp, ROBOT_PORT))
         if START_PROMPT:
@@ -114,15 +116,39 @@ class DialogueModule(naoqi.ALModule):
         if enable:
             self.speechRecognition.start()
             self.speechRecognition.enableAutoDetection()
+            # Yeux VERT quand Pepper écoute
+            self.setEyeColor("green")
         else:
             self.speechRecognition.disableAutoDetection()
             self.speechRecognition.pause()
+    
+    def setEyeColor(self, color):
+        """Changer la couleur des yeux de Pepper"""
+        try:
+            if color == "green":
+                # Vert pour écouter
+                self.leds.fadeRGB("FaceLeds", 0x00FF00, 0.5)  # Vert
+            elif color == "purple":
+                # Violet pour parler
+                self.leds.fadeRGB("FaceLeds", 0x800080, 0.5)  # Violet
+            elif color == "blue":
+                # Bleu par défaut
+                self.leds.fadeRGB("FaceLeds", 0x0000FF, 0.5)  # Bleu
+            else:
+                # Couleur par défaut
+                self.leds.fadeRGB("FaceLeds", 0xFFFFFF, 0.5)  # Blanc
+        except Exception as e:
+            print(u"Erreur lors du changement de couleur des yeux: %s" % safe_decode(e))
 
     def speak(self, text):
         # Always encode as UTF-8 bytes before say()
         if isinstance(text, unicode):
             text = text.encode('utf-8')
+        # Yeux VIOLET quand Pepper parle
+        self.setEyeColor("purple")
         self.aup.say(text)
+        # Remettre les yeux verts après avoir parlé
+        self.setEyeColor("green")
 
     def processRemote(self, signalName, message):
         # NAOqi ALMemory subscribeToEvent callback signature:
