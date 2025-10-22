@@ -58,7 +58,7 @@ class DialogueModule(naoqi.ALModule):
         self.log = codecs.open('dialogue.log', 'a', encoding='utf-8')
         try:
             naoqi.ALModule.__init__(self, strModuleName)
-            self.BIND_PYTHON(self.getName(), "callback")
+            self.BIND_PYTHON(self.getName(), "processRemote")
             self.strNaoIp = strNaoIp
         except BaseException, err:
             print(u"ERR: ReceiverModule: loading error: %s" % safe_decode(err))
@@ -125,6 +125,10 @@ class DialogueModule(naoqi.ALModule):
         self.aup.say(text)
 
     def processRemote(self, signalName, message):
+        # NAOqi ALMemory subscribeToEvent callback signature:
+        # (signalName, message)
+        print("DEBUG - signalName:", signalName)
+        print("DEBUG - message:", message)
         message = safe_decode(message)
         self.log.write(u'INP: ' + message + u'\n')
         if message == u'error':
@@ -162,12 +166,13 @@ class DialogueModule(naoqi.ALModule):
 
 def main():
     parser = OptionParser()
-    parser.add_option("--pip", help="Parent broker port. The IP address of your robot", dest="pip")
-    parser.add_option("--pport", help="Parent broker port. The port NAOqi is listening to", dest="pport", type="int")
-    parser.set_defaults(
-        pip=ROBOT_IP,
-        pport=ROBOT_PORT
-    )
+    parser.add_option("--pip", dest="pip", default=ROBOT_IP,
+                      help="IP/hostname of broker. Default: 192.168.1.188")
+    parser.add_option("--pport", dest="pport", default=ROBOT_PORT,
+                      help="port of broker. Default: 9559")
+    parser.add_option("--prompt", dest="prompt", default="pepper",
+                      help="prompt file name (without .prompt extension). Default: pepper")
+
     (opts, args_) = parser.parse_args()
     pip = opts.pip
     pport = opts.pport

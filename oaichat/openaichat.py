@@ -19,6 +19,16 @@ from oaichat.oairesponse import OaiResponse
 import dotenv
 dotenv.load_dotenv()
 
+# Charger les variables d'environnement depuis config.env
+try:
+    with open('config.env', 'r') as f:
+        for line in f:
+            if '=' in line and not line.startswith('#'):
+                key, value = line.strip().split('=', 1)
+                os.environ[key] = value
+except:
+    pass
+
 if sys.version_info[0] < 3:
     raise ImportError('OpenAI Chat requires Python 3')
 

@@ -14,8 +14,20 @@
 #
 ###########################################################
 import socket
+import os
 
 from raw_to_wav import rawToWav
+
+# Charger les variables d'environnement depuis config.env (seulement pour la clé Google)
+try:
+    with open('config.env', 'r') as f:
+        for line in f:
+            if '=' in line and not line.startswith('#'):
+                key, value = line.strip().split('=', 1)
+                if key == 'GOOGLE_API_KEY':
+                    os.environ[key] = value
+except:
+    pass
 
 from optparse import OptionParser
 import naoqi
@@ -402,20 +414,61 @@ class SpeechRecognitionModule(naoqi.ALModule):
 
         buffer = np.getbuffer(data)
 
-        r = Recognizer()
         try:
-            result = r.recognize_google(audio_data=buffer, samplerate=SAMPLE_RATE, language=self.language)
-            self.memory.raiseEvent("SpeechRecognition", result)
+            # Utiliser Vosk local directement
+            result = self._recognize_with_local(buffer, SAMPLE_RATE)
             print '---RESULT---: ' + result
-        except UnknownValueError:
-            print 'ERR: Recognition error'
+            
+            # FORCER L'ENVOI DU TEXTE RECONNU - BYPASS COMPLET
+            print "=== BYPASS FORCE ==="
+            print "RESULT BRUT:", repr(result)
+            print "TYPE:", type(result)
+            
+            # ENVOYER TOUJOURS LE TEXTE RECONNU
+            if result and result != "error":
+                print "ENVOI FORCE DU TEXTE:", result
+                # ENVOYER DIRECTEMENT LE TEXTE RECONNU
+                self.memory.raiseEvent("SpeechRecognition", str(result))
+            else:
+                print "ENVOI ERROR FORCE"
+                self.memory.raiseEvent("SpeechRecognition", "error")
+        except Exception as e:
+            print 'ERR: Recognition error: ' + str(e)
+            # Envoyer "error" comme avant, pas de message personnalisé
             self.memory.raiseEvent("SpeechRecognition", "error")
-        except RequestError, e:
-            print 'ERR: ' + str(e)
-        except socket.timeout:
-            print 'ERR: Socket timeout'
-        except:
-            print 'ERR: Unknown, probably timeout ' + str(sys.exc_info()[0])
+
+
+
+    def _recognize_with_local(self, audio_data, samplerate):
+        """Reconnaissance vocale avec serveur Google STT externe"""
+        try:
+            from vosk_client import VoskClient
+            
+            # Utiliser le même client mais il pointe vers le serveur Google STT
+            client = VoskClient()
+            result = client.recognize(audio_data)
+            
+            print("Résultat serveur Google STT:", result)
+            
+            # FORCER LE RETOUR DU TEXTE RECONNU
+            print "=== FORCE RETURN ==="
+            print "RESULT BRUT CLIENT:", repr(result)
+            print "TYPE CLIENT:", type(result)
+            
+            if result and result.strip():
+                # Nettoyer le résultat (enlever les espaces en début/fin)
+                cleaned_result = result.strip()
+                print("Reconnaissance Google réussie:", cleaned_result)
+                print("RETOUR FORCE:", repr(cleaned_result))
+                return cleaned_result
+            
+            # Si pas de résultat valide, retourner "error" comme avant
+            print("Aucun résultat valide du serveur Google")
+            return "error"
+                
+        except Exception as e:
+            print("Erreur de reconnaissance:", str(e))
+            return "error"
 
 
 

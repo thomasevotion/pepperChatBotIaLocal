@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # The recognize_google method is taken from the Uberi SpeechRecognition module:
 # https://github.com/Uberi/speech_recognition
 # Author: Anthony Zhang (Uberi)
@@ -21,10 +22,17 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-from urllib import urlencode
-from urllib2 import Request, urlopen, URLError, HTTPError
+try:
+    from urllib import urlencode
+    from urllib2 import Request, urlopen, URLError, HTTPError
+except ImportError:
+    # Python 3
+    from urllib.parse import urlencode
+    from urllib.request import Request, urlopen
+    from urllib.error import URLError, HTTPError
 import json
 import socket
+import os
 
 class RequestError(Exception): pass
 
@@ -48,7 +56,34 @@ class Recognizer :
         assert key is None or isinstance(key, str), "``key`` must be ``None`` or a string"
         assert isinstance(language, str), "``language`` must be a string"
 
-        if key is None: key = "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw"
+        if key is None: 
+            # Try to load the key from environment variables
+            key = os.getenv('GOOGLE_API_KEY')
+            if key is None:
+                # Try to use service account credentials
+                credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+                if credentials_path and os.path.exists(credentials_path):
+                    # Use service account authentication with proper API
+                    try:
+                        from google.oauth2 import service_account
+                        from google.cloud import speech
+                        credentials = service_account.Credentials.from_service_account_file(credentials_path)
+                        # Use the new Google Speech-to-Text API
+                        return self._recognize_with_service_account(audio_data, samplerate, credentials, language)
+                    except ImportError:
+                        # Fallback to old method if libraries not available
+                        key = "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw"
+                else:
+                    key = "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw"
+            
+            # Si on a une clé API, essayer l'API v1 avec cette clé
+            if key and key.startswith('AIza'):
+                try:
+                    return self._recognize_with_api_key(audio_data, samplerate, key, language)
+                except Exception as e:
+                    print("API key recognition error:", str(e))
+                    # Fallback vers l'ancienne API
+                    pass
 
         url = "http://www.google.com/speech-api/v2/recognize?{}".format(urlencode({
             "client": "chromium",
@@ -94,3 +129,87 @@ class Recognizer :
         if "transcript" not in best_hypothesis:
             raise UnknownValueError()
         return best_hypothesis["transcript"].encode("utf-8")
+
+    def _recognize_with_service_account(self, audio_data, samplerate, credentials, language):
+        """
+        Use Google Speech-to-Text API v1 with service account authentication
+        """
+        try:
+            from google.cloud import speech
+            
+            # Initialize the client with credentials
+            client = speech.SpeechClient(credentials=credentials)
+            
+            # Configure audio settings
+            audio = speech.RecognitionAudio(content=audio_data)
+            config = speech.RecognitionConfig(
+                encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+                sample_rate_hertz=samplerate,
+                language_code=language,
+            )
+            
+            # Perform the recognition
+            response = client.recognize(config=config, audio=audio)
+            
+            # Extract the result
+            if response.results:
+                for result in response.results:
+                    if result.alternatives:
+                        return result.alternatives[0].transcript.encode("utf-8")
+            
+            raise UnknownValueError()
+            
+        except Exception as e:
+            print("Service account recognition error:", str(e))
+            raise RequestError("Service account recognition failed: {}".format(str(e)))
+
+    def _recognize_with_api_key(self, audio_data, samplerate, api_key, language):
+        """Utiliser l'API Google Speech-to-Text v1 avec clé API"""
+        try:
+            import requests
+            import json
+            
+            # URL de l'API Google Speech-to-Text v1
+            url = "https://speech.googleapis.com/v1/speech:recognize"
+            
+            # Headers avec la clé API
+            headers = {
+                "Authorization": "Bearer " + api_key,
+                "Content-Type": "application/json"
+            }
+            
+            # Configuration de la requête
+            config = {
+                "encoding": "LINEAR16",
+                "sampleRateHertz": samplerate,
+                "languageCode": language
+            }
+            
+            # Données audio en base64
+            import base64
+            audio_content = base64.b64encode(audio_data).decode('utf-8')
+            
+            # Corps de la requête
+            data = {
+                "config": config,
+                "audio": {
+                    "content": audio_content
+                }
+            }
+            
+            # Envoyer la requête
+            response = requests.post(url, headers=headers, json=data, timeout=30)
+            
+            if response.status_code == 200:
+                result = response.json()
+                if 'results' in result and len(result['results']) > 0:
+                    transcript = result['results'][0]['alternatives'][0]['transcript']
+                    return transcript.encode('utf-8')
+                else:
+                    raise UnknownValueError()
+            else:
+                raise RequestError("API request failed: " + str(response.status_code))
+                
+        except Exception as e:
+            print("API key recognition error:", str(e))
+            raise RequestError("API key recognition failed: {}".format(str(e)))
