@@ -64,3 +64,7 @@ venv/
 # recorded debug audio files
 *.raw
 *.wav
+env/*
+divine-data-472416-c3-6107ddcf03d9.json
+*.wav
+whisper-large-v3/*

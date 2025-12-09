@@ -415,27 +415,66 @@ class SpeechRecognitionModule(naoqi.ALModule):
         buffer = np.getbuffer(data)
 
         try:
-            # Utiliser Vosk local directement
-            result = self._recognize_with_local(buffer, SAMPLE_RATE)
-            print '---RESULT---: ' + result
+            # Utiliser le serveur local Google STT (Python 3) via socket
+            # C'est la méthode robuste pour contourner les pbs de SSL/Auth en Python 2.7
+            result = self._recognize_with_socket_server(buffer)
+            print '---RESULT---: ' + str(result)
             
-            # FORCER L'ENVOI DU TEXTE RECONNU - BYPASS COMPLET
-            print "=== BYPASS FORCE ==="
-            print "RESULT BRUT:", repr(result)
-            print "TYPE:", type(result)
-            
-            # ENVOYER TOUJOURS LE TEXTE RECONNU
-            if result and result != "error":
-                print "ENVOI FORCE DU TEXTE:", result
-                # ENVOYER DIRECTEMENT LE TEXTE RECONNU
-                self.memory.raiseEvent("SpeechRecognition", str(result))
+            if result and "Erreur" not in str(result) and str(result).strip() != "":
+                 self.memory.raiseEvent("SpeechRecognition", str(result))
             else:
-                print "ENVOI ERROR FORCE"
-                self.memory.raiseEvent("SpeechRecognition", "error")
+                 print "Erreur ou resultat vide, envoi 'error'"
+                 self.memory.raiseEvent("SpeechRecognition", "error")
+
         except Exception as e:
             print 'ERR: Recognition error: ' + str(e)
-            # Envoyer "error" comme avant, pas de message personnalisé
             self.memory.raiseEvent("SpeechRecognition", "error")
+
+    def _recognize_with_socket_server(self, audio_data):
+        """Envoie l'audio au serveur Python 3 local (port 8888)"""
+        HOST = '127.0.0.1'
+        PORT = 8888
+        import socket
+        import struct
+        
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            # Timeout de 10 secondes pour éviter de bloquer
+            sock.settimeout(10.0)
+            sock.connect((HOST, PORT))
+            
+            # Envoyer la taille des données (big endian unsigned int)
+            data_size = len(audio_data)
+            sock.send(struct.pack('>I', data_size))
+            
+            # Envoyer les données
+            sock.sendall(audio_data)
+            
+            # Recevoir la taille de la réponse
+            size_data = sock.recv(4)
+            if not size_data:
+                return "Erreur: Pas de réponse du serveur"
+                
+            resp_size = struct.unpack('>I', size_data)[0]
+            
+            # Recevoir la réponse
+            response = ""
+            while len(response) < resp_size:
+                chunk = sock.recv(min(4096, resp_size - len(response)))
+                if not chunk:
+                    break
+                response += chunk
+            
+            return response
+            
+        except Exception as e:
+            print "Erreur socket serveur STT: " + str(e)
+            return "Erreur de reconnaissance"
+        finally:
+            try:
+                sock.close()
+            except:
+                pass
 
 
 
