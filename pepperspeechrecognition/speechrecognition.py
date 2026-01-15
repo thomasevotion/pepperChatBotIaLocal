@@ -2,515 +2,296 @@
 
 ###########################################################
 # Retrieve robot audio buffer and do google speech recognition
-#
-# Syntax:
-#    python scriptname --pip <ip> --pport <port>
-#
-#    --pip <ip>: specify the ip of your robot (without specification it will use the NAO_IP defined below)
-#
-# Author: Johannes Bramauer, Vienna University of Technology. Updated by Erik Billing, University of Skovde, for integration with the OpenAI chatbot.
-# Created: May 30, 2018. Updated: November 2022. 
-# License: MIT
-#
+# STREAMING VERSION - 2025
 ###########################################################
 import socket
 import os
-
-from raw_to_wav import rawToWav
-
-# Charger les variables d'environnement depuis config.env (seulement pour la clé Google)
-try:
-    with open('config.env', 'r') as f:
-        for line in f:
-            if '=' in line and not line.startswith('#'):
-                key, value = line.strip().split('=', 1)
-                if key == 'GOOGLE_API_KEY':
-                    os.environ[key] = value
-except:
-    pass
-
+import sys
+import time
+import threading
+import traceback
+import numpy as np
 from optparse import OptionParser
 import naoqi
-import numpy as np
-import time
-import sys
-import threading
 from naoqi import ALProxy
-from google import Recognizer, UnknownValueError, RequestError
 from numpy import sqrt, mean, square
-import traceback
 
-
-RECORDING_DURATION = 10     # seconds, maximum recording time, also default value for startRecording(), Google Speech API only accepts up to about 10-15 seconds
-LOOKAHEAD_DURATION = 1.0    # seconds, for auto-detect mode: amount of seconds before the threshold trigger that will be included in the request
-IDLE_RELEASE_TIME = 2.0     # seconds, for auto-detect mode: idle time (RMS below threshold) after which we stop recording and recognize
-HOLD_TIME = 3.0             # seconds, minimum recording time after we started recording (autodetection)
-SAMPLE_RATE = 48000         # Hz, be careful changing this, both google and Naoqi have requirements!
-
-CALIBRATION_DURATION = 4    # seconds, timespan during which calibration is performed (summing up RMS values and calculating mean)
-CALIBRATION_THRESHOLD_FACTOR = 1.5  # factor the calculated mean RMS gets multiplied by to determine the auto detection threshold (after calibration)
-
-DEFAULT_LANGUAGE = "en-us"  # RFC5646 language tag, e.g. "en-us", "de-de", "fr-fr",... <http://stackoverflow.com/a/14302134>
-
-WRITE_WAV_FILE = False      # write the recorded audio to "out.wav" before sending it to google. intended for debugging purposes
-PRINT_RMS = False           # prints the calculated RMS value to the console, useful for setting the threshold
-
-PREBUFFER_WHEN_STOP = False # Fills pre-buffer with last samples when stopping recording. WARNING: has performance issues!
-
+# --- CONFIGURATION ---
+RECORDING_DURATION = 15.0    # Max recording time
+LOOKAHEAD_DURATION = 0.5    # Pre-buffer for auto-detection
+IDLE_RELEASE_TIME = 0.5     # Time of silence to stop recording (Shortened for speed)
+HOLD_TIME = 1.0             # Minimum recording time
+SAMPLE_RATE = 48000         # Pepper native rate
+CALIBRATION_DURATION = 4
+CALIBRATION_THRESHOLD_FACTOR = 1.5
+DEFAULT_LANGUAGE = "fr-fr"
+# ---------------------
 
 class SpeechRecognitionModule(naoqi.ALModule):
-    """
-    Use this object to get call back from the ALMemory of the naoqi world.
-    Your callback needs to be a method with two parameter (variable name, value).
-    """
-
     def __init__( self, moduleName, naoIp, naoPort=9559):
         try:
             naoqi.ALModule.__init__(self, moduleName )
-
-            # is these 2 line necessary? what do they do?
-            # just copied them from the examples...
-            self.BIND_PYTHON( self.getName(),"callback" )
+            # self.BIND_PYTHON( self.getName(),"callback" )
             self.naoIp = naoIp
             self.naoPort = naoPort
-
-            # declare event to ALMemory so other modules can subscribe
+            
             self.memory = naoqi.ALProxy("ALMemory")
             self.memory.declareEvent("SpeechRecognition")
+            self.memory.declareEvent("SpeechRecognitionStatus")
 
-            # flag to indicate if subscribed to audio events
             self.isStarted = False
-
-            # flag to indicate if we are currently recording audio
             self.isRecording = False
             self.startRecordingTimestamp = 0
             self.recordingDuration = RECORDING_DURATION
-
-            # flag to indicate if auto speech detection is enabled
-            self.isAutoDetectionEnabled = False
-            self.autoDetectionThreshold = 10 # TODO: find a default value that works fine so we don't need to calibrate every time
-
-            # flag to indicate if we are calibrating
+            self.isAutoDetectionEnabled = True # Default true
+            self.autoDetectionThreshold = 10 
             self.isCalibrating = False
             self.startCalibrationTimestamp = 0
 
-            # RMS calculation variables
+            # RMS calculation
             self.framesCount = 0
-            self.rmsSum = 0 # used to sum up rms results and calculate average
+            self.rmsSum = 0 
             self.lastTimeRMSPeak = 0
 
-            # audio buffer
-            self.buffer = []
+            # Audio buffers
             self.preBuffer = []
-            self.preBufferLength = 0    # length in samples (len(self.preBuffer) just counts entries)
+            self.preBufferLength = 0
+            
+            # Streaming
+            self.streaming_socket = None
+            self.listener_thread = None
+            self.socket_lock = threading.Lock()
 
-            # init parameters
+            # Init params
             self.language = DEFAULT_LANGUAGE
             self.idleReleaseTime = IDLE_RELEASE_TIME
             self.holdTime = HOLD_TIME
             self.lookaheadBufferSize = LOOKAHEAD_DURATION * SAMPLE_RATE
 
-            # counter for wav file output
-            self.fileCounter = 0
-
         except BaseException, err:
             print( "ERR: SpeechRecognitionModule: loading error: %s" % str(err) )
 
-    # __init__ - end
     def __del__( self ):
-        print( "INF: SpeechRecognitionModule.__del__: cleaning everything" )
+        self.stop()
+
+    def pause(self):
         self.stop()
 
     def start( self ):
-
         if(self.isStarted):
             print("INF: SpeechRecognitionModule.start: already running")
             return
 
         print("INF: SpeechRecognitionModule: starting!")
-
         self.isStarted = True
-
         audio = naoqi.ALProxy( "ALAudioDevice")
-        nNbrChannelFlag = 0 # ALL_Channels: 0,  AL::LEFTCHANNEL: 1, AL::RIGHTCHANNEL: 2 AL::FRONTCHANNEL: 3  or AL::REARCHANNEL: 4.
+        nNbrChannelFlag = 0 # ALL_Channels
         nDeinterleave = 0
-        audio.setClientPreferences( self.getName(),  SAMPLE_RATE, nNbrChannelFlag, nDeinterleave ) # setting same as default generate a bug !?!
+        audio.setClientPreferences( self.getName(),  SAMPLE_RATE, nNbrChannelFlag, nDeinterleave )
         audio.subscribe( self.getName() )
 
-    def pause(self):
+    def stop( self ):
         print("INF: SpeechRecognitionModule.pause: stopping")
         if (self.isStarted == False):
-            print("INF: SpeechRecognitionModule.stop: not running")
             return
-
         self.isStarted = False
-
-        audio = naoqi.ALProxy("ALAudioDevice", self.naoIp, self.naoPort)
-        audio.unsubscribe(self.getName())
-
+        try:
+            audio = naoqi.ALProxy("ALAudioDevice", self.naoIp, self.naoPort)
+            audio.unsubscribe(self.getName())
+        except:
+            pass
+        
+        # Close socket if open
+        self.close_socket()
         print("INF: SpeechRecognitionModule: stopped!")
 
-    def stop( self ):
-        self.pause()
-
     def processRemote( self, nbOfChannels, nbrOfSamplesByChannel, aTimeStamp, buffer ):
-        #print("INF: SpeechRecognitionModule: Processing '%s' channels" % nbOfChannels)
-
-        # calculate a decimal seconds timestamp
         timestamp = float (str(aTimeStamp[0]) + "."  + str(aTimeStamp[1]))
 
-        # put whole function in a try/except to be able to see the stracktrace
         try:
-
+            # Convert audio buffer
             aSoundDataInterlaced = np.fromstring( str(buffer), dtype=np.int16 )
             aSoundData = np.reshape( aSoundDataInterlaced, (nbOfChannels, nbrOfSamplesByChannel), 'F' )
+            
+            # Use Front Mic (Channel 0)
+            micFrontData = aSoundData[0]
 
-            # compute RMS, handle autodetection and calibration
+            # RMS Calculation
             if( self.isCalibrating or self.isAutoDetectionEnabled or self.isRecording):
-
-                # compute the rms level on front mic
-                rmsMicFront = self.calcRMSLevel(self.convertStr2SignedInt(aSoundData[0]))
+                rmsMicFront = self.calcRMSLevel(self.convertStr2SignedInt(micFrontData))
 
                 if (rmsMicFront >= self.autoDetectionThreshold):
-                    # save timestamp when we last had and RMS > threshold
                     self.lastTimeRMSPeak = timestamp
-
-                    # start recording if we are not doing so already
                     if (self.isAutoDetectionEnabled and not self.isRecording and not self.isCalibrating):
                         self.startRecording()
-                        print("threshold surpassed: " + str(rmsMicFront) + " more than " + str(self.autoDetectionThreshold))
+                        print("threshold surpassed: " + str(rmsMicFront))
 
-                # perform calibration
+                # Calibration logic
                 if( self.isCalibrating):
-
                     if(self.startCalibrationTimestamp <= 0):
-                        # we are starting to calibrate, save timestamp
-                        # to track how long we are doing this
                         self.startCalibrationTimestamp = timestamp
-
                     elif(timestamp - self.startCalibrationTimestamp >= CALIBRATION_DURATION):
-                        # time's up, we're done!
                         self.stopCalibration()
-
-                    # sum rms values of the frames
-                    # keep track of how many frames we sum up
-                    # to calculate mean afterwards
                     self.rmsSum += rmsMicFront
-                    self.framesCount = self.framesCount + 1
+                    self.framesCount += 1
+            
+            # Recording logic
+            if(self.isRecording):
+                # STREAMING: Send chunk immediately
+                self.send_chunk(micFrontData)
 
+                if (self.startRecordingTimestamp <= 0):
+                    self.startRecordingTimestamp = timestamp
+                elif ((timestamp - self.startRecordingTimestamp) > self.recordingDuration):
+                    print('stop after max recording duration')
+                    self.stopRecordingAndRecognize()
 
-                if(PRINT_RMS):
-                    # for debug purposes
-                    # also use it to find a good threshold value for auto detection
-                    print 'Mic RMS: ' + str(rmsMicFront)
-
-            if( False ):
-                # compute average
-                aAvgValue = np.mean( aSoundData, axis = 1 )
-                print( "avg: %s" % aAvgValue )
-            if( False ):
-                # compute fft
-                nBlockSize = nbrOfSamplesByChannel
-                signal = aSoundData[0] * np.hanning( nBlockSize )
-                aFft = ( np.fft.rfft(signal) / nBlockSize )
-                print aFft
-            if( False ):
-                # compute peak
-                aPeakValue = np.max( aSoundData )
-                if( aPeakValue > 16000 ):
-                    print( "Peak: %s" % aPeakValue )
-
-            if(not self.isCalibrating):
-                if(self.isRecording):
-                    # write to buffer
-                    self.buffer.append(aSoundData)
-
-                    if (self.startRecordingTimestamp <= 0):
-                        # initialize timestamp when we start recording
-                        self.startRecordingTimestamp = timestamp
-                    elif ((timestamp - self.startRecordingTimestamp) > self.recordingDuration):
-                        print('stop after max recording duration')
-                        # check how long we are recording
-                        self.stopRecordingAndRecognize()
-
-                    # stop recording after idle time (and recording at least hold time)
-                    # lastTimeRMSPeak is 0 if no peak occured
-                    if (timestamp - self.lastTimeRMSPeak >= self.idleReleaseTime) and (
-                            timestamp - self.startRecordingTimestamp >= self.holdTime):
-                        print ('stopping after idle/hold time')
-                        self.stopRecordingAndRecognize()
-                else:
-                    # constantly record into prebuffer for lookahead
-                    self.preBuffer.append(aSoundData)
-                    self.preBufferLength += len(aSoundData[0])
-
-                    # remove first (oldest) item if the buffer gets bigger than required
-                    # removes one block of samples as we store a list of lists...
-                    overshoot = (self.preBufferLength - self.lookaheadBufferSize)
-
-                    if((overshoot > 0) and (len(self.preBuffer) > 0)):
-                        self.preBufferLength -= len(self.preBuffer.pop(0)[0])
+                # Silence detection
+                if (timestamp - self.lastTimeRMSPeak >= self.idleReleaseTime) and \
+                   (timestamp - self.startRecordingTimestamp >= self.holdTime):
+                    print ('stopping after idle/hold time')
+                    self.stopRecordingAndRecognize()
+            else:
+                # Prebuffer logic (for lookahead)
+                self.preBuffer.append(micFrontData)
+                self.preBufferLength += len(micFrontData)
+                overshoot = (self.preBufferLength - self.lookaheadBufferSize)
+                if((overshoot > 0) and (len(self.preBuffer) > 0)):
+                    self.preBufferLength -= len(self.preBuffer.pop(0))
 
         except:
-            # i did this so i could see the stracktrace as the thread otherwise just silently failed
             traceback.print_exc()
 
-    # processRemote - end
+    def send_chunk(self, data):
+        """Send raw audio chunk to socket"""
+        with self.socket_lock:
+            if self.streaming_socket:
+                try:
+                    self.streaming_socket.sendall(data.tostring())
+                except Exception as e:
+                    print("ERR: Socket send failed: " + str(e))
+                    self.close_socket()
 
-    def calcRMSLevel(self, data):
-        rms = (sqrt(mean(square(data))))
-        # TODO: maybe a log would be better for threshold?
-        #rms = 20 * np.log10(np.sqrt(np.sum(np.power(data, 2) / len(data))))
-        return rms
-
-    def version( self ):
-        return "1.1"
-
-
-    # use this method to manually start recording (works with both autodetection enabled or disabled)
-    # the recording will stop after the signal is below the threshold for IDLE_RELEASE_TIME seconds,
-    # but will at least record for HOLD_TIME seconds
     def startRecording(self):
-        if(self.isRecording):
-            print("INF: SpeechRecognitionModule.startRecording: already recording")
-            return
-
+        if(self.isRecording): return
         print("INF: Starting to record audio")
-
-        # start recording
         self.startRecordingTimestamp = 0
         self.lastTimeRMSPeak = 0
-        self.buffer = self.preBuffer
-
-        #self.preBuffer = []
-
+        
+        # Open Socket Connection
+        self.connect_socket()
+        
+        # Send pre-buffer if exists
+        for chunk in self.preBuffer:
+            self.send_chunk(chunk)
+        self.preBuffer = [] # Clear prebuffer
+        
         self.isRecording = True
 
-        return
-
     def stopRecordingAndRecognize(self):
-        if(self.isRecording == False):
-            print("INF: SpeechRecognitionModule.stopRecordingAndRecognize: not recording")
-            return
-
-        print("INF: stopping recording and recognizing")
-
-        # TODO: choose which mic channel to use
-        # can we use the sound direction module for this?
-
-        # buffer is a list of nparrays we now concat into one array
-        # and the slice out the first mic channel
-        
-        slice = np.concatenate(self.buffer, axis=1)[0]
-
-        # initialize preBuffer with last samples to fix cut off words
-        # loop through buffer and count samples until prebuffer is full
-        # TODO: performance issues!
-        if (PREBUFFER_WHEN_STOP):
-            sampleCounter = 0
-            itemCounter = 0
-
-            for i in reversed(self.preBuffer):
-                sampleCounter += len(i[0])
-
-                if(sampleCounter > self.lookaheadBufferSize):
-                    break
-
-                itemCounter += 1
-
-            start = len(self.buffer) - itemCounter
-            self.preBuffer = self.buffer[start:]
-        else:
-            # don't copy to prebuffer
-            self.preBuffer = []
-
-        # start new worker thread to do the http call and some processing
-        # copy slice to be thread safe!
-        # TODO: make a job queue so we don't start a new thread for each recognition
-        threading.Thread(target=self.recognize, args=(slice.copy(), )).start()
-
-        # reset flag
+        if(self.isRecording == False): return
+        print("INF: stopping recording (end of stream)")
         self.isRecording = False
+        self.memory.raiseEvent("SpeechRecognitionStatus", "processing")
+        
+        # Close write end of socket to signal EOF to server
+        with self.socket_lock:
+            if self.streaming_socket:
+                try:
+                    # Shutdown WR signals EOF to the remote read
+                    self.streaming_socket.shutdown(socket.SHUT_WR)
+                except Exception as e:
+                    print("ERR: Socket shutdown failed: " + str(e))
+                    self.close_socket()
 
-        return
+    def connect_socket(self):
+        self.close_socket() # Ensure clean slate
+        try:
+            self.streaming_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.streaming_socket.connect(('localhost', 8888))
+            print("INF: Streaming socket connected!")
+            
+            # Start listener thread
+            self.listener_thread = threading.Thread(target=self.listen_response)
+            self.listener_thread.start()
+        except Exception as e:
+            print("ERR: Connection failed: " + str(e))
+            self.streaming_socket = None
 
+    def close_socket(self):
+        with self.socket_lock:
+            if self.streaming_socket:
+                try:
+                    self.streaming_socket.close()
+                except:
+                    pass
+                self.streaming_socket = None
+
+    def listen_response(self):
+        """Thread to listen for transcripts from server"""
+        print("INF: Response listener started")
+        full_response = ""
+        try:
+            while True:
+                # We need to access socket without lock if possible, or careful lock
+                # recv is blocking.
+                sock = self.streaming_socket # local copy ref
+                if not sock: break
+                
+                data = sock.recv(4096)
+                if not data:
+                    break # EOF
+                
+                text = data.decode('utf-8')
+                if text.startswith("FINAL:"):
+                    final_text = text.replace("FINAL:", "").strip()
+                    print("INF: FINAL RESULT RECEIVED: " + final_text)
+                    self.memory.raiseEvent("SpeechRecognition", final_text.encode('utf-8'))
+                    break # We are done after final result
+                elif text.startswith("PARTIAL:"):
+                    # We can use this for UI feedback later
+                    pass
+                    
+        except Exception as e:
+            print("ERR: Listener error: " + str(e))
+        finally:
+            self.close_socket()
+            print("INF: Response listener finished")
+
+    # --- UTILS ---
+    def calcRMSLevel(self, data):
+        return (sqrt(mean(square(data))))
+
+    def convertStr2SignedInt(self, data):
+        lsb = data[0::2]
+        msb = data[1::2]
+        rms_data = np.add(lsb, np.multiply(msb, 256.0))
+        sign_correction = np.select([rms_data>=32768], [-65536])
+        rms_data = np.add(rms_data, sign_correction)
+        rms_data = np.divide(rms_data, 32768.0)
+        return rms_data
+
+    # --- API ---
     def calibrate(self):
         self.isCalibrating = True
         self.framesCount = 0
         self.startCalibrationTimestamp = 0
-
-        print("INF: starting calibration")
-
-        if(self.isStarted == False):
-            self.start()
-
-        return
+        if(self.isStarted == False): self.start()
 
     def stopCalibration(self):
-        if(self.isCalibrating == False):
-            print("INF: SpeechRecognitionModule.stopCalibration: not calibrating")
-            return
-
         self.isCalibrating = False
-
-        # calculate avg rms over self.framesCount
         self.autoDetectionThreshold = CALIBRATION_THRESHOLD_FACTOR * (self.rmsSum / self.framesCount)
         print 'calibration done, RMS threshold is: ' + str(self.autoDetectionThreshold)
-        return
 
     def enableAutoDetection(self):
         self.isAutoDetectionEnabled = True
-        print("INF: autoDetection enabled")
-        return
-
+    
     def disableAutoDetection(self):
         self.isAutoDetectionEnabled = False
-        print 'INF: AutoDetection Disabled '
-        return
-
-    def setLanguage(self, language = DEFAULT_LANGUAGE):
-        self.language = language
-        print 'SET: language set to ' + language
-        return
-
-    # used for RMS calculation
-    def convertStr2SignedInt(self, data):
-        """
-        This function takes a string containing 16 bits little endian sound
-        samples as input and returns a vector containing the 16 bits sound
-        samples values converted between -1 and 1.
-        """
-
-        # from the naoqi sample, but rewritten to use numpy methods instead of for loops
-
-        lsb = data[0::2]
-        msb = data[1::2]
-
-        # don't remove the .0, otherwise overflow!
-        rms_data = np.add(lsb, np.multiply(msb, 256.0))
-
-        # gives and array that contains -65536 on every position where signedData is > 32768
-        sign_correction = np.select([rms_data>=32768], [-65536])
-
-        # add the two to get the correct signed values
-        rms_data = np.add(rms_data, sign_correction)
-
-        # normalize values to -1.0 ... +1.0
-        rms_data = np.divide(rms_data, 32768.0)
-
-        return rms_data
-
-    def recognize(self, data):
-        # print 'sending %d bytes' % len(data)
-
-        if (WRITE_WAV_FILE):
-            # write to file
-            filename = "out" + str(self.fileCounter)
-            self.fileCounter += 1
-            outfile = open(filename + ".raw", "wb")
-            data.tofile(outfile)
-            outfile.close()
-            rawToWav(filename)
-
-        buffer = np.getbuffer(data)
-
-        try:
-            # Utiliser le serveur local Google STT (Python 3) via socket
-            # C'est la méthode robuste pour contourner les pbs de SSL/Auth en Python 2.7
-            result = self._recognize_with_socket_server(buffer)
-            print '---RESULT---: ' + str(result)
-            
-            if result and "Erreur" not in str(result) and str(result).strip() != "":
-                 self.memory.raiseEvent("SpeechRecognition", str(result))
-            else:
-                 print "Erreur ou resultat vide, envoi 'error'"
-                 self.memory.raiseEvent("SpeechRecognition", "error")
-
-        except Exception as e:
-            print 'ERR: Recognition error: ' + str(e)
-            self.memory.raiseEvent("SpeechRecognition", "error")
-
-    def _recognize_with_socket_server(self, audio_data):
-        """Envoie l'audio au serveur Python 3 local (port 8888)"""
-        HOST = '127.0.0.1'
-        PORT = 8888
-        import socket
-        import struct
         
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            # Timeout de 10 secondes pour éviter de bloquer
-            sock.settimeout(10.0)
-            sock.connect((HOST, PORT))
-            
-            # Envoyer la taille des données (big endian unsigned int)
-            data_size = len(audio_data)
-            sock.send(struct.pack('>I', data_size))
-            
-            # Envoyer les données
-            sock.sendall(audio_data)
-            
-            # Recevoir la taille de la réponse
-            size_data = sock.recv(4)
-            if not size_data:
-                return "Erreur: Pas de réponse du serveur"
-                
-            resp_size = struct.unpack('>I', size_data)[0]
-            
-            # Recevoir la réponse
-            response = ""
-            while len(response) < resp_size:
-                chunk = sock.recv(min(4096, resp_size - len(response)))
-                if not chunk:
-                    break
-                response += chunk
-            
-            return response
-            
-        except Exception as e:
-            print "Erreur socket serveur STT: " + str(e)
-            return "Erreur de reconnaissance"
-        finally:
-            try:
-                sock.close()
-            except:
-                pass
-
-
-
-    def _recognize_with_local(self, audio_data, samplerate):
-        """Reconnaissance vocale avec serveur Google STT externe"""
-        try:
-            from vosk_client import VoskClient
-            
-            # Utiliser le même client mais il pointe vers le serveur Google STT
-            client = VoskClient()
-            result = client.recognize(audio_data)
-            
-            print("Résultat serveur Google STT:", result)
-            
-            # FORCER LE RETOUR DU TEXTE RECONNU
-            print "=== FORCE RETURN ==="
-            print "RESULT BRUT CLIENT:", repr(result)
-            print "TYPE CLIENT:", type(result)
-            
-            if result and result.strip():
-                # Nettoyer le résultat (enlever les espaces en début/fin)
-                cleaned_result = result.strip()
-                print("Reconnaissance Google réussie:", cleaned_result)
-                print("RETOUR FORCE:", repr(cleaned_result))
-                return cleaned_result
-            
-            # Si pas de résultat valide, retourner "error" comme avant
-            print("Aucun résultat valide du serveur Google")
-            return "error"
-                
-        except Exception as e:
-            print("Erreur de reconnaissance:", str(e))
-            return "error"
-
-
-
+    def version(self): return "2.0 Streaming"
+    
+    # --- MISSING METHODS RESTORED ---
     def setAutoDetectionThreshold(self, threshold):
         self.autoDetectionThreshold = threshold
         print 'SET: AutoDetection Threshold set to ' + str(self.autoDetectionThreshold)
@@ -532,6 +313,10 @@ class SpeechRecognitionModule(naoqi.ALModule):
         self.holdTime = holdTime
         print 'SET: Hold time set to ' + str(holdTime)
 
+    def setLanguage(self, language = DEFAULT_LANGUAGE):
+        self.language = language
+        print 'SET: language set to ' + language
+        
     def printInfo(self):
         print "INFO"
         print "language: "+ self.language
@@ -539,4 +324,3 @@ class SpeechRecognitionModule(naoqi.ALModule):
         print 'Lookahead duration: ' + str(self.lookaheadBufferSize/SAMPLE_RATE)
         print 'Idle release time: ' + str(self.idleReleaseTime)
         print 'Hold time set to: ' + str(self.holdTime)
-

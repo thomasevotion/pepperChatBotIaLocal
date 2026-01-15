@@ -3,7 +3,7 @@
 
 """
 Serveur STT Google avec OAuth
-Remplace l'ancien système Google API qui ne marchait plus
+Mode: Streaming Continu
 """
 
 import os
@@ -50,122 +50,104 @@ class GoogleSTTServer:
             print(f"ERREUR lors du chargement des credentials: {e}")
             return False
     
-    def recognize_audio(self, audio_data, sample_rate=16000):
-        """Reconnaître l'audio avec Google Speech API v1"""
+    def request_generator(self, client_socket):
+        """Générateur qui lit le socket et produit des chunks pour Google"""
+        client_socket.settimeout(None) # Mode bloquant
+        print("Debut du streaming audio...")
+        
+        # Buffer pour accumuler un peu de données si nécessaire
         try:
-            if not self.client:
-                return "Erreur: Client non chargé"
-            
-            print(f"Reçu {len(audio_data)} bytes d'audio")
-            
-            # Convertir les données audio si nécessaire
-            if isinstance(audio_data, str):
-                audio_data = base64.b64decode(audio_data)
-            elif isinstance(audio_data, bytes):
-                pass
-            else:
-                audio_data = audio_data.tobytes()
-            
-            print(f"Audio traité: {len(audio_data)} bytes")
-            
-            # Convertir en numpy array
-            audio_array = np.frombuffer(audio_data, dtype=np.int16)
-            
-            # Vérifier si l'audio est assez fort
-            if abs(audio_array.max()) < 1000:
-                print("Audio trop faible")
-                return ""
-            
-            # Configuration Google Speech API - Optimisée pour mots courts
-            config = speech.RecognitionConfig(
-                encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-                sample_rate_hertz=48000,  # Audio de Pepper est à 48kHz !
-                language_code='fr-FR',
-                enable_automatic_punctuation=True,
-                model='latest_short',  # Modèle optimisé pour mots courts
-                # Paramètres plus permissifs
-                max_alternatives=1,
-                profanity_filter=False,
-                enable_word_time_offsets=False,
-                enable_word_confidence=False,
-                # Essayer avec différents modèles
-                use_enhanced=True
-            )
-            
-            # Créer l'audio pour Google
-            audio = speech.RecognitionAudio(content=audio_data)
-            
-            # Reconnaissance avec Google Speech API v1
-            print("Envoi vers Google Speech API...")
-            print(f"Audio envoyé: {len(audio_data)} bytes, sample_rate: {sample_rate}")
-            print(f"Audio min/max: {audio_array.min()}/{audio_array.max()}")
-            
-            response = self.client.recognize(config=config, audio=audio)
-            
-            print(f"Réponse Google: {response}")
-            
-            # Extraire le résultat
-            if response.results:
-                print(f"Nombre de résultats: {len(response.results)}")
-                for i, result in enumerate(response.results):
-                    print(f"Résultat {i}: {result}")
-                    if result.alternatives:
-                        text = result.alternatives[0].transcript
-                        confidence = result.alternatives[0].confidence
-                        print(f"Résultat Google: '{text}' (confiance: {confidence:.2f})")
-                        return text.strip()
-            else:
-                print("Aucun résultat dans la réponse Google")
-            
-            print("Aucun résultat Google")
-            return ""
-                    
+            while True:
+                # Lecture bloquante du socket
+                data = client_socket.recv(4096)
+                if not data:
+                    print("Fin du flux audio (socket fermé par le client).")
+                    break
+                
+                # On envoie direct à Google
+                yield speech.StreamingRecognizeRequest(audio_content=data)
         except Exception as e:
-            print(f"Erreur de reconnaissance: {e}")
-            return "Erreur de reconnaissance"
-    
+            print(f"Erreur lecture socket: {e}")
+            
     def handle_client(self, client_socket, address):
-        """Gérer un client connecté"""
+        """Gérer un client en mode Streaming complet"""
         try:
             print(f"Client connecté: {address}")
             
-            while True:
-                # Recevoir la taille des données
-                size_data = client_socket.recv(4)
-                if not size_data:
-                    break
+            if not self.client:
+                print("Erreur: Client Google non initialisé")
+                return
+
+            # Configuration Google Speech API Streaming
+            # Pepper est en 48kHz
+            config = speech.RecognitionConfig(
+                encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+                sample_rate_hertz=48000, 
+                language_code='fr-FR',
+                enable_automatic_punctuation=True,
+                model='latest_short',
+                use_enhanced=True
+            )
+            
+            # config single_utterance=True permet de dire à Google de s'arrêter dès qu'une phrase est finie
+            # Mais ici on veut contrôler manuellement via le client
+            streaming_config = speech.StreamingRecognitionConfig(
+                config=config,
+                interim_results=True # Important pour le feedback et la rapidité
+            )
+
+            # Lancer la reconnaissance
+            # Cette fonction bloque et consomme le générateur
+            print("Lancement de streaming_recognize...")
+            requests = self.request_generator(client_socket)
+            
+            # On itère sur les réponses au fur et à mesure
+            responses = self.client.streaming_recognize(config=streaming_config, requests=requests)
+            
+            for response in responses:
+                if not response.results:
+                    continue
+                
+                result = response.results[0]
+                if not result.alternatives:
+                    continue
                     
-                data_size = int.from_bytes(size_data, 'big')
+                transcript = result.alternatives[0].transcript
                 
-                # Recevoir les données audio
-                audio_data = b''
-                while len(audio_data) < data_size:
-                    chunk = client_socket.recv(min(4096, data_size - len(audio_data)))
-                    if not chunk:
-                        break
-                    audio_data += chunk
-                
-                if len(audio_data) != data_size:
-                    print("Erreur: Taille des données incorrecte")
-                    break
-                
-                # Reconnaissance
-                result = self.recognize_audio(audio_data)
-                
-                # Envoyer le résultat
-                result_bytes = result.encode('utf-8')
-                result_size = len(result_bytes).to_bytes(4, 'big')
-                print(f"Envoi de '{result}' -> {len(result_bytes)} bytes")
-                client_socket.send(result_size + result_bytes)
+                # Gestion des résultats
+                if result.is_final:
+                    print(f"FINAL: {transcript}")
+                    msg = f"FINAL:{transcript}"
+                    # Envoyer la taille (4 bytes) puis le message
+                    # msg_bytes = msg.encode('utf-8')
+                    # client_socket.send(len(msg_bytes).to_bytes(4, 'big') + msg_bytes)
+                    
+                    # Simplification: Protocole texte simple avec séparateur, car Python 2.7 struct est chiant
+                    # On envoie juste le texte brut utf-8. Le client lira tout.
+                    client_socket.send(msg.encode('utf-8'))
+                    
+                else:
+                    # Resultat partiel (interim)
+                    print(f"PARTIAL: {transcript}")
+                    # On pourrait renvoyer les partiels au robot pour affichage tablette
+                    # msg = f"PARTIAL:{transcript}"
+                    # client_socket.send(msg.encode('utf-8'))
+            
+            print("Fin de la session de reconnaissance.")
                 
         except Exception as e:
-            print(f"Erreur avec le client {address}: {e}")
+            print(f"Erreur dans handle_client: {e}")
         finally:
-            client_socket.close()
+            try:
+                client_socket.close()
+            except:
+                pass
             print(f"Client déconnecté: {address}")
     
     def start_server(self):
         """Démarrer le serveur"""
+        print("Initialisation du serveur STT (Mode Streaming)...")
+        
         if not self.load_credentials():
             return False
             
@@ -176,22 +158,17 @@ class GoogleSTTServer:
             self.server_socket.listen(5)
             
             self.running = True
-            print(f"Serveur Google STT démarré sur le port {self.port}")
+            print(f"Serveur Google STT prêt sur le port {self.port}")
             print("En attente de connexions...")
             
             while self.running:
                 try:
-                    print("En attente de connexion...")
                     client_socket, address = self.server_socket.accept()
-                    print(f"Client connecté: {address}")
-                    # Traiter la connexion directement
-                    try:
-                        self.handle_client(client_socket, address)
-                    except Exception as e:
-                        print(f"Erreur dans handle_client: {e}")
-                    finally:
-                        client_socket.close()
-                        print(f"Client déconnecté: {address}")
+                    # Thread pour chaque client pour ne pas bloquer
+                    client_thread = threading.Thread(target=self.handle_client, args=(client_socket, address))
+                    client_thread.daemon = True
+                    client_thread.start()
+                    
                 except Exception as e:
                     if self.running:
                         print(f"Erreur d'acceptation: {e}")

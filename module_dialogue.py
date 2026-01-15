@@ -70,13 +70,13 @@ def update_tablet_interface(user_text, robot_text):
         pc_ip = get_local_ip()
         url = "http://" + pc_ip + ":9090/update"
         data = {}
-        if user_text:
+        if user_text is not None:
             # Encodage safe pour JSON
             if isinstance(user_text, unicode):
                 data['user'] = user_text.encode('utf-8')
             else:
                 data['user'] = str(user_text)
-        if robot_text:
+        if robot_text is not None:
             if isinstance(robot_text, unicode):
                 data['robot'] = robot_text.encode('utf-8')
             else:
@@ -116,12 +116,14 @@ class DialogueModule(naoqi.ALModule):
         # On essaie d'afficher la page sur la tablette des le debut
         try:
             self.tablet = ALProxy("ALTabletService", self.strNaoIp, ROBOT_PORT)
+            self.tablet.enableWifi() # S'assurer que le Wifi est actif
             # URL locale du PC hote (Pepper doit pouvoir acceder a cette IP)
-            # ATTENTION: Il faut que PepperWebLocal/main.py soit lance sur la meme machine
-            # Et que l'IP soit accessible. Ici on laisse le script main.py gerer l'affichage initial
-            pass
-        except:
-            pass
+            pc_ip = get_local_ip()
+            url = "http://" + pc_ip + ":9090/index.html"
+            print("Tentative d'affichage tablette: " + url)
+            self.tablet.showWebview(url)
+        except Exception as e:
+            print("Erreur initialisation tablette: " + str(e))
 
         try:
             self.posture = ALProxy("ALRobotPosture", self.strNaoIp, ROBOT_PORT)
@@ -164,8 +166,8 @@ class DialogueModule(naoqi.ALModule):
             self.speechRecognition.setMaxRecordingDuration(10)
         else:
             print(u"True, auto-detection selected")
-            self.speechRecognition.setHoldTime(2.5)
-            self.speechRecognition.setIdleReleaseTime(2.0)
+            self.speechRecognition.setHoldTime(1.0)
+            self.speechRecognition.setIdleReleaseTime(0.5)
             self.speechRecognition.setMaxRecordingDuration(10)
             self.speechRecognition.setLookaheadDuration(0.5)
             self.speechRecognition.setLanguage("fr-fr")
@@ -294,22 +296,81 @@ class DialogueModule(naoqi.ALModule):
         except Exception as e:
             print(u"Erreur lors du mouvement naturel: %s" % safe_decode(e))
 
+    def handle_streaming_response(self, input_text):
+        full_answer = ""
+        sentence_buffer = ""
+        
+        print "ROBOT (streaming):"
+        update_tablet_interface(None, "...")
+        
+        try:
+            for chunk in chatbot.respond_stream(input_text):
+                chunk = safe_decode(chunk)
+                full_answer += chunk
+                sentence_buffer += chunk
+                sys.stdout.write(chunk)
+                sys.stdout.flush()
+                
+                # Speak heuristic
+                if re.search(r'[.!?]+\s*$', sentence_buffer):
+                    self.speak(sentence_buffer)
+                    sentence_buffer = ""
+                    # Update tablet after speaking a sentence
+                    update_tablet_interface(None, full_answer)
+                elif len(sentence_buffer) > 60:
+                      last_space = sentence_buffer.rfind(' ')
+                      if last_space > 0:
+                          to_speak = sentence_buffer[:last_space]
+                          self.speak(to_speak)
+                          sentence_buffer = sentence_buffer[last_space+1:]
+                          update_tablet_interface(None, full_answer)
+
+            if sentence_buffer:
+                self.speak(sentence_buffer)
+                
+            print "\n"
+            update_tablet_interface(None, full_answer)
+            self.react(full_answer)
+            self.log.write(u'ANS: ' + full_answer + u'\n')
+            
+        except Exception as e:
+            print "Stream error:", e
+            # Fallback
+            answer = "Désolé, j'ai eu un problème."
+            self.speak(answer)
+
     def processRemote(self, signalName, message):
         # NAOqi ALMemory subscribeToEvent callback signature:
         # (signalName, message)
-        print("DEBUG - signalName:", signalName)
-        print("DEBUG - message:", message)
-        message = safe_decode(message)
-        self.log.write(u'INP: ' + message + u'\n')
-        if message == u'error':
+        print "DEBUG_RAW_RECEIVE: Signal=" + str(signalName) + " Content=" + str(message)
+        
+        # Filtrage strict des messages vides ou d'erreur
+        # On verifie d'abord si le message est valide avant de tester sa longueur
+        if message is None:
+            print("Message None ignore.")
+            self.listen(True)
             return
+            
+        if message == "None" or message == "error":
+             print("Message 'None'/'error' ignore.")
+             self.listen(True)
+             return
+             
+        # Conversion safe
+        message_str = safe_decode(message)
+        if len(message_str.strip()) == 0:
+            print("Message vide ignore.")
+            self.listen(True)
+            return
+
+        self.log.write(u'INP: ' + message_str + u'\n')
         self.listen(False)
-        print(u"USER:\n" + message)
+        print(u"USER:\n" + message_str)
         
         # Mise a jour tablette (User)
-        update_tablet_interface(message, None)
+        update_tablet_interface(message_str, None)
 
-        if message == u'error':
+        if message_str == u'error':
             self.misunderstandings += 1
             if self.misunderstandings == 1:
                 answer = u"Je n'ai pas compris, peux-tu répéter ?"
@@ -320,11 +381,13 @@ class DialogueModule(naoqi.ALModule):
             else:
                 answer = u"Peux-tu répéter cela ?"
             print(u'ERREUR, REPONSE PAR DEFAUT:\n' + answer)
+            update_tablet_interface(None, answer)
+            self.speak(answer)
         else:
             self.misunderstandings = 0
             
             # LOGIQUE INTELLIGENTE POUR LES COMPORTEMENTS
-            message_lower = message.lower()
+            message_lower = message_str.lower()
             
             # 1. DANSE - Si l'utilisateur demande de danser
             if "danse" in message_lower or "dance" in message_lower:
@@ -333,8 +396,6 @@ class DialogueModule(naoqi.ALModule):
                 update_tablet_interface(None, answer)
                 self.speak(answer)
                 self.dance()
-                self.listen(True)
-                return
             
             # 2. SERRE LA MAIN - Réponse spéciale
             elif "serre" in message_lower and "main" in message_lower:
@@ -342,50 +403,21 @@ class DialogueModule(naoqi.ALModule):
                 update_tablet_interface(None, answer)
                 self.speak(answer)
                 self.wave()
-                self.listen(True)
-                return
             
             # 3. BLAGUE - Détecter si c'est une blague et rire après
             elif "blague" in message_lower or "rigole" in message_lower or "rire" in message_lower:
-                answer = safe_decode(chatbot.respond(message))
-                try:
-                    print(u'ROBOT:\n' + answer)
-                except:
-                    print(u'ROBOT:\n' + answer.encode('ascii', 'replace'))
-                update_tablet_interface(None, answer)
-                self.speak(answer)
+                # Streaming response for joke
+                self.handle_streaming_response(message_str)
                 self.laugh()  # Rire après la blague
-                self.react(answer)
-                self.listen(True)
-                return  # Sortir de la fonction
             
             # 4. BONJOUR - Combiner IA + comportement
             elif "bonjour" in message_lower or "salut" in message_lower or "hello" in message_lower:
-                answer = safe_decode(chatbot.respond(message))
-                try:
-                    print(u'ROBOT:\n' + answer)
-                except:
-                    print(u'ROBOT:\n' + answer.encode('ascii', 'replace'))
-                update_tablet_interface(None, answer)
                 self.wave() # Lancer le geste de manière asynchrone
-                self.speak_static(answer) # Parler sans gestes pour laisser le coucou se faire
-                self.react(answer)
-                self.listen(True)
-                return  # Sortir de la fonction
+                self.handle_streaming_response(message_str)
             
             # 5. AUTRES - Réponse IA uniquement
             else:
-                answer = safe_decode(chatbot.respond(message))
-            try:
-                print(u'ROBOT:\n' + answer)
-            except:
-                print(u'ROBOT:\n' + answer.encode('ascii', 'replace'))
-            
-            update_tablet_interface(None, answer)
-
-        self.log.write(u'ANS: ' + answer + u'\n')
-        self.speak(answer)
-        self.react(answer)
+                self.handle_streaming_response(message_str)
         
         # Le mouvement naturel manuel est supprimé car il interrompt les animations
         # La respiration est gérée automatiquement par self.listen(True)
