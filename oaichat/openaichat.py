@@ -55,32 +55,33 @@ class OaiChat:
     # print('Logging requests to',log)
     pass
 
-  def respond(self, inputText):
+  def respond(self, inputText, **kwargs):
     start = datetime.now()
     self.moderation = None
-    #moderator = Thread(target=self.getModeration,args=(inputText,))
-    #moderator.start()
+    
     self.history.append({'role':'user','content':inputText})
-    #print(self.history)
+    
+    # Mode normal non-streaming pour l'instant (pour ne pas casser le ZMQ actuel)
+    # Pour le streaming, on devrait utiliser stream=True et un generateur
+    stream = kwargs.get('stream', False)
     response = self.client.chat.completions.create(
       model="gpt-3.5-turbo-1106",
-      #response_format={ "type": "json_object" },
-      #user=self.user,
       messages=self.history,
-      # temperature=0.7,
-      max_tokens=150,
-      # top_p=1,
-      # frequency_penalty=1,
-      # presence_penalty=0
+      max_tokens=60,
+      stream=stream
     )
-    #moderator.join()
-    #print('Moderation:',self.moderation)
-    #print(response.choices[0].message.content)
-    r = OaiResponse(response.model_dump_json())
+    
+    if stream:
+        return response
 
+    r = OaiResponse(response.model_dump_json())
     self.history.append({'role':'assistant','content':r.getText()})
     print('Request delay',datetime.now()-start)
     return r
+
+  def respond_stream(self, inputText):
+      return self.respond(inputText, stream=True)
+
 
   def loadPrompt(self,promptFile):
     promptFile = promptFile or 'openai.prompt'

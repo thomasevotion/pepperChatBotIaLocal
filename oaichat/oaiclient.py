@@ -56,6 +56,22 @@ class OaiClient:
     def respond(self,s):
         return OaiResponse(self.send({'input':s})).getText()
 
+    def respond_stream(self, s):
+        # Start stream
+        self.send({'input': s, 'stream': True})
+        
+        while True:
+            r = self.send({'next_chunk': True})
+            if r.get('stream_finished'):
+                break
+            if r.get('error'):
+                print("Stream error:", r['error'])
+                break
+            
+            chunk = r.get('chunk', '')
+            if chunk:
+                yield chunk
+
     def send(self,o):
         o['time'] = datetime.now().isoformat()
         if self.log: 

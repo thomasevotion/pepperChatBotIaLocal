@@ -25,6 +25,8 @@ class OaiServer(OaiChat):
         self.socket = self.context.socket(zmq.REP)
         self.socket.bind('tcp://*:'+os.getenv('CHATBOT_SERVER_ADDRESS').split(':')[-1])
         self.thread = None
+        self.stream_generator = None
+        self.full_stream_response = ""
 
     def start(self):
         self.thread = Thread(target=self._run)
@@ -52,9 +54,36 @@ class OaiServer(OaiChat):
                         self.history.append(row.strip())
                     response['history']='ok'
                 if 'input' in i:
-                    r = self.respond(i['input'])
-                    for k,v in r.json.items():
-                        response[k] = v        
+                    if i.get('stream'):
+                        print('Starting stream for input:', i['input'])
+                        self.stream_generator = self.respond(i['input'], stream=True)
+                        self.full_stream_response = ""
+                        response['stream'] = 'started'
+                    else:
+                        r = self.respond(i['input'])
+                        for k,v in r.json.items():
+                            response[k] = v
+                elif 'next_chunk' in i:
+                    if self.stream_generator:
+                        try:
+                            chunk = next(self.stream_generator)
+                            content = chunk.choices[0].delta.content
+                            if content:
+                                response['chunk'] = content
+                                self.full_stream_response += content
+                            else:
+                                response['chunk'] = ""
+                        except StopIteration:
+                            response['stream_finished'] = True
+                            self.history.append({'role':'assistant','content':self.full_stream_response})
+                            self.stream_generator = None
+                        except Exception as e:
+                            print("Stream error:", e)
+                            response['error'] = str(e)
+                            self.stream_generator = None
+                    else:
+                        response['error'] = "No active stream"
+                        response['stream_finished'] = True
                 response['time'] = datetime.datetime.now().isoformat()
                 print('Sending response:',response)        
                 self.send(response)
