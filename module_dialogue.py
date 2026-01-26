@@ -176,7 +176,7 @@ class DialogueModule(naoqi.ALModule):
             self.speechRecognition.calibrate()
             # Augmentation du seuil pour eviter les faux positifs (bruit/echo)
             # Valeur ajustee : 12 compromis vitesse/fiabilite
-            self.speechRecognition.setAutoDetectionThreshold(8) 
+            self.speechRecognition.setAutoDetectionThreshold(12) 
         self.listen(False)
 
     def listen(self, enable):
@@ -322,27 +322,31 @@ class DialogueModule(naoqi.ALModule):
         sentence_buffer = ""
         print "ROBOT (streaming):"
         
-        # 1. Yeux VIOLET au début
-        self.setEyeColor("purple") 
+        self.setEyeColor("purple")
         update_tablet_interface(None, "...", status="robot_speaking")
         
+        # On s'assure que le micro est coupé avant de commencer à parler
+        try:
+            self.speechRecognition.pause()
+        except:
+            pass
+
         last_task_id = None
 
         try:
-            # Boucle de lecture du flux ChatGPT
             for chunk in chatbot.respond_stream(input_text):
                 chunk = safe_decode(chunk)
                 full_answer += chunk
                 sentence_buffer += chunk
-
+                
                 # Affichage console
                 try:
                     sys.stdout.write(chunk.encode(sys.stdout.encoding or 'utf-8', 'replace'))
                     sys.stdout.flush()
                 except:
-                    pass 
+                    pass
 
-                # Découpage en phrases pour fluidité
+                # Découpage intelligent pour fluidité
                 if re.search(r'[.!?]+\s*$', sentence_buffer):
                     last_task_id = self.speak_async(sentence_buffer)
                     sentence_buffer = ""
@@ -355,7 +359,7 @@ class DialogueModule(naoqi.ALModule):
                         sentence_buffer = sentence_buffer[last_space+1:]
                         update_tablet_interface(None, full_answer)
 
-            # Parler le reste du buffer s'il y a
+            # Finir le buffer
             if sentence_buffer:
                 last_task_id = self.speak_async(sentence_buffer)
                 print "\n"
@@ -363,43 +367,23 @@ class DialogueModule(naoqi.ALModule):
 
             self.log.write(u'ANS: ' + full_answer + u'\n')
 
-            # --- CORRECTION CRITIQUE ICI ---
-            # On attend que Pepper ait VRAIMENT fini de parler
+            # --- LE FIX CRITIQUE ---
+            # Attendre que Pepper ait fini de parler avant de rouvrir le micro
             if last_task_id is not None:
-                try:
-                    # wait(taskId, timeout) -> timeout 0 signifie infini
-                    self.aup.wait(last_task_id, 0)
-                except Exception as e:
-                    print "Erreur attente fin de parole:", e
-                    # Fallback : petit sleep si wait plante
-                    time.sleep(1.0) 
+                self.aup.wait(last_task_id, 0)
 
         except Exception as e:
             print "Stream error:", e
-            self.speak("Désolé, j'ai eu un problème.")
+            self.speak("Désolé, erreur.")
 
         finally:
-            # Maintenant qu'il s'est tu, on peut changer d'état
+            # Maintenant qu'il s'est tu, on change d'état
+            self.setEyeColor("white") # Transition
+            time.sleep(0.5) # Petit délai anti-écho
             
-            # Etape 1: Yeux BLANCS (transition)
-            self.setEyeColor("white")
-            update_tablet_interface(None, None, status="waiting")
-
-            # Etape 2: S'assurer que le micro était bien coupé
-            try:
-                self.speechRecognition.pause()
-            except:
-                pass
-                
-            # Petit délai pour éviter l'écho résiduel (réduit à 0.2s car on a déjà attendu la fin de la parole)
-            time.sleep(0.2)
-
-            # Etape 3: Yeux VERTS et écoute
             self.setEyeColor("green")
             update_tablet_interface(None, None, status="listening")
-            
-            # Le 'listen(True)' sera rappelé par la boucle principale, 
-            # mais ici on prépare juste l'état visuel.
+            # Le 'listen(True)' sera rappelé par le processRemote
 
 
     def processRemote(self, signalName, message):
