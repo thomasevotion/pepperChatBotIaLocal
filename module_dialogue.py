@@ -61,7 +61,7 @@ def get_local_ip():
         s.close()
     return ip
 
-def update_tablet_interface(user_text, robot_text):
+def update_tablet_interface(user_text, robot_text, status=None):
     """Envoie les mises a jour au serveur Web local de la tablette"""
     try:
         import urllib2
@@ -81,6 +81,8 @@ def update_tablet_interface(user_text, robot_text):
                 data['robot'] = robot_text.encode('utf-8')
             else:
                 data['robot'] = str(robot_text)
+        if status is not None:
+            data['status'] = status
             
         req = urllib2.Request(url)
         req.add_header('Content-Type', 'application/json')
@@ -173,8 +175,8 @@ class DialogueModule(naoqi.ALModule):
             self.speechRecognition.setLanguage("fr-fr")
             self.speechRecognition.calibrate()
             # Augmentation du seuil pour eviter les faux positifs (bruit/echo)
-            # Valeur ajustee : 12 pour filtrer l'echo moyen mais entendre la voix forte
-            self.speechRecognition.setAutoDetectionThreshold(12) 
+            # Valeur ajustee : 12 compromis vitesse/fiabilite
+            self.speechRecognition.setAutoDetectionThreshold(8) 
         self.listen(False)
 
     def listen(self, enable):
@@ -200,18 +202,23 @@ class DialogueModule(naoqi.ALModule):
     def setEyeColor(self, color):
         """Changer la couleur des yeux de Pepper"""
         try:
+            # Duree de transition tres courte pour reactivite immediate
+            duration = 0.1 
             if color == "green":
                 # Vert pour écouter
-                self.leds.fadeRGB("FaceLeds", 0x00FF00, 0.5)  # Vert
+                self.leds.fadeRGB("FaceLeds", 0x00FF00, duration)
             elif color == "purple":
                 # Violet pour parler
-                self.leds.fadeRGB("FaceLeds", 0x800080, 0.5)  # Violet
+                self.leds.fadeRGB("FaceLeds", 0x800080, duration)
             elif color == "blue":
                 # Bleu par défaut
-                self.leds.fadeRGB("FaceLeds", 0x0000FF, 0.5)  # Bleu
+                self.leds.fadeRGB("FaceLeds", 0x0000FF, duration)
+            elif color == "white":
+                # Blanc pour attente
+                self.leds.fadeRGB("FaceLeds", 0xFFFFFF, duration)
             else:
                 # Couleur par défaut
-                self.leds.fadeRGB("FaceLeds", 0xFFFFFF, 0.5)  # Blanc
+                self.leds.fadeRGB("FaceLeds", 0xFFFFFF, duration)
         except Exception as e:
             print(u"Erreur lors du changement de couleur des yeux: %s" % safe_decode(e))
 
@@ -219,11 +226,8 @@ class DialogueModule(naoqi.ALModule):
         # Always encode as UTF-8 bytes before say()
         if isinstance(text, unicode):
             text = text.encode('utf-8')
-        # Yeux VIOLET quand Pepper parle
         self.setEyeColor("purple")
         self.aup.say(text)
-        # Remettre les yeux verts après avoir parlé
-        self.setEyeColor("green")
 
     def speak_static(self, text):
         """Parler sans gestuelle automatique (pour ne pas casser les animations en cours)"""
@@ -316,63 +320,87 @@ class DialogueModule(naoqi.ALModule):
     def handle_streaming_response(self, input_text):
         full_answer = ""
         sentence_buffer = ""
-        
         print "ROBOT (streaming):"
-        update_tablet_interface(None, "...")
         
-        # Yeux VIOLET en continu pendant tout le streaming
-        self.setEyeColor("purple")
+        # 1. Yeux VIOLET au début
+        self.setEyeColor("purple") 
+        update_tablet_interface(None, "...", status="robot_speaking")
         
         last_task_id = None
-        
+
         try:
+            # Boucle de lecture du flux ChatGPT
             for chunk in chatbot.respond_stream(input_text):
                 chunk = safe_decode(chunk)
                 full_answer += chunk
                 sentence_buffer += chunk
-                sys.stdout.write(chunk)
-                sys.stdout.flush()
-                
-                # Speak heuristic - Envoi asynchrone des phrases
+
+                # Affichage console
+                try:
+                    sys.stdout.write(chunk.encode(sys.stdout.encoding or 'utf-8', 'replace'))
+                    sys.stdout.flush()
+                except:
+                    pass 
+
+                # Découpage en phrases pour fluidité
                 if re.search(r'[.!?]+\s*$', sentence_buffer):
                     last_task_id = self.speak_async(sentence_buffer)
                     sentence_buffer = ""
-                    # Update tablet (texte complet)
                     update_tablet_interface(None, full_answer)
                 elif len(sentence_buffer) > 60:
-                      last_space = sentence_buffer.rfind(' ')
-                      if last_space > 0:
-                          to_speak = sentence_buffer[:last_space]
-                          last_task_id = self.speak_async(to_speak)
-                          sentence_buffer = sentence_buffer[last_space+1:]
-                          update_tablet_interface(None, full_answer)
+                    last_space = sentence_buffer.rfind(' ')
+                    if last_space > 0:
+                        to_speak = sentence_buffer[:last_space]
+                        last_task_id = self.speak_async(to_speak)
+                        sentence_buffer = sentence_buffer[last_space+1:]
+                        update_tablet_interface(None, full_answer)
 
             # Parler le reste du buffer s'il y a
             if sentence_buffer:
                 last_task_id = self.speak_async(sentence_buffer)
-                
-            print "\n"
-            update_tablet_interface(None, full_answer)
+                print "\n"
+                update_tablet_interface(None, full_answer)
+
             self.log.write(u'ANS: ' + full_answer + u'\n')
-            
-            # OPTIMISATION RADICALE : On n'attend PAS la fin de la parole.
-            # On remet les yeux verts et l'ecoute IMMEDIATEMENT.
-            # Tant pis si le robot s'entend un peu sur la fin de sa phrase (l'AEC de NAOqi devrait gerer).
-            
-            # Reagir (postures) de maniere asynchrone (via thread ou juste skip pour l'instant pour tester la vitesse)
-            # self.react(full_answer) # Desactive pour test vitesse extreme
-            
+
+            # --- CORRECTION CRITIQUE ICI ---
+            # On attend que Pepper ait VRAIMENT fini de parler
+            if last_task_id is not None:
+                try:
+                    # wait(taskId, timeout) -> timeout 0 signifie infini
+                    self.aup.wait(last_task_id, 0)
+                except Exception as e:
+                    print "Erreur attente fin de parole:", e
+                    # Fallback : petit sleep si wait plante
+                    time.sleep(1.0) 
+
         except Exception as e:
             print "Stream error:", e
-            # Fallback
-            answer = "Désolé, j'ai eu un problème."
-            self.speak(answer)
+            self.speak("Désolé, j'ai eu un problème.")
+
         finally:
-            # Remettre les yeux verts une fois TOUT fini
-            # Pas de delai artificiel - Vitesse max
-            # time.sleep(0.3)
+            # Maintenant qu'il s'est tu, on peut changer d'état
+            
+            # Etape 1: Yeux BLANCS (transition)
+            self.setEyeColor("white")
+            update_tablet_interface(None, None, status="waiting")
+
+            # Etape 2: S'assurer que le micro était bien coupé
+            try:
+                self.speechRecognition.pause()
+            except:
+                pass
+                
+            # Petit délai pour éviter l'écho résiduel (réduit à 0.2s car on a déjà attendu la fin de la parole)
+            time.sleep(0.2)
+
+            # Etape 3: Yeux VERTS et écoute
             self.setEyeColor("green")
-            # Force listen update handled by caller (processRemote -> listen(True))
+            update_tablet_interface(None, None, status="listening")
+            
+            # Le 'listen(True)' sera rappelé par la boucle principale, 
+            # mais ici on prépare juste l'état visuel.
+
 
     def processRemote(self, signalName, message):
         # NAOqi ALMemory subscribeToEvent callback signature:
@@ -403,7 +431,7 @@ class DialogueModule(naoqi.ALModule):
         print(u"USER:\n" + message_str)
         
         # Mise a jour tablette (User)
-        update_tablet_interface(message_str, None)
+        update_tablet_interface(message_str, None, status="waiting")
 
         if message_str == u'error':
             self.misunderstandings += 1
