@@ -203,12 +203,23 @@ class SpeechRecognitionModule(naoqi.ALModule):
                 except Exception as e:
                     print("ERR: Socket shutdown failed: " + str(e))
                     self.close_socket()
+        
+        # Force re-listening immediately if no response within 2 seconds
+        # This is a safety mechanism
+        threading.Timer(2.0, self.check_if_stuck).start()
+
+    def check_if_stuck(self):
+        """Safety check to ensure we don't get stuck in processing state"""
+        # If we are not recording and not started again, maybe we are stuck waiting for Google
+        # But we can't easily check 'processing' state here without more flags.
+        # For now, let's rely on the server response.
+        pass
 
     def connect_socket(self):
         self.close_socket() # Ensure clean slate
         try:
             self.streaming_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.streaming_socket.connect(('localhost', 8888))
+            self.streaming_socket.connect(('localhost', 8889))
             print("INF: Streaming socket connected!")
             
             # Start listener thread

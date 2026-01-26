@@ -166,13 +166,15 @@ class DialogueModule(naoqi.ALModule):
             self.speechRecognition.setMaxRecordingDuration(10)
         else:
             print(u"True, auto-detection selected")
-            self.speechRecognition.setHoldTime(1.0)
-            self.speechRecognition.setIdleReleaseTime(0.5)
+            self.speechRecognition.setHoldTime(0.8) # Min duration to consider speech
+            self.speechRecognition.setIdleReleaseTime(0.4) # Silence duration to cut
             self.speechRecognition.setMaxRecordingDuration(10)
             self.speechRecognition.setLookaheadDuration(0.5)
             self.speechRecognition.setLanguage("fr-fr")
             self.speechRecognition.calibrate()
-            self.speechRecognition.setAutoDetectionThreshold(6)
+            # Augmentation du seuil pour eviter les faux positifs (bruit/echo)
+            # Valeur ajustee : 12 pour filtrer l'echo moyen mais entendre la voix forte
+            self.speechRecognition.setAutoDetectionThreshold(12) 
         self.listen(False)
 
     def listen(self, enable):
@@ -296,12 +298,32 @@ class DialogueModule(naoqi.ALModule):
         except Exception as e:
             print(u"Erreur lors du mouvement naturel: %s" % safe_decode(e))
 
+    def speak_async(self, text):
+        """Parler de manière asynchrone (ne bloque pas le thread)"""
+        # Always encode as UTF-8 bytes before say()
+        if isinstance(text, unicode):
+            text = text.encode('utf-8')
+        try:
+            # Utiliser l'objet 'post' pour rendre l'appel non-bloquant
+            # Cela renvoie un ID de tâche que l'on peut attendre plus tard
+            return self.aup.post.say(text)
+        except Exception as e:
+            print("Erreur speak_async:", e)
+            # Fallback synchrone si erreur
+            self.aup.say(text)
+            return None
+
     def handle_streaming_response(self, input_text):
         full_answer = ""
         sentence_buffer = ""
         
         print "ROBOT (streaming):"
         update_tablet_interface(None, "...")
+        
+        # Yeux VIOLET en continu pendant tout le streaming
+        self.setEyeColor("purple")
+        
+        last_task_id = None
         
         try:
             for chunk in chatbot.respond_stream(input_text):
@@ -311,33 +333,46 @@ class DialogueModule(naoqi.ALModule):
                 sys.stdout.write(chunk)
                 sys.stdout.flush()
                 
-                # Speak heuristic
+                # Speak heuristic - Envoi asynchrone des phrases
                 if re.search(r'[.!?]+\s*$', sentence_buffer):
-                    self.speak(sentence_buffer)
+                    last_task_id = self.speak_async(sentence_buffer)
                     sentence_buffer = ""
-                    # Update tablet after speaking a sentence
+                    # Update tablet (texte complet)
                     update_tablet_interface(None, full_answer)
                 elif len(sentence_buffer) > 60:
                       last_space = sentence_buffer.rfind(' ')
                       if last_space > 0:
                           to_speak = sentence_buffer[:last_space]
-                          self.speak(to_speak)
+                          last_task_id = self.speak_async(to_speak)
                           sentence_buffer = sentence_buffer[last_space+1:]
                           update_tablet_interface(None, full_answer)
 
+            # Parler le reste du buffer s'il y a
             if sentence_buffer:
-                self.speak(sentence_buffer)
+                last_task_id = self.speak_async(sentence_buffer)
                 
             print "\n"
             update_tablet_interface(None, full_answer)
-            self.react(full_answer)
             self.log.write(u'ANS: ' + full_answer + u'\n')
+            
+            # OPTIMISATION RADICALE : On n'attend PAS la fin de la parole.
+            # On remet les yeux verts et l'ecoute IMMEDIATEMENT.
+            # Tant pis si le robot s'entend un peu sur la fin de sa phrase (l'AEC de NAOqi devrait gerer).
+            
+            # Reagir (postures) de maniere asynchrone (via thread ou juste skip pour l'instant pour tester la vitesse)
+            # self.react(full_answer) # Desactive pour test vitesse extreme
             
         except Exception as e:
             print "Stream error:", e
             # Fallback
             answer = "Désolé, j'ai eu un problème."
             self.speak(answer)
+        finally:
+            # Remettre les yeux verts une fois TOUT fini
+            # Pas de delai artificiel - Vitesse max
+            # time.sleep(0.3)
+            self.setEyeColor("green")
+            # Force listen update handled by caller (processRemote -> listen(True))
 
     def processRemote(self, signalName, message):
         # NAOqi ALMemory subscribeToEvent callback signature:
@@ -421,7 +456,7 @@ class DialogueModule(naoqi.ALModule):
         
         # Le mouvement naturel manuel est supprimé car il interrompt les animations
         # La respiration est gérée automatiquement par self.listen(True)
-        time.sleep(1.0) # Pause pour eviter que le robot ne s'ecoute lui-meme (echo)
+        # time.sleep(1.0) # Suppression du sleep bloquant
         self.listen(True)
 
     def react(self, s):

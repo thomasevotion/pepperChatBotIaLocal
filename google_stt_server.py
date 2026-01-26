@@ -19,7 +19,7 @@ from google.cloud import speech
 from google.oauth2 import service_account
 
 class GoogleSTTServer:
-    def __init__(self, credentials_path="divine-data-472416-c3-6107ddcf03d9.json", port=8888):
+    def __init__(self, credentials_path="divine-data-472416-c3-6107ddcf03d9.json", port=8889):
         self.credentials_path = credentials_path
         self.port = port
         self.client = None

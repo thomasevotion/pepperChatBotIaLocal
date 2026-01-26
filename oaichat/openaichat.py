@@ -67,7 +67,7 @@ class OaiChat:
     response = self.client.chat.completions.create(
       model="gpt-3.5-turbo-1106",
       messages=self.history,
-      max_tokens=60,
+      max_tokens=250,
       stream=stream
     )
     
