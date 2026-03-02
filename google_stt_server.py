@@ -19,35 +19,29 @@ from google.cloud import speech
 from google.oauth2 import service_account
 
 class GoogleSTTServer:
-    def __init__(self, credentials_path="divine-data-472416-c3-6107ddcf03d9.json", port=8889):
-        self.credentials_path = credentials_path
+    def __init__(self, api_key="AIzaSyCua14754ZknobwsZ0zqGvWbHvT_FBblUU", port=8889):
+        self.api_key = api_key
         self.port = port
         self.client = None
         self.server_socket = None
         self.running = False
         
     def load_credentials(self):
-        """Charger les credentials Google OAuth"""
+        """Charger les credentials Google OAuth via API Key"""
         try:
-            if not os.path.exists(self.credentials_path):
-                print(f"ERREUR: Fichier credentials non trouvé: {self.credentials_path}")
-                return False
-                
-            print(f"Chargement des credentials Google: {self.credentials_path}")
+            print(f"Chargement du client Google Speech avec API Key...")
             
-            # Charger les credentials
-            credentials = service_account.Credentials.from_service_account_file(
-                self.credentials_path,
-                scopes=['https://www.googleapis.com/auth/cloud-platform']
-            )
+            # Utilisation de l'API Key via client_options
+            from google.api_core.client_options import ClientOptions
+            options = ClientOptions(api_key=self.api_key)
             
-            # Créer le client Speech
-            self.client = speech.SpeechClient(credentials=credentials)
-            print("Client Google Speech chargé avec succès!")
+            # Créer le client Speech sans credentials explicites mais avec l'API key
+            self.client = speech.SpeechClient(client_options=options)
+            print("Client Google Speech chargé avec succès (API Key)!")
             return True
             
         except Exception as e:
-            print(f"ERREUR lors du chargement des credentials: {e}")
+            print(f"ERREUR lors du chargement du client: {e}")
             return False
     
     def request_generator(self, client_socket):
@@ -163,12 +157,16 @@ class GoogleSTTServer:
             
             while self.running:
                 try:
-                    client_socket, address = self.server_socket.accept()
-                    # Thread pour chaque client pour ne pas bloquer
-                    client_thread = threading.Thread(target=self.handle_client, args=(client_socket, address))
-                    client_thread.daemon = True
-                    client_thread.start()
-                    
+                    self.server_socket.settimeout(1.0) # Timeout pour permettre le CTRL+C
+                    try:
+                        client_socket, address = self.server_socket.accept()
+                        # Thread pour chaque client pour ne pas bloquer
+                        client_thread = threading.Thread(target=self.handle_client, args=(client_socket, address))
+                        client_thread.daemon = True
+                        client_thread.start()
+                    except socket.timeout:
+                        continue
+                        
                 except Exception as e:
                     if self.running:
                         print(f"Erreur d'acceptation: {e}")
