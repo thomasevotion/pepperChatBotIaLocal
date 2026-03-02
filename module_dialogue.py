@@ -96,6 +96,7 @@ class DialogueModule(naoqi.ALModule):
     """
     def __init__(self, strModuleName, strNaoIp):
         self.misunderstandings = 0
+        self.processing = False
         self.log = codecs.open('dialogue.log', 'a', encoding='utf-8')
         try:
             naoqi.ALModule.__init__(self, strModuleName)
@@ -139,8 +140,8 @@ class DialogueModule(naoqi.ALModule):
             print(u"Can't connect to Naoqi at ip \"%s\" on port %d.\nPlease check your script arguments. Run with -h option for help." % (self.strNaoIp, ROBOT_PORT))
         # Activer les mouvements naturels (version simplifiée)
         try:
-            self.motion.setBreathEnabled("Body", True)
-            print("Mouvements naturels activés")
+            # self.motion.setBreathEnabled("Body", True)
+            print("Mouvements naturels désactivés (Breath)")
         except Exception as e:
             print(u"Erreur mouvements naturels: %s" % safe_decode(e))
         
@@ -187,7 +188,8 @@ class DialogueModule(naoqi.ALModule):
             self.setEyeColor("green")
             # Activer les mouvements naturels pendant l'écoute
             try:
-                self.motion.setBreathEnabled("Body", True)
+                # self.motion.setBreathEnabled("Body", True)
+                pass
             except:
                 pass
         else:
@@ -195,7 +197,8 @@ class DialogueModule(naoqi.ALModule):
             self.speechRecognition.pause()
             # Désactiver les mouvements pendant la parole
             try:
-                self.motion.setBreathEnabled("Body", False)
+                # self.motion.setBreathEnabled("Body", False)
+                pass
             except:
                 pass
     
@@ -407,85 +410,94 @@ class DialogueModule(naoqi.ALModule):
         # (signalName, message)
         print "DEBUG_RAW_RECEIVE: Signal=" + str(signalName) + " Content=" + str(message)
         
-        # Filtrage strict des messages vides ou d'erreur
-        # On verifie d'abord si le message est valide avant de tester sa longueur
-        if message is None:
-            print("Message None ignore.")
-            self.listen(True)
-            return
-            
-        if message == "None" or message == "error":
-             print("Message 'None'/'error' ignore.")
-             self.listen(True)
-             return
-             
-        # Conversion safe
-        message_str = safe_decode(message)
-        if len(message_str.strip()) == 0:
-            print("Message vide ignore.")
-            self.listen(True)
+        # Ignorer si on est deja en train de traiter une reponse
+        if self.processing:
+            print("Message ignore car deja en traitement.")
             return
 
-        self.log.write(u'INP: ' + message_str + u'\n')
-        self.listen(False)
-        print(u"USER:\n" + message_str)
-        
-        # Mise a jour tablette (User)
-        update_tablet_interface(message_str, None, status="waiting")
+        self.processing = True
+        try:
+            # Filtrage strict des messages vides ou d'erreur
+            # On verifie d'abord si le message est valide avant de tester sa longueur
+            if message is None:
+                print("Message None ignore.")
+                self.listen(True)
+                return
+                
+            if message == "None" or message == "error":
+                 print("Message 'None'/'error' ignore.")
+                 self.listen(True)
+                 return
+                 
+            # Conversion safe
+            message_str = safe_decode(message)
+            if len(message_str.strip()) == 0:
+                print("Message vide ignore.")
+                self.listen(True)
+                return
 
-        if message_str == u'error':
-            self.misunderstandings += 1
-            if self.misunderstandings == 1:
-                answer = u"Je n'ai pas compris, peux-tu répéter ?"
-            elif self.misunderstandings == 2:
-                answer = u"Désolé, je n’ai pas compris. Pourrais-tu répéter encore ?"
-            elif self.misunderstandings == 3:
-                answer = u"Aujourd'hui j'ai des difficultés à comprendre, désolé."
-            else:
-                answer = u"Peux-tu répéter cela ?"
-            print(u'ERREUR, REPONSE PAR DEFAUT:\n' + answer)
-            update_tablet_interface(None, answer)
-            self.speak(answer)
-        else:
-            self.misunderstandings = 0
+            self.log.write(u'INP: ' + message_str + u'\n')
+            self.listen(False)
+            print(u"USER:\n" + message_str)
             
-            # LOGIQUE INTELLIGENTE POUR LES COMPORTEMENTS
-            message_lower = message_str.lower()
-            
-            # 1. DANSE - Si l'utilisateur demande de danser
-            if "danse" in message_lower or "dance" in message_lower:
-                answer = "Je danse pour vous !"
-                # Mise a jour tablette (Robot)
+            # Mise a jour tablette (User)
+            update_tablet_interface(message_str, None, status="waiting")
+
+            if message_str == u'error':
+                self.misunderstandings += 1
+                if self.misunderstandings == 1:
+                    answer = u"Je n'ai pas compris, peux-tu répéter ?"
+                elif self.misunderstandings == 2:
+                    answer = u"Désolé, je n’ai pas compris. Pourrais-tu répéter encore ?"
+                elif self.misunderstandings == 3:
+                    answer = u"Aujourd'hui j'ai des difficultés à comprendre, désolé."
+                else:
+                    answer = u"Peux-tu répéter cela ?"
+                print(u'ERREUR, REPONSE PAR DEFAUT:\n' + answer)
                 update_tablet_interface(None, answer)
                 self.speak(answer)
-                self.dance()
-            
-            # 2. SERRE LA MAIN - Réponse spéciale
-            elif "serre" in message_lower and "main" in message_lower:
-                answer = "Je ne peux pas serrer la main mes mains sont fragiles mais je peux faire coucou."
-                update_tablet_interface(None, answer)
-                self.speak(answer)
-                self.wave()
-            
-            # 3. BLAGUE - Détecter si c'est une blague et rire après
-            elif "blague" in message_lower or "rigole" in message_lower or "rire" in message_lower:
-                # Streaming response for joke
-                self.handle_streaming_response(message_str)
-                self.laugh()  # Rire après la blague
-            
-            # 4. BONJOUR - Combiner IA + comportement
-            elif "bonjour" in message_lower or "salut" in message_lower or "hello" in message_lower:
-                self.wave() # Lancer le geste de manière asynchrone
-                self.handle_streaming_response(message_str)
-            
-            # 5. AUTRES - Réponse IA uniquement
             else:
-                self.handle_streaming_response(message_str)
-        
-        # Le mouvement naturel manuel est supprimé car il interrompt les animations
-        # La respiration est gérée automatiquement par self.listen(True)
-        # time.sleep(1.0) # Suppression du sleep bloquant
-        self.listen(True)
+                self.misunderstandings = 0
+                
+                # LOGIQUE INTELLIGENTE POUR LES COMPORTEMENTS
+                message_lower = message_str.lower()
+                
+                # 1. DANSE - Si l'utilisateur demande de danser
+                if "danse" in message_lower or "dance" in message_lower:
+                    answer = "Je danse pour vous !"
+                    # Mise a jour tablette (Robot)
+                    update_tablet_interface(None, answer)
+                    self.speak(answer)
+                    self.dance()
+                
+                # 2. SERRE LA MAIN - Réponse spéciale
+                elif "serre" in message_lower and "main" in message_lower:
+                    answer = "Je ne peux pas serrer la main mes mains sont fragiles mais je peux faire coucou."
+                    update_tablet_interface(None, answer)
+                    self.speak(answer)
+                    self.wave()
+                
+                # 3. BLAGUE - Détecter si c'est une blague et rire après
+                elif "blague" in message_lower or "rigole" in message_lower or "rire" in message_lower:
+                    # Streaming response for joke
+                    self.handle_streaming_response(message_str)
+                    self.laugh()  # Rire après la blague
+                
+                # 4. BONJOUR - Combiner IA + comportement
+                elif "bonjour" in message_lower or "salut" in message_lower or "hello" in message_lower:
+                    self.wave() # Lancer le geste de manière asynchrone
+                    self.handle_streaming_response(message_str)
+                
+                # 5. AUTRES - Réponse IA uniquement
+                else:
+                    self.handle_streaming_response(message_str)
+            
+            # Le mouvement naturel manuel est supprimé car il interrompt les animations
+            # La respiration est gérée automatiquement par self.listen(True)
+            # time.sleep(1.0) # Suppression du sleep bloquant
+            self.listen(True)
+        finally:
+            self.processing = False
 
     def react(self, s):
         s = safe_decode(s)
