@@ -14,7 +14,7 @@
 ###########################################################
 ###########################################################
 
-ROBOT_IP = "pepper.local" # default, for running on Pepper
+ROBOT_IP = "172.20.10.3" # default, for running on Pepper
 ROBOT_PORT = 9559
 
 import sys, time
