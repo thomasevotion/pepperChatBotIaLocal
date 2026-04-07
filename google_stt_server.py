@@ -46,20 +46,26 @@ class GoogleSTTServer:
     
     def request_generator(self, client_socket):
         """Générateur qui lit le socket et produit des chunks pour Google"""
-        client_socket.settimeout(None) # Mode bloquant
+        # Remplacer None (bloquant) par un timeout de 1.0 seconde
+        client_socket.settimeout(1.0) 
         print("Debut du streaming audio...")
-        
-        # Buffer pour accumuler un peu de données si nécessaire
+
         try:
             while True:
-                # Lecture bloquante du socket
-                data = client_socket.recv(4096)
-                if not data:
-                    print("Fin du flux audio (socket fermé par le client).")
-                    break
-                
-                # On envoie direct à Google
-                yield speech.StreamingRecognizeRequest(audio_content=data)
+                try:
+                    data = client_socket.recv(4096)
+                    if not data:
+                        print("Fin du flux audio (socket fermé par le client).")
+                        break
+                    
+                    # On envoie direct à Google
+                    yield speech.StreamingRecognizeRequest(audio_content=data)
+                    
+                except socket.timeout:
+                    # Plus d'audio reçu pendant 1 seconde : l'utilisateur a fini de parler
+                    print("Silence détecté (timeout socket), fin de la phrase.")
+                    break # On casse la boucle pour clôturer la requête proprement
+                    
         except Exception as e:
             print(f"Erreur lecture socket: {e}")
             

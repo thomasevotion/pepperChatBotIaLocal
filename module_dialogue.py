@@ -60,7 +60,7 @@ def get_local_ip():
         try:
             ip = socket.gethostbyname(socket.gethostname())
         except:
-            ip = "127.0.0.1"
+        ip = "127.0.0.1"
     finally:
         s.close()
     return ip
@@ -144,7 +144,7 @@ class DialogueModule(naoqi.ALModule):
                     print("ATTENTION: La tablette n'est pas connectee au Wifi !")
                     print("Veuillez connecter la tablette au meme reseau que le robot via les parametres Android.")
             except: pass
-
+            
             # URL locale du PC hote (Pepper doit pouvoir acceder a cette IP)
             pc_ip = get_local_ip()
             url = "http://" + pc_ip + ":9091/"

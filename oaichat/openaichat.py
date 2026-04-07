@@ -65,9 +65,9 @@ class OaiChat:
     # Pour le streaming, on devrait utiliser stream=True et un generateur
     stream = kwargs.get('stream', False)
     response = self.client.chat.completions.create(
-      model="gpt-3.5-turbo-1106",
+      model="gpt-4o-mini",
       messages=self.history,
-      max_tokens=250,
+      max_completion_tokens=4096,
       stream=stream
     )
     
