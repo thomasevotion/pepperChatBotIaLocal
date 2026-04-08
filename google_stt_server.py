@@ -19,7 +19,7 @@ from google.cloud import speech
 from google.oauth2 import service_account
 
 class GoogleSTTServer:
-    def __init__(self, api_key="AIzaSyCua14754ZknobwsZ0zqGvWbHvT_FBblUU", port=8889):
+    def __init__(self, api_key="AIzaSyAC10StUbYwR_xy1v4nPAxyGjx0D1XftuE", port=8889):
         self.api_key = api_key
         self.port = port
         self.client = None

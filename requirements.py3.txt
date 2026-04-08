@@ -1,4 +1,8 @@
-# PepperChat Python2 Requirements
+# PepperChat Python3 Requirements (serveur IA + STT + interface web)
 python-dotenv
-zmq
-openai
+pyzmq
+google-genai
+Pillow
+numpy
+google-cloud-speech
+grpcio
