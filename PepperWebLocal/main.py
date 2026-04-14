@@ -199,7 +199,7 @@ def render_menu():
     parts = [
         "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
         "<div class='container'>",
-        "<h1 style='font-size:36px; margin-top:20px; flex-shrink:0;'>Hello ! Je suis Pepper, que puis-je faire pour toi ?</h1>",
+        "<h1 style='font-size:45px; margin-top:45px; flex-shrink:0;'>Hello ! Je suis Inno,<br> que puis-je faire pour toi ?</h1>",
         "<div style='display:flex; flex-direction:row; align-items:center; justify-content:center; gap:80px; width:100%; flex:1;'>",
         "<div style='display:flex; flex-direction:column; gap:25px;'>",
         "<a class='btn btn-menu' href='/quiz/start'>JOUONS AU QUIZ</a>",
