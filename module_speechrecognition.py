@@ -18,7 +18,6 @@ ROBOT_IP = "172.20.10.3" # default, for running on Pepper
 ROBOT_PORT = 9559
 
 import sys, time
-sys.path.insert(0, "C:\\Users\\thoma\\pynaoqi-python2.7-2.5.7.1-win32-vs2013\\lib")
 import naoqi
 from optparse import OptionParser
 from pepperspeechrecognition import SpeechRecognitionModule

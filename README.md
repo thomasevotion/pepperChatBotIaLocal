@@ -1,72 +1,109 @@
 # PepperChat — Guide d'utilisation
 
-## ▶️ Démarrer l'application
+## Installation (nouveau PC)
 
-**Double-cliquez sur `START_APP.bat`**
+**Double-cliquez sur `INSTALL_APP.bat` (en tant qu'Administrateur)**
 
-C'est tout. Le script s'occupe de tout démarrer automatiquement.
+Ce script installe automatiquement :
+- Python 2.7.18 dans `C:\Python27\`
+- Python 3.10 (ajouté au PATH)
+- Le SDK NAOqi dans Python 2.7
+- Toutes les dépendances pip (Python 2 et 3)
+- Le fichier `.env` de configuration
 
 ---
 
-## ⏹️ Arrêter l'application
+## Démarrer l'application
+
+**Double-cliquez sur `START_APP.bat`**
+
+Le script lance 4 fenêtres (une par service) :
+
+| Fenêtre | Rôle | Python |
+|---------|------|--------|
+| STT Google | Reconnaissance vocale Google Cloud | Python 3 |
+| Gemini Server | Serveur IA Gemini (ZMQ) | Python 3 |
+| Speech Recognition | Module audio Pepper → STT | Python 2.7 |
+| Dialogue NaoQI | Module dialogue principal | Python 2.7 |
+
+---
+
+## Arrêter l'application
 
 **Double-cliquez sur `STOP_APP.bat`**
 
 ---
 
-## ✅ Prérequis (à vérifier avant le premier lancement)
+## Prérequis
 
-### 1. Docker Desktop
-- Télécharger et installer : https://www.docker.com/products/docker-desktop
-- **Docker Desktop doit être ouvert et démarré** (icône baleine visible dans la barre des tâches) avant de lancer `START_APP.bat`
+### 1. Python 2.7 + SDK NaoQI
+- Installé automatiquement par `INSTALL_APP.bat`
+- Ou manuellement : Python 2.7 dans `C:\Python27\`, SDK NAOqi dans `C:\Python27\Lib\site-packages\`
 
-### 2. Python 2.7 + SDK NaoQI
-- Python 2.7 doit être installé dans `C:\Python27\`
-- Le SDK NaoQI doit être présent dans `C:\Python27\Lib\site-packages\` (fichiers `naoqi.py`, `qi\`, etc.)
-- *(Fournis par votre intégrateur)*
+### 2. Python 3.10+
+- Installé automatiquement par `INSTALL_APP.bat`
+- Ou manuellement : https://www.python.org/downloads/ (cocher **Add to PATH**)
 
-### 3. Fichier de configuration `.env`
-- Le fichier `.env` doit être présent à la racine du dossier `pepperchat-master\`
-- Vérifier que `ROBOT_IP=` contient bien l'adresse IP de votre robot Pepper sur le réseau local
-- Exemple : `ROBOT_IP=192.168.1.76`
+### 3. Fichier `.env`
+- Créé automatiquement par `INSTALL_APP.bat`
+- Contient : `ROBOT_IP`, `GEMINI_API_KEY`, `CHATBOT_SERVER_ADDRESS`, etc.
 
 ### 4. Connexion réseau
-- Le PC et le robot Pepper doivent être **sur le même réseau Wi-Fi ou câble**
+- Le PC et le robot Pepper doivent être sur le même réseau
 
 ---
 
-## 🔧 En cas de problème
+## En cas de problème
 
 | Symptôme | Solution |
 |----------|----------|
-| « Docker Desktop n'est pas démarré » | Ouvrir Docker Desktop, attendre l'icône baleine, relancer `START_APP.bat` |
-| Le robot ne répond pas | Vérifier que `ROBOT_IP` dans `.env` est correct. Tester : `ping 192.168.1.76` dans un terminal |
-| Une fenêtre s'ouvre et se ferme immédiatement | Contacter le support technique |
-| Erreur « python.exe introuvable » | Vérifier l'installation de Python 2.7 dans `C:\Python27\` |
+| « Python 3 introuvable » | Relancer `INSTALL_APP.bat`, ou redémarrer le PC si Python 3 vient d'être installé |
+| « Python 2.7 introuvable » | Relancer `INSTALL_APP.bat` en tant qu'Administrateur |
+| Le robot ne répond pas | Vérifier `ROBOT_IP` dans `.env` ; tester `ping <ip_robot>` |
+| Une fenêtre s'ouvre et se ferme | Ouvrir un terminal, lancer la commande manuellement pour voir l'erreur |
+| Erreur pip / dépendance | Relancer `INSTALL_APP.bat` |
 
 ---
 
-## 📂 Structure des fichiers importants
+## Structure des fichiers
 
 ```
 pepperchat-master\
-├── START_APP.bat          ← Démarrer l'application
-├── STOP_APP.bat           ← Arrêter l'application
-├── .env                   ← Configuration (IP robot, clés API)
-├── credentials.json       ← Identifiants Google Cloud (ne pas supprimer)
-└── docker-compose.yml     ← Configuration des services Docker (ne pas modifier)
+├── INSTALL_APP.bat         ← Installation complète (nouveau PC)
+├── START_APP.bat           ← Démarrer l'application
+├── STOP_APP.bat            ← Arrêter l'application
+├── kill_python.bat         ← Tuer tous les processus Python
+├── .env                    ← Configuration (IP robot, clés API)
+├── requirements_py2.txt    ← Dépendances Python 2.7
+├── requirements_py3.txt    ← Dépendances Python 3.10
+├── google_stt_server.py    ← Serveur STT Google (Python 3)
+├── startDialogueServer_background.py  ← Serveur Gemini (Python 3)
+├── module_speechrecognition.py  ← Module audio Pepper (Python 2)
+├── module_dialogue.py      ← Module dialogue Pepper (Python 2)
+├── oaichat\                ← Client/Serveur Gemini (ZMQ)
+├── pepperspeechrecognition\  ← Module reconnaissance vocale
+└── pynaoqi-python2.7-2.5.7.1-win32-vs2013\  ← SDK NAOqi Windows
 ```
 
 ---
 
-## ℹ️ Architecture technique (pour information)
+## Architecture technique
 
-L'application lance automatiquement 5 services dans l'ordre :
-
-| # | Service | Technologie |
-|---|---------|-------------|
-| 1 | Serveur IA Gemini | Docker (Python 3) |
-| 1 | Reconnaissance vocale Google | Docker (Python 3) |
-| 2 | Interface web tablette | Docker (Python 3) |
-| 2 | Module reconnaissance vocale Pepper | Python 2.7 (hôte Windows) |
-| 3 | Module dialogue Pepper | Python 2.7 (hôte Windows) |
+```
+                    ┌─────────────────────────┐
+                    │     Robot Pepper         │
+                    │  (NAOqi port 9559)       │
+                    └────────┬────────────────┘
+                             │
+          ┌──────────────────┼──────────────────┐
+          │                  │                   │
+   ┌──────▼───────┐  ┌──────▼───────┐          │
+   │ Speech Recog │  │  Dialogue    │          │
+   │ (Python 2.7) │  │  (Python 2.7)│          │
+   └──────┬───────┘  └──────┬───────┘          │
+          │ TCP:8889         │ ZMQ:5556         │
+   ┌──────▼───────┐  ┌──────▼───────┐          │
+   │  STT Google  │  │ Gemini Server│          │
+   │ (Python 3)   │  │ (Python 3)   │          │
+   └──────────────┘  └──────────────┘          │
+```

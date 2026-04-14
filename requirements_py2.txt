@@ -1,0 +1,5 @@
+# PepperChat — Python 2.7 dependencies
+# Modules: module_dialogue.py, module_speechrecognition.py, pepperspeechrecognition/
+numpy
+python-dotenv
+pyzmq

@@ -1,4 +1,4 @@
-# PepperChat Python3 Requirements (serveur IA + STT + interface web)
+# PepperChat Python 3.10 — voir requirements_py3.txt
 python-dotenv
 pyzmq
 google-genai
@@ -6,3 +6,4 @@ Pillow
 numpy
 google-cloud-speech
 grpcio
+google-api-core
