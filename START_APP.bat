@@ -3,6 +3,7 @@ chcp 65001 >nul
 title PepperChat - Demarrage
 
 cd /d "%~dp0"
+set "PROJECT_DIR=%cd%"
 
 :: Detecter Python 3
 set "PY3="
@@ -46,27 +47,27 @@ echo.
 
 :: ETAPE 1 : Serveur STT Google
 echo [1/5] Serveur STT Google (port 8889)...
-start "PepperChat STT" cmd /k "title PepperChat STT && %PY3% google_stt_server.py"
+start "PepperChat STT" cmd /k "title PepperChat STT && cd /d "%PROJECT_DIR%" && %PY3% google_stt_server.py"
 timeout /t 3 /nobreak >nul
 
 :: ETAPE 2 : Serveur IA Gemini
 echo [2/5] Serveur IA Gemini (port 5556)...
-start "PepperChat Gemini" cmd /k "title PepperChat Gemini && %PY3% startDialogueServer_background.py --prompt pepper"
+start "PepperChat Gemini" cmd /k "title PepperChat Gemini && cd /d "%PROJECT_DIR%" && %PY3% startDialogueServer_background.py --prompt pepper"
 timeout /t 3 /nobreak >nul
 
-:: ETAPE 3 : Interface Web tablette (cd dans PepperWebLocal pour les chemins relatifs images/veolia/)
+:: ETAPE 3 : Interface Web tablette (on cd dans PepperWebLocal pour les chemins relatifs)
 echo [3/5] Interface Web tablette (port 9091)...
-start "PepperChat Web" cmd /k "title PepperChat Web && cd /d %~dp0PepperWebLocal && %PY2% main.py --ip %ROBOT_IP%"
+start "PepperChat Web" cmd /k "title PepperChat Web && cd /d "%PROJECT_DIR%\PepperWebLocal" && %PY2% main.py --ip %ROBOT_IP%"
 timeout /t 3 /nobreak >nul
 
 :: ETAPE 4 : Module reconnaissance vocale
 echo [4/5] Module reconnaissance vocale...
-start "PepperChat SpeechRecog" cmd /k "title PepperChat SpeechRecog && %PY2% module_speechrecognition.py --pip %ROBOT_IP%"
+start "PepperChat SpeechRecog" cmd /k "title PepperChat SpeechRecog && cd /d "%PROJECT_DIR%" && %PY2% module_speechrecognition.py --pip %ROBOT_IP%"
 timeout /t 3 /nobreak >nul
 
-:: ETAPE 5 : Module dialogue principal
+:: ETAPE 5 : Module dialogue (echo Pepper pour repondre au raw_input Participant ID)
 echo [5/5] Module dialogue principal...
-start "PepperChat Dialogue" cmd /k "title PepperChat Dialogue && echo 2 | %PY2% module_dialogue.py --pip %ROBOT_IP%"
+start "PepperChat Dialogue" cmd /c "title PepperChat Dialogue && cd /d "%PROJECT_DIR%" && echo Pepper| %PY2% module_dialogue.py --pip %ROBOT_IP%"
 
 echo.
 echo ============================================================
