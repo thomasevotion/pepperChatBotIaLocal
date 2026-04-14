@@ -51,7 +51,7 @@ WIFI_SECURITY = "WPA2"
 
 QUESTIONS = [
     {
-        "text": "A Le développement de logiciels informatiques de gestion",
+        "text": "Quel est aujourd’hui le cœur de métier principal de Véolia au niveau mondial ?",
         "answers": [
             "A Le développement de logiciels informatiques de gestion",
             "B La fabrication d’équipements industriels lourds",
@@ -61,7 +61,7 @@ QUESTIONS = [
         "correct": 4
     },
     {
-        "text": "Dans quel objectif principal Veolia développe-t-elle ses solutions pour les territoires et les entreprises ?",
+        "text": "Dans quel objectif principal Véolia développe-t-elle ses solutions pour les territoires et les entreprises ?",
         "answers": [
             "A Remplacer les services publics par des services totalement privés",
             "B Assurer la transition écologique en optimisant l’usage des ressources",
@@ -71,7 +71,7 @@ QUESTIONS = [
         "correct": 2
     },
     {
-        "text": "Quel type de contrat lie le plus souvent Veolia aux collectivités locales pour la gestion de l’eau ou des déchets ?",
+        "text": "Quel type de contrat lie le plus souvent Véolia aux collectivités locales pour la gestion de l’eau ou des déchets ?",
         "answers": [
             "A Une délégation de service public ou un contrat de concession",
             "B Un contrat de travail individuel à durée indéterminée",
@@ -81,7 +81,7 @@ QUESTIONS = [
         "correct": 1
     },
     {
-        "text": "Dans le domaine des déchets, quel objectif stratégique Veolia met-elle particulièrement en avant ?",
+        "text": "Dans le domaine des déchets, quel objectif stratégique Véolia met-elle particulièrement en avant ?",
         "answers": [
             "A Développer le recyclage et la valorisation des déchets en nouvelles ressources",
             "B Limiter le tri pour simplifier la collecte",
