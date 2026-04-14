@@ -46,7 +46,8 @@ echo.
 
 :: ETAPE 1 : Interface Web tablette
 echo [1/5] Interface Web tablette (port 9091)...
-start cd "PepperWebLocal" && %PY2% main.py --ip %ROBOT_IP%
+start cd "PepperWebLocal"
+start cmd /k "%PY2% main.py --ip %ROBOT_IP%"
 timeout /t 3 /nobreak >nul
 start cd "..\"
 
