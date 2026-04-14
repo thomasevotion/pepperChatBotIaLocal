@@ -54,9 +54,9 @@ echo [2/5] Serveur IA Gemini (port 5556)...
 start "PepperChat Gemini" cmd /k "title PepperChat Gemini && %PY3% startDialogueServer_background.py --prompt pepper"
 timeout /t 3 /nobreak >nul
 
-:: ETAPE 3 : Interface Web tablette
+:: ETAPE 3 : Interface Web tablette (cd dans PepperWebLocal pour les chemins relatifs images/veolia/)
 echo [3/5] Interface Web tablette (port 9091)...
-start "PepperChat Web" cmd /k "title PepperChat Web && %PY2% PepperWebLocal/main.py --ip %ROBOT_IP%"
+start "PepperChat Web" cmd /k "title PepperChat Web && cd /d %~dp0PepperWebLocal && %PY2% main.py --ip %ROBOT_IP%"
 timeout /t 3 /nobreak >nul
 
 :: ETAPE 4 : Module reconnaissance vocale
