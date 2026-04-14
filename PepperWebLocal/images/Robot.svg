@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 500 500" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-miterlimit:10;">
+    <rect id="Plan-de-travail1" serif:id="Plan de travail1" x="0" y="0" width="500" height="500" style="fill:none;"/>
+    <g id="Plan-de-travail11" serif:id="Plan de travail1">
+        <g id="Layer-2" serif:id="Layer 2" transform="matrix(1.28774,0,0,1.28774,0.113585,17.3644)">
+            <g>
+                <clipPath id="_clip1">
+                    <path d="M21.655,179.667C21.655,287.915 116.732,376.834 222.309,352.936C320.976,330.602 359.321,261.581 359.321,153.333C359.321,45.086 302.248,19.961 194,19.961C85.752,19.961 21.655,71.419 21.655,179.667Z" clip-rule="nonzero"/>
+                </clipPath>
+                <g clip-path="url(#_clip1)">
+                    <g transform="matrix(0,-1,-1,0,133.855,113.856)">
+                        <ellipse cx="-9.23" cy="0" rx="9.231" ry="9.23" style="fill:none;stroke:rgb(255,221,0);stroke-width:3.88px;"/>
+                    </g>
+                    <g transform="matrix(0,-1,-1,0,194.277,106.266)">
+                        <ellipse cx="-9.23" cy="0" rx="9.231" ry="9.23" style="fill:none;stroke:rgb(255,221,0);stroke-width:3.88px;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,1,31.4048,202.917)">
+                        <path d="M0,2C0,2 5.5,-9.5 30.75,19.75C56,49 71.25,23 73.5,21.25C75.75,19.5 64.25,-31.25 64.25,-31.25C64.25,-31.25 24,-47 0,-8.5C0,-8.5 -7,-2.25 0,3.5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,1,246.405,199.167)">
+                        <path d="M0,-60.75C0,-60.75 19.75,-66.25 19.75,-24C19.75,18.25 77.75,-18.25 69,-48.25C60.25,-78.25 -9.75,-79 0,-60.75Z" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,1,235.905,58.5277)">
+                        <path d="M0,83.139C0,83.139 14.75,59.639 -7.25,6.639C-7.25,6.639 -17.474,0 -27.724,1.25" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,1,105.197,175.179)">
+                        <path d="M0,-100.512C0,-100.512 -20.542,-94.012 -21.042,-90.762C-21.542,-87.512 -24.66,-24.262 -13.542,-16.012C8.037,0 43.458,-2.012 43.458,-2.012" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(0.940578,-0.339578,-0.339578,-0.940578,156.595,187.045)">
+                        <path d="M-2.756,15.75C-2.756,15.75 66.52,-6.603 90.006,15.75" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(-0.0731023,-0.997324,-0.997324,0.0731023,142.228,12.9507)">
+                        <path d="M-45.493,-60.262C-45.493,-60.262 -19.355,-21.953 -37.317,20.54C-39.408,25.485 -42.097,30.488 -45.493,35.494C-78.39,55.201 -82.013,5.774 -81.202,-13.933C-80.39,-33.64 -82.468,-68.832 -45.493,-60.262Z" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,1,98.4048,325.334)">
+                        <path d="M0,-72.917C0,-72.917 12.813,0 91.343,-0.34C91.343,-0.34 147.071,-3.792 147.071,-36.542" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,1,100.655,229.972)">
+                        <path d="M0,-48.36C0,-48.36 16.75,-51.555 27.75,-34.055C27.75,-34.055 11,-12.055 11.5,3.195" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,1,214.155,183.586)">
+                        <path d="M0,-10.338C0,-10.338 15.392,-30.669 31.321,-30.669C47.25,-30.669 49,12.331 49.75,20.331" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(0.301268,0.95354,0.95354,-0.301268,381.549,191.587)">
+                        <path d="M-32.724,-64.009C-32.724,-64.009 44.444,-31.101 81.237,-64.009" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,1,130.905,221.667)">
+                        <path d="M0,58.25C16.84,41.41 20,-7.75 59.25,-7.75C98.5,-7.75 125,19.5 125,32.25C125,45 114.928,66 114.928,66" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,1,148.655,182.478)">
+                        <path d="M0,-7.311C0,-7.311 -2.5,6.689 15,6.689C32.5,6.689 54.853,5.439 44.75,-14" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(-0.585015,0.811022,0.811022,0.585015,297.401,350.488)">
+                        <path d="M61.33,-146.969C61.33,-146.969 104.783,-113.833 113.334,-115.217C121.885,-116.602 117.171,-23.673 61.33,-14.633C5.488,-5.592 39.409,-12.874 39.409,-12.874C39.409,-12.874 23.956,-58.545 5.1,-72.147" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                    <g transform="matrix(0,-1,-1,0,143.29,14.3415)">
+                        <ellipse cx="-10.118" cy="0" rx="10.117" ry="10.118" style="fill:none;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+                    </g>
+                </g>
+            </g>
+            <g transform="matrix(0.984944,-0.172876,-0.172876,-0.984944,129.904,203.849)">
+                <path d="M-0.106,8.073C-0.106,8.073 67.014,-10.78 93.893,8.073" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.985121,-0.17186,-0.17186,-0.985121,120.377,188.896)">
+                <path d="M-0.211,2.434C-0.211,2.434 19.905,3.866 28.115,2.434" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,195.75,287.463)">
+                <path d="M0,-112.477C0,-112.477 46.571,-123.797 68.904,-78.13C73.298,-69.147 81.821,-64.015 86.571,-51.2C93.632,-32.151 120.417,11.32 120.417,11.32" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,88.6548,251.051)">
+                <path d="M0,-11.68C0,-11.68 9.292,11.918 20.667,-9.051C27.576,-21.79 13.416,-23.598 12.939,-23.087" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.460997,-0.887402,-0.887402,-0.460997,91.9515,289.998)">
+                <path d="M-15.59,25.667C-15.59,25.667 35.031,30.177 42.257,25.667" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.245326,-0.969441,-0.969441,-0.245326,279.914,242.417)">
+                <path d="M-15.269,19.614C-15.269,19.614 -3.538,12.343 25.196,19.614" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(-0.284926,0.958549,0.958549,0.284926,36.1711,226.383)">
+                <path d="M-11.274,-8.411C-11.274,-8.411 -4.27,-11.545 6.274,-8.411" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,-1,-1,0,189.748,19.9079)">
+                <path d="M-168.093,-168.093C-75.258,-168.093 0,-92.835 0,0C0,92.835 -75.258,168.093 -168.093,168.093C-260.928,168.093 -336.186,92.835 -336.186,0C-336.186,-92.835 -260.928,-168.093 -168.093,-168.093Z" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.707107,-0.707107,-0.707107,-0.707107,41.044,176.353)">
+                <path d="M-7.2,17.382L41.964,17.382" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.707107,-0.707107,-0.707107,-0.707107,36.3815,154.407)">
+                <path d="M-4.167,10.06L24.287,10.06" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.707107,-0.707107,-0.707107,-0.707107,97.7731,325.167)">
+                <path d="M-2.65,6.398L15.445,6.398" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.671972,-0.740577,-0.740577,-0.671972,265.223,338.705)">
+                <path d="M-4.37,9.867L22.275,9.867" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.707107,-0.707107,-0.707107,-0.707107,88.6517,317.089)">
+                <path d="M-1.534,3.703L8.939,3.703" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.672004,-0.740547,-0.740547,-0.672004,247.289,334.12)">
+                <path d="M-2.529,5.71L12.892,5.71" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.707107,-0.707107,-0.707107,-0.707107,299.191,112.16)">
+                <path d="M-6.382,15.408L37.198,15.408" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.707107,-0.707107,-0.707107,-0.707107,296.767,87.7557)">
+                <path d="M-3.562,8.6L20.762,8.6" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.237192,-0.971463,-0.971463,-0.237192,300.101,231.88)">
+                <path d="M-14.361,11.933C-14.361,11.933 2.962,22.897 16.749,11.933" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,83.4264,129.042)">
+                <path d="M0,-27.041C0,-27.041 -8.105,-28.854 -8.105,-13.521C-8.105,1.813 0.637,1.077 0.637,1.077" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,240.056,77.1936)">
+                <path d="M0,28.964C0,28.964 5.705,24.741 5.704,15.482C5.703,10.274 0.159,0 -5.389,0" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,162.137,39.9644)">
+                <path d="M0,0.316C0,0.316 -4.222,-5.389 -13.482,-5.388C-18.69,-5.387 -28.964,0.157 -28.964,5.705" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,-1,-1,0,254,72.3076)">
+                <ellipse cx="-10.118" cy="0" rx="10.117" ry="10.118" style="fill:none;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,-1,-1,0,65.5432,98.7777)">
+                <ellipse cx="-10.118" cy="0" rx="10.117" ry="10.118" style="fill:none;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(-0.967993,-0.250979,-0.250979,0.967993,126.129,326.642)">
+                <path d="M-19.552,12.173C-14.342,8.015 -4.901,0.82 -0.957,12.173" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0.999443,-0.0333596,-0.0333596,-0.999443,245.903,339.058)">
+                <path d="M-0.134,0.275C-0.134,0.275 3.949,8.449 16.233,0.275" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+        </g>
+        <g id="Layer-4" serif:id="Layer 4" transform="matrix(1.28774,0,0,1.28774,0.113585,17.3644)">
+            <g transform="matrix(0,1,1,0,51.2496,265.132)">
+                <path d="M-8.731,-8.731L8.731,-8.731" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,53.4458,268.119)">
+                <path d="M-6.613,-6.613L6.613,-6.613" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,60.0641,274.979)">
+                <path d="M-8.916,-8.916L8.916,-8.916" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,44.435,259.32)">
+                <path d="M-5.82,-5.82L5.82,-5.82" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,64.6408,282.345)">
+                <path d="M-9.178,-9.178L9.178,-9.178" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,70.876,280.424)">
+                <path d="M-11.099,-11.099L11.099,-11.099" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,74.8693,271.403)">
+                <path d="M-11.099,-11.099L11.099,-11.099" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,79.1918,263.804)">
+                <path d="M-11.099,-11.099L11.099,-11.099" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,80.7084,256.44)">
+                <path d="M-8.571,-8.571L8.571,-8.571" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,84.7531,253.875)">
+                <path d="M-8.571,-8.571L8.571,-8.571" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,88.7978,246.609)">
+                <path d="M-8.571,-8.571L8.571,-8.571" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,138.923,294.148)">
+                <path d="M-10.447,-10.447L10.447,-10.447" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,141.175,300.384)">
+                <path d="M-8.384,-8.384L8.384,-8.384" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,114.46,259.218)">
+                <path d="M-10.447,-10.447L10.447,-10.447" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,113.1,264.667)">
+                <path d="M-6.767,-6.767L6.767,-6.767" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,143.364,302.893)">
+                <path d="M-6.258,-6.258L6.258,-6.258" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,152.454,308.724)">
+                <path d="M-11.034,-11.034L11.034,-11.034" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,156.564,304.005)">
+                <path d="M-10.828,-10.828L10.828,-10.828" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,165.287,304.435)">
+                <path d="M-15.237,-15.237L15.237,-15.237" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,170.79,303.435)">
+                <path d="M-16.424,-16.424L16.424,-16.424" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,178.008,303.227)">
+                <path d="M-19.328,-19.328L19.328,-19.328" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,183.022,302.528)">
+                <path d="M-20.027,-20.027L20.027,-20.027" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,186.17,303.694)">
+                <path d="M-18.861,-18.861L18.861,-18.861" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,189.288,304.892)">
+                <path d="M-17.664,-17.664L17.664,-17.664" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,191.947,306.547)">
+                <path d="M-16.008,-16.008L16.008,-16.008" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,159.483,180.96)">
+                <path d="M-7.038,-7.038L7.038,-7.038" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,162.681,180.706)">
+                <path d="M-7.293,-7.293L7.293,-7.293" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,165.201,181.13)">
+                <path d="M-6.868,-6.868L6.868,-6.868" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,166.61,182.666)">
+                <path d="M-5.333,-5.333L5.333,-5.333" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,167.869,184.352)">
+                <path d="M-3.647,-3.647L3.647,-3.647" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,120.995,73.7464)">
+                <path d="M-9.777,-9.777L9.777,-9.777" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,124.946,77.7773)">
+                <path d="M-10.784,-10.784L10.784,-10.784" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,124.993,80.6747)">
+                <path d="M-7.887,-7.887L7.887,-7.887" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,125.735,82.8775)">
+                <path d="M-5.684,-5.684L5.684,-5.684" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,126.057,85.4996)">
+                <path d="M-3.061,-3.061L3.061,-3.061" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,195.531,307.277)">
+                <path d="M-15.278,-15.278L15.278,-15.278" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,198.09,309.034)">
+                <path d="M-13.522,-13.522L13.522,-13.522" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,201.315,310.123)">
+                <path d="M-12.432,-12.432L12.432,-12.432" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,203.975,311.777)">
+                <path d="M-10.778,-10.778L10.778,-10.778" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,206.428,313.64)">
+                <path d="M-8.916,-8.916L8.916,-8.916" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,209.831,314.551)">
+                <path d="M-8.004,-8.004L8.004,-8.004" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,212.584,316.138)">
+                <path d="M-6.417,-6.417L6.417,-6.417" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,215.858,317.204)">
+                <path d="M-5.352,-5.352L5.352,-5.352" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(-0.00839611,0.999965,0.999965,0.00839611,165.371,335.007)">
+                <path d="M-17.655,-17.508L17.361,-17.508" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,165.173,338.381)">
+                <path d="M-13.84,-13.84L13.84,-13.84" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,166.089,340.944)">
+                <path d="M-11.277,-11.277L11.277,-11.277" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,166.745,343.766)">
+                <path d="M-8.455,-8.455L8.455,-8.455" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,168.925,345.944)">
+                <path d="M-7.157,-7.157L7.157,-7.157" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,171.427,346.964)">
+                <path d="M-6.18,-6.18L6.18,-6.18" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,174.566,348.402)">
+                <path d="M-5.84,-5.84L5.84,-5.84" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,177.574,348.873)">
+                <path d="M-5.37,-5.37L5.37,-5.37" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,180.338,350.588)">
+                <path d="M-4.656,-4.656L4.656,-4.656" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,182.881,350.558)">
+                <path d="M-3.72,-3.72L3.72,-3.72" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,185.979,351.904)">
+                <path d="M-3.34,-3.34L3.34,-3.34" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,188.564,352.817)">
+                <path d="M-2.426,-2.426L2.426,-2.426" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,191.433,353.447)">
+                <path d="M-1.797,-1.797L1.797,-1.797" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,218.393,317.188)">
+                <path d="M-3.548,-3.548L3.548,-3.548" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,307.388,236.734)">
+                <path d="M-17.77,-17.77L17.77,-17.77" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,306.723,241.196)">
+                <path d="M-13.308,-13.308L13.308,-13.308" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,310.416,252.691)">
+                <path d="M-13.204,-13.204L13.204,-13.204" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,280.156,196.584)">
+                <path d="M-11.584,-11.584L11.584,-11.584" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,279.864,197.52)">
+                <path d="M-7.495,-7.495L7.495,-7.495" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,283.603,203.994)">
+                <path d="M-7.436,-7.436L7.436,-7.436" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,313.958,261.922)">
+                <path d="M-12.949,-12.949L12.949,-12.949" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,314.894,266.579)">
+                <path d="M-10.088,-10.088L10.088,-10.088" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,321.703,277.767)">
+                <path d="M-13.1,-13.1L13.1,-13.1" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,322.953,281.43)">
+                <path d="M-10.553,-10.553L10.553,-10.553" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,325.762,284.605)">
+                <path d="M-9.543,-9.543L9.543,-9.543" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,327.093,284.927)">
+                <path d="M-7.055,-7.055L7.055,-7.055" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,1,1,0,329.733,281.173)">
+                <path d="M-5.877,-5.877L5.877,-5.877" style="fill:none;fill-rule:nonzero;stroke:rgb(255,221,0);stroke-width:1.55px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,-1,-1,0,201.827,247.441)">
+                <circle cx="-12.5" cy="0" r="12.5" style="fill:none;stroke:rgb(255,221,0);stroke-width:3.88px;stroke-linecap:round;stroke-linejoin:round;"/>
+            </g>
+            <g transform="matrix(0,-1,-1,0,99.9363,296.765)">
+                <path d="M-4.235,-4.235C-1.896,-4.235 -0.001,-2.339 -0.001,-0.001C-0.001,2.338 -1.896,4.235 -4.235,4.235C-6.574,4.235 -8.469,2.338 -8.469,-0.001C-8.469,-2.339 -6.574,-4.235 -4.235,-4.235" style="fill:rgb(255,221,0);fill-rule:nonzero;"/>
+            </g>
+            <g transform="matrix(0,-1,-1,0,283.04,301.279)">
+                <path d="M-3.726,-3.726C-1.387,-3.726 0.508,-2.058 0.508,0C0.508,2.058 -1.387,3.726 -3.726,3.726C-6.065,3.726 -7.96,2.058 -7.96,0C-7.96,-2.058 -6.065,-3.726 -3.726,-3.726" style="fill:rgb(255,221,0);fill-rule:nonzero;"/>
+            </g>
+            <g transform="matrix(0,-1,-1,0,280.548,86.1353)">
+                <path d="M-4.235,-4.235C-1.896,-4.235 -0.001,-2.339 -0.001,-0.001C-0.001,2.338 -1.896,4.235 -4.235,4.235C-6.574,4.235 -8.469,2.338 -8.469,-0.001C-8.469,-2.339 -6.574,-4.235 -4.235,-4.235" style="fill:rgb(255,221,0);fill-rule:nonzero;"/>
+            </g>
+        </g>
+    </g>
+</svg>

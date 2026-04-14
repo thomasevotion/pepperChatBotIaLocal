@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <meta name="viewport" content="initial-scale = 1.333, minimum-scale = 1.333, maximum-scale = 1.333" />
+    <meta name="viewport" content="width=980, height=613, user-scalable=no" />
+    <title>Presentation</title>
+
+    <!---------------------------------------------------------------------- STYLE CSS -->
+    <style type="text/css">
+        body {
+            border: 1px solid black;
+            margin: 0px 0px;
+            width: 1000px;
+            height: 800px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* PAGE GENERAL */
+        #page {
+            font-family: 'NewHelveticaRoman', Arial, sans-serif;
+            margin-top: 90px;
+            width: 1000px;
+            height: 710px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .general {
+            width: 100%;
+            height: calc(100% - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            background: #fff;
+            overflow-y: auto;
+            margin: 0 auto;
+            position: relative;
+            padding-bottom: 80px;
+        }
+        .venir-container {
+            width: 100%;
+            height: auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            overflow-y: visible;
+            position: relative;
+        }
+        .venir-header {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 3px;
+        }
+        .venir-title {
+            color: #d32d2f;
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 0px;
+            letter-spacing: 1px;
+            width: 100%;
+            margin-top: 0px;
+            display: block;
+        }
+        .venir-subtitle {
+            color: #d32d2f;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 4px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 0px;
+            display: block;
+        }
+        .transports-title, .parking-label, .entrees-text {
+            font-size: 18px;
+            margin-bottom: 3px;
+            margin-top: 3px;
+            font-weight: bold;
+            text-align: center;
+            width: 100%;
+            padding: 4px 0;
+        }
+        .transports-title {
+            color: #fff;
+            background-color: #f6a623;
+            padding: 4px 12px;
+            display: block;
+            margin: 0 auto;
+            width: fit-content;
+        }
+        .parking-label {
+            color: #fff;
+            background-color: #3498db;
+            padding: 4px 12px;
+            display: block;
+            margin: 0 auto;
+            width: fit-content;
+        }
+        .entrees-text {
+            color: #fff;
+            background-color: #7ac143;
+            padding: 4px 12px;
+            display: block;
+            margin: 0 auto;
+            width: fit-content;
+        }
+        .possibilites-title, .right-highlight {
+            color: #333;
+        }
+        .bus-label {
+            font-size: 36px;
+            margin-bottom: 4px;
+            margin-top: 4px;
+            font-weight: bold;
+            color: #f6a623;
+        }
+        .bus-item, .metro-icon, .metro-num, .parking-num, .parking-places, .possibilites-num {
+            font-size: 16px;
+        }
+        .venir-desc {
+            font-size: 13px;
+            line-height: 1.3;
+            color: #333;
+            text-align: center;
+            margin: 8px 0;
+        }
+        .venir-columns {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .venir-left, .venir-right {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+        .transports-parking-row {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            width: 100%;
+            justify-content: space-around;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+            height: 260px;
+        }
+        .transports-block, .parking-block {
+            margin-bottom: 12px;
+            border-bottom: none;
+            padding-bottom: 0;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        .transports-block .venir-desc, .parking-block .venir-desc {
+            font-size: 12px;
+            line-height: 1.2;
+            margin: 4px 0;
+        }
+        .bus-list {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            margin: 4px 0;
+        }
+        .metro-block {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            margin: 4px 0;
+        }
+        .bus-item {
+            background: #f6a623;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+            padding: 4px 10px;
+            text-align: center;
+        }
+        .metro-icon {
+            background: #f6a623;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .metro-num {
+            color: #f6a623;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .parking-num {
+            color: #3498db;
+            font-size: 32px;
+            font-weight: bold;
+            margin-right: 5px;
+            text-align: center;
+        }
+        .parking-places {
+            font-size: 20px;
+            color: #3498db;
+            font-weight: bold;
+            text-align: center;
+        }
+        .possibilites-num {
+            color: #7ac143;
+            font-size: 28px;
+            font-weight: bold;
+            margin-right: 5px;
+            text-align: center;
+        }
+        .possibilites-item {
+            margin-bottom: 16px;
+            width: 100%;
+        }
+        .venir-note {
+            font-size: 16px;
+            color: #444;
+            margin-top: 18px;
+        }
+
+        .entrees-block {
+            color: #fff;
+            text-align: center;
+            padding: 8px;
+            margin: 4px auto;
+            border-radius: 5px;
+            display: block;
+            width: fit-content;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .entrees-text {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .entrees-num {
+            color: #7ac143;
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        .suivantretour {
+            width: 100%;
+            height: 80px;
+            background: #fff;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+            z-index: 100;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        .retour {
+            padding: 20px 30px;
+            background-color: #d3dada;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 0;
+            width: 150px;
+            margin-left: 0;
+            margin-right: 0;
+            opacity: 0.5;
+            cursor: not-allowed;
+            float: left;
+        }
+
+        .suivant {
+            padding: 20px 30px;
+            background-color: #d3dada;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            width: 150px;
+            margin-left: 0;
+        }
+
+        .nombre {
+            width: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            flex-grow: 0;
+            margin: 0;
+            text-align: center;
+        }
+
+        /* NAVBARS */
+        nav {
+            font-family: 'NewHelveticaRoman';
+            font-weight: bold;
+            background-color: #0a3148;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            z-index: 100;
+        }
+
+        nav ul,
+        .navbar2 ul {
+            display: flex;
+            justify-content: space-between;
+            list-style: none;
+            margin: 0;
+            padding: 20px 40px;
+        }
+
+        nav li,
+        .navbar2 ul {
+            margin: 0;
+        }
+
+        .navbar2 {
+            font-family: 'NewHelveticaRoman';
+            font-weight: bold;
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 210px;
+            height: 100%;
+            background-color: #FFA500;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: right 0.5s ease-in-out;
+            z-index: 101;
+        }
+
+        .navbar2.show {
+            right: 0;
+        }
+
+        .setting_sound {
+            font-family: 'NewHelveticaRoman';
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 30px;
+            text-transform: uppercase;
+            margin-right: 1rem;
+            margin-left: 10px;
+            color: black;
+        }
+
+        /* BOUTON HOME ET SONS */
+        .button_home {
+            padding: 10px 30px;
+            background-color: #34ccf4;
+            color: #000000;
+            border: none;
+            border-radius: 5px;
+            font-size: 25px;
+        }
+
+        .button_sound {
+            padding: 20px 30px;
+            background-color: #d3dada;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 10px;
+            width: 150px;
+        }
+
+        .button_sound_mute {
+            padding: 20px 30px;
+            background-color: #8e9292;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 10px;
+            width: 150px;
+        }
+
+        .button_back {
+            padding: 20px 30px;
+            background-color: #34ccf4;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 10px;
+            width: 150px;
+        }
+
+        .parking-block .venir-desc {
+            word-break: break-word;
+            text-align: center;
+            line-height: 1.5;
+            padding: 0 10px;
+        }
+        .venir-subtitle, .transports-title, .parking-title, .possibilites-title {
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+        @media (max-width: 900px) {
+            .venir-columns {
+                flex-direction: column;
+                gap: 0;
+            }
+            .venir-left, .venir-right {
+                align-items: center;
+                width: 100%;
+            }
+            .suivantretour {
+                position: fixed;
+                right: 16px;
+                bottom: 16px;
+                margin-top: 0;
+            }
+            .venir-container {
+                padding-bottom: 90px;
+            }
+        }
+    </style>
+
+    <!----------------------------------------------------------------------------FONCTION JS -->
+    <!-- Nouveau script base sur des URL relatives et des appels XHR a ton serveur local -->
+    <script>
+        function GoHome() {
+            window.location.href = "/menu";
+        }
+
+        function toggleNavbar() {
+            document.querySelector('.navbar2').classList.toggle('show');
+        }
+
+        function toggleNavbar2() {
+            document.querySelector('.navbar2').classList.remove('show');
+        }
+
+        function setVolume(val) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/setvolume', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({volume: val}));
+            toggleNavbar2();
+        }
+
+        function soundMin() { setVolume(30); }
+        function soundMoy() { setVolume(60); }
+        function soundMax() { setVolume(100); }
+        function soundMute() { setVolume(0); }
+
+        function Suivant() {
+            // Lien vers la page 2
+            window.location.href = "/veolia/presentation2.html";
+        }
+
+        function Retour() {
+            // Sur la page 1, pas de retour, ou bien retour vers accueil
+            window.location.href = "/veolia/accueil.html";
+        }
+    </script>
+</head>
+
+<!-----------------------------------------NAVBAR--------------------------------->
+<nav>
+    <ul>
+        <li><button class="button_home" onclick="GoHome()"> <strong>ACCUEIL</strong> </button> </li>
+        <li><button class="button_home" onclick="toggleNavbar()"> <strong>REGLAGES</strong> </button> </li>
+    </ul>
+</nav>
+
+<div class="navbar2">
+    <li><button class="button_back" onclick="toggleNavbar2()"> <strong>FERMER </strong> </button> </li>
+    <div class="">--------------------------- </div>
+    <div class="setting_sound"><strong>VOLUME:</strong> </div>
+    <li><button class="button_sound" onclick="soundMin()"> <strong>MINIMUM</strong> </button> </li>
+    <li><button class="button_sound" onclick="soundMoy()"> <strong>MOYEN</strong> </button> </li>
+    <li><button class="button_sound" onclick="soundMax()"> <strong>MAXIMUM</strong> </button> </li>
+    <li><button class="button_sound_mute" onclick="soundMute()"> <strong>MUTE</strong> </button> </li>
+    <img src="logo.png" width="150" height="150" style="margin-top: 10px; margin-left: 10px;" onerror="this.style.display='none'">
+</div>
+
+<!-----------------------------------------BODY--------------------------------->
+<body>
+    <div id="page">
+        <div class="general">
+            <div class="venir-container" style="margin-left: 3px;">
+                <div class="venir-header">
+                    <div class="venir-title">VENIR</div>
+                    <div class="venir-subtitle">AU V</div>
+                </div>
+                <div class="venir-columns">
+                    <div class="venir-left">
+                        <div class="transports-parking-row">
+                            <div class="transports-block">
+                                <div class="transports-title">Transports</div>
+                                <div class="bus-label" style="text-align: center;">BUS</div>
+                                <div class="bus-list">
+                                    <div class="bus-item">139</div>
+                                    <div class="bus-item">144</div>
+                                    <div class="bus-item">54</div>
+                                    <div class="bus-item">239</div>
+                                </div>
+                                <br>
+                                <div class="metro-block">
+                                    <div class="metro-icon">M</div>
+                                    <div class="metro-num">12</div>
+                                </div>
+                                <br>
+                                <div class="venir-desc">
+                                    <b>Le V</b> est desservi par plusieurs <b>moyens de transport public</b> :<br>
+                                    la ligne de métro 12, le tramway T3bis, les bus 34, 45, 54, 239 ainsi que les navettes routière et fluviales Icade.
+                                </div>
+                            </div>
+                            <div class="parking-block">
+                                <div class="parking-label">Parking</div>
+                                <p class="parking-num" style="text-align: center;">555 places</p>
+                                <div class="venir-desc">
+                                    Il dispose d'un parking de 555 places dont 160 équipées de bornes de recharge électrique (déplacement au niveau -2), et de nombreuses
+                                    places pour les deux-roues motorisés, accessibles à tous les visiteurs du V. L'entrée s'effectue rue Anne-Marie-Fettier, côté aile sud
+                                    du bâtiment, et la sortie sur la voie privée, côté aile nord. Un espace réservé aux vélos et aux trottinettes, équipé de vestiaires et
+                                    de douches, est également disponible. Le parking est accessible de 7 h à 22 h.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="entrees-block" style="width: 100%; margin-top: 32px;">
+                    <div class="entrees-text">Entrées</div>
+                    <div class="entrees-num">3</div>
+                    <div class="entrees-num" style="font-size: 24px;">POSSIBILITÉS</div>
+                </div>
+                <div class="possibilites-list" style="width: 100%; margin-top: 16px; margin-bottom: 32px;">
+                    L'accès au V est possible par 3 entrées :<br>l'accueil principal, hall 1, 30, rue Madeleine-Vionnet ;
+                    le hall 2, rue Anne-Marie-Fettier et le hall 3, 40, avenue Victor-Hugo.<br> L'accueil principal est ouvert de
+                    7 h à 20 h, le hall 2 de 7 h à 19 h et le hall 3 de 8 h à 19 h. En dehors de ces horaires, l'accès doit
+                    être demandé au PC sécurité.<br>
+                    <b>À noter :</b> la réception des visiteurs professionnels se fait uniquement à l'accueil principal.
+                </div>
+            </div>
+            <div class="suivantretour">
+                <button class="retour" disabled><strong>RETOUR</strong></button>
+                <div class="nombre">1/11</div>
+                <button class="suivant" onclick="Suivant()"><strong>SUIVANT</strong></button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

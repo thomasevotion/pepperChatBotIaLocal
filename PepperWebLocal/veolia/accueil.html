@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <meta name="viewport" content="initial-scale=1.333, minimum-scale=1.333, maximum-scale=1.333" />
+    <meta name="viewport" content="width=980, height=613, user-scalable=no" />
+    <title>Accueil</title>
+
+    <!-- FONCTION CSS -->
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        body {
+            background-image: url("accueil.jpg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        /* Ce bloc s'assure que le lien prend toute la place */
+        .fullscreen-link {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            text-decoration: none;
+        }
+    </style>
+
+    <!-- FONCTION JS -->
+    <script src="/libs/qimessaging/2/qimessaging.js"></script>
+</head>
+
+<body>
+    <!-- Le lien recouvre toute la page, le clic renvoie sur le menu Pepper -->
+    <a href="/menu" class="fullscreen-link">
+        <div id="page" style="width: 100%; height: 100%;"></div>
+    </a>
+</body>
+</html>
