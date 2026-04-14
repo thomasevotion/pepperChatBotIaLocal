@@ -51,46 +51,50 @@ WIFI_SECURITY = "WPA2"
 
 QUESTIONS = [
     {
-        "text": "Quel est aujourd’hui le cœur de métier principal de Véolia au niveau mondial ?",
-        "answers": [
-            "A Le développement de logiciels informatiques de gestion",
-            "B La fabrication d’équipements industriels lourds",
-            "C Exclusivement le transport urbain de passagers",
-            "D La gestion optimisée de l’eau, des déchets et de l’énergie"
-            ],
-        "correct": 4
+        "text": "Que peux-tu faire à l'atelier parfums ?",
+        "answers": ["Créer un parfum", "Construire un robot", "Faire du sport", "Cuisiner"],
+        "correct": 0,
+        "good": "Bravo ! Tu es un créateur du futur !",
+        "bad": ["", "Pas ici, mais bonne idée !", "Presque, mais non !", "Miam ! Mais ce n'est pas ici"]
     },
     {
-        "text": "Dans quel objectif principal Véolia développe-t-elle ses solutions pour les territoires et les entreprises ?",
-        "answers": [
-            "A Remplacer les services publics par des services totalement privés",
-            "B Assurer la transition écologique en optimisant l’usage des ressources",
-            "C Se consacrer uniquement à l’innovation technologique sans considération sociale",
-            "D Maximiser exclusivement ses profits financiers à court terme"
-        ],
-        "correct": 2
+        "text": "Pourquoi faut-il protéger sa peau ?",
+        "answers": ["Contre le soleil", "Pour dormir", "Pour courir", "Pour jouer"],
+        "correct": 0,
+        "good": "Exact ! Tu es un expert !",
+        "bad": ["", "Pas vraiment", "Non plus !", "Pas exactement !"]
     },
     {
-        "text": "Quel type de contrat lie le plus souvent Véolia aux collectivités locales pour la gestion de l’eau ou des déchets ?",
-        "answers": [
-            "A Une délégation de service public ou un contrat de concession",
-            "B Un contrat de travail individuel à durée indéterminée",
-            "C Un traité international bilatéral",
-            "D Un contrat de location d’équipements"
-        ],
-        "correct": 1
+        "text": "Que permet l'intelligence artificielle ?",
+        "answers": ["Créer et inventer", "Dormir", "Manger", "Disparaître"],
+        "correct": 0,
+        "good": "Bravo ! Tu es prêt pour le futur !",
+        "bad": ["", "Non", "Pas encore !", "Impossible !"]
     },
     {
-        "text": "Dans le domaine des déchets, quel objectif stratégique Véolia met-elle particulièrement en avant ?",
-        "answers": [
-            "A Développer le recyclage et la valorisation des déchets en nouvelles ressources",
-            "B Limiter le tri pour simplifier la collecte",
-            "C Interrompre toutes les activités liées aux déchets dangereux",
-            "D Augmenter systématiquement les volumes envoyés en centre d’enfouissement"
-        ],
-        "correct": 1
+        "text": "Où peux-tu jouer librement ?",
+        "answers": ["Fun Zone", "Zone Zen", "Atelier peau", "Accueil"],
+        "correct": 0,
+        "good": "Oui !! Amuse-toi bien !",
+        "bad": ["", "Là on se détend", "On apprend ici !", "On commence ici !"]
+    },
+    {
+        "text": "Que fait un scientifique ?",
+        "answers": ["Il expérimente", "Il dort", "Il joue", "Il chante"],
+        "correct": 0,
+        "good": "Exact ! Comme toi aujourd'hui !",
+        "bad": ["", "Non", "Parfois... mais pas tout le temps !", "Pourquoi pas !"]
     }
 ]
+
+QUIZ_END_TEXT = (
+    "Analyse des résultats... bip bip... "
+    "Mission réussie ! "
+    "Tu es officiellement un explorateur de la beauté du futur ! "
+    "Tu peux continuer ton aventure et tester plein d'ateliers autour de toi ! "
+    "Et si tu veux en découvrir encore plus... les animateurs sont là pour t'aider ! "
+    "À bientôt petit inventeur du futur !"
+)
 
 class GameState:
     def __init__(self):
@@ -208,7 +212,6 @@ def render_menu():
         "<div style='display:flex; flex-direction:row; align-items:center; justify-content:center; gap:80px; width:100%; flex:1;'>",
         "<div style='display:flex; flex-direction:column; gap:25px;'>",
         "<a class='btn btn-menu' href='/quiz/start'>JOUONS AU QUIZ</a>",
-        "<a class='btn btn-menu' href='/veolia/presentation1.html'>VEOLIA</a>",
         "<a class='btn btn-menu' href='/ai_module'>IA CHAT</a>",
         "</div>",
         "<img src='/images/pepperwebMenu.webp' style='height:45vh; max-height:350px; object-fit:contain;' onerror=\"this.src='https://techcrunch.com/wp-content/uploads/2015/06/pepper.jpg'; this.style.borderRadius='20px'\">",
@@ -277,50 +280,96 @@ def render_chat():
     ]
     return "".join(parts)
 
-def render_quiz():
+def _build_question_say_text(q):
+    """Construit le texte oral : question + toutes les reponses."""
+    say_text = q["text"] + ". "
+    for ans in q["answers"]:
+        say_text += ans + ". "
+    return say_text
+
+def render_quiz(speak_question=True):
     if state.quiz_index < len(QUESTIONS):
         q = QUESTIONS[state.quiz_index]
+        good_msg = q.get("good", "Bonne reponse !")
+        bad_msgs = q.get("bad", [])
+        bad_json = json.dumps(bad_msgs)
         parts = [
             "<html><head><meta charset='utf-8'>", COMMON_CSS,
-            "<style>.btn-answer { width: 45%; font-size: 24px; min-height: 100px; transition: background-color 0.2s; }</style>",
+            "<style>.btn-answer { width: 45%; font-size: 24px; min-height: 100px; transition: background-color 0.2s; }",
+            "#feedback-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:5000; flex-direction:column; align-items:center; justify-content:center; }",
+            "#feedback-text { font-size:36px; font-weight:bold; padding:30px 50px; border-radius:20px; max-width:80%; text-align:center; }</style>",
             "<script>",
+            "var answered = false;",
+            "var goodMsg = " + json.dumps(good_msg) + ";",
+            "var badMsgs = " + bad_json + ";",
             "function clickAns(btn, idx, correctIdx) {",
-            "  if (idx == correctIdx) { btn.style.backgroundColor = '#2ecc71'; btn.style.color = 'white'; }",
-            "  else { btn.style.backgroundColor = '#e74c3c'; btn.style.color = 'white'; }",
-            "  setTimeout(function() { window.location.href = '/quiz/answer/' + idx + '?t=' + new Date().getTime(); }, 1500);",
+            "  if (answered) return;",
+            "  answered = true;",
+            "  var overlay = document.getElementById('feedback-overlay');",
+            "  var fbText = document.getElementById('feedback-text');",
+            "  if (idx == correctIdx) {",
+            "    btn.style.backgroundColor = '#2ecc71'; btn.style.color = 'white';",
+            "    overlay.style.background = 'rgba(46,204,113,0.92)';",
+            "    fbText.innerText = goodMsg;",
+            "  } else {",
+            "    btn.style.backgroundColor = '#e74c3c'; btn.style.color = 'white';",
+            "    overlay.style.background = 'rgba(231,76,60,0.92)';",
+            "    var msg = (badMsgs && badMsgs[idx]) ? badMsgs[idx] : 'Mauvaise reponse !';",
+            "    fbText.innerText = msg;",
+            "  }",
+            "  overlay.style.display = 'flex';",
+            "  setTimeout(function() { window.location.href = '/quiz/answer/' + idx + '?t=' + new Date().getTime(); }, 3000);",
             "}",
             "</script></head><body>", HEADER_HTML,
+            "<div id='feedback-overlay'><div id='feedback-text' style='color:white;'></div></div>",
             "<div class='container'>",
-            "<h1 style='flex-shrink:0; max-height:30%; overflow-y:auto; font-size:40px; margin:20px 0; color:white;'>" + q["text"] + "</h1>",
+            "<h1 style='flex-shrink:0; max-height:30%; overflow-y:auto; font-size:36px; margin:20px 0; color:white;'>" + q["text"] + "</h1>",
             "<div style='flex:1; display:flex; flex-wrap:wrap; align-content:flex-start; justify-content:center; width:100%; overflow-y:auto; padding-bottom:10px; gap:15px;'>"
         ]
         for i, ans in enumerate(q["answers"]):
             correct_idx = q["correct"]
-            parts.append("<div class='btn btn-answer' style='margin:0; margin-right:5px; margin-bottom:5px; padding:15px; font-size:22px; min-height:80px; width:40%; border-radius:20px;' onclick='clickAns(this, "+str(i)+", "+str(correct_idx)+")'>" + ans + "</div>")
-        parts.append("</div><p style='margin:5px 0; flex-shrink:0; font-size:20px;'>Question " + str(state.quiz_index+1) + "/" + str(len(QUESTIONS)) + "</p>")
+            parts.append("<div class='btn btn-answer' style='margin:0; margin-right:5px; margin-bottom:5px; padding:15px; font-size:22px; min-height:80px; width:40%; border-radius:20px;' onclick='clickAns(this, " + str(i) + ", " + str(correct_idx) + ")'>" + ans + "</div>")
+        parts.append("</div><p style='margin:5px 0; flex-shrink:0; font-size:20px;'>Question " + str(state.quiz_index + 1) + "/" + str(len(QUESTIONS)) + "</p>")
         parts.append("<a class='btn' href='/menu' style='margin-bottom:20px;'>Quitter</a></div></body></html>")
-        
-        threading.Thread(target=action_say, args=(q["text"],)).start()
+
+        if speak_question:
+            threading.Thread(target=action_say, args=(_build_question_say_text(q),)).start()
         return "".join(parts)
     else:
+        score_txt = str(state.quiz_score) + " sur " + str(len(QUESTIONS))
         parts = [
             "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
-            "<div class='container' style='justify-content:center;'>",
-            "<h1 style='font-size:48px;'>Bravo ! Le quiz est termine.</h1>",
-            "<div style='font-size:80px; color:#2ecc71; font-weight:bold; margin:40px 0;'>" + str(state.quiz_score) + " / " + str(len(QUESTIONS)) + " bonnes reponses</div>",
-            "<div style='display:flex; flex-direction:column; gap:20px;'>",
+            "<div class='container' style='justify-content:center; padding:100px 30px;'>",
+            "<h1 style='font-size:36px; margin-bottom:20px;'>Quiz termin\u00e9 !</h1>",
+            "<div style='font-size:70px; color:#2ecc71; font-weight:bold; margin:20px 0;'>" + score_txt + "</div>",
+            "<p style='font-size:22px; max-width:80%; line-height:1.6; margin:20px auto;'>" + QUIZ_END_TEXT.replace(". ", ".<br>") + "</p>",
+            "<div style='display:flex; flex-direction:column; gap:20px; margin-top:20px;'>",
             "<a class='btn btn-green' href='/quiz/start' style='width:300px;' onclick=\"this.href='/quiz/start?t=' + new Date().getTime()\">Recommencer</a>",
             "<a class='btn' href='/menu' style='width:300px;'>Menu principal</a>",
             "</div></div></body></html>"
         ]
-        threading.Thread(target=action_say, args=("Bravo, tu as fini le quiz. Voici ton score.",)).start()
+        threading.Thread(target=action_say, args=(QUIZ_END_TEXT,)).start()
         return "".join(parts)
 
 def action_say(text):
+    """Dit un texte via le robot (bloquant). Appeler dans un thread."""
     if session_global and qi:
         try:
+            tts = session_global.service("ALTextToSpeech")
             print("[ROBOT] Say: " + text)
-            session_global.service("ALTextToSpeech").say(str(text))
+            tts.say(str(text))
+        except: pass
+
+def action_say_then(text1, text2):
+    """Dit text1, puis text2 sequentiellement (feedback puis question suivante)."""
+    if session_global and qi:
+        try:
+            tts = session_global.service("ALTextToSpeech")
+            print("[ROBOT] Say feedback: " + text1)
+            tts.say(str(text1))
+            time.sleep(0.5)
+            print("[ROBOT] Say question: " + text2)
+            tts.say(str(text2))
         except: pass
 
 class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -400,11 +449,11 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.wfile.write(gif1px)
                 return
 
-            # 1. Redirection de la racine vers l'écran d'accueil
+            # 1. Racine → menu principal directement
             if self.path == "/" or self.path == "/index.html":
-                set_app_mode("chat") # L'IA ecoute sur l'ecran d'accueil !
+                set_app_mode("chat")
                 self.send_response(302)
-                self.send_header("Location", "/veolia/accueil.html")
+                self.send_header("Location", "/menu")
                 self.end_headers()
                 return
 
@@ -490,22 +539,33 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             elif self.path.startswith("/quiz"):
                 set_app_mode("quiz") # SEUL ENDROIT OU L'IA EST COUPEE !
                 
+                speak = True
                 if "/start" in self.path: 
                     state.reset_quiz()
                 elif "/answer/" in self.path:
+                    speak = False
                     try:
                         ans_str = self.path.split("/answer/")[1].split("?")[0]
                         ans = int(ans_str)
-                        correct = QUESTIONS[state.quiz_index]["correct"]
+                        q = QUESTIONS[state.quiz_index]
+                        correct = q["correct"]
                         if ans == correct:
                             state.quiz_score += 1
-                            threading.Thread(target=action_say, args=("Bonne reponse !",)).start()
+                            say_txt = q.get("good", "Bonne reponse !")
                         else:
-                            threading.Thread(target=action_say, args=("Mauvaise reponse.",)).start()
+                            bad_msgs = q.get("bad", [])
+                            say_txt = bad_msgs[ans] if ans < len(bad_msgs) and bad_msgs[ans] else "Mauvaise reponse !"
                         state.quiz_index += 1
+                        next_q_text = ""
+                        if state.quiz_index < len(QUESTIONS):
+                            next_q_text = _build_question_say_text(QUESTIONS[state.quiz_index])
+                        if next_q_text:
+                            threading.Thread(target=action_say_then, args=(say_txt, next_q_text)).start()
+                        else:
+                            threading.Thread(target=action_say, args=(say_txt,)).start()
                     except Exception as e: 
                         print("Erreur Answer: " + str(e))
-                content = render_quiz()
+                content = render_quiz(speak_question=speak)
                 
             else:
                 set_app_mode("chat")
