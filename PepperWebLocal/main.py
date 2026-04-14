@@ -51,24 +51,44 @@ WIFI_SECURITY = "WPA2"
 
 QUESTIONS = [
     {
-        "text": "Quand on parle de Machine Learning, ca veut dire que...",
-        "answers": ["Le robot apprend tout seul comme un humain", "Le robot apprend grace aux donnees qu on lui donne", "Le robot devient plus intelligent chaque nuit", "Le robot telecharge des competences sur Internet"],
-        "correct": 1
+        "text": "A Le développement de logiciels informatiques de gestion",
+        "answers": [
+            "A Le développement de logiciels informatiques de gestion",
+            "B La fabrication d’équipements industriels lourds",
+            "C Exclusivement le transport urbain de passagers",
+            "D La gestion optimisée de l’eau, des déchets et de l’énergie"
+            ],
+        "correct": 4
     },
     {
-        "text": "Quel est le role principal d un algorithme en IA ?",
-        "answers": ["Donner une personnalite au robot", "Decorer l interface", "Permettre a la machine de prendre des decisions ou faire des calculs", "Controler la batterie"],
+        "text": "Dans quel objectif principal Veolia développe-t-elle ses solutions pour les territoires et les entreprises ?",
+        "answers": [
+            "A Remplacer les services publics par des services totalement privés",
+            "B Assurer la transition écologique en optimisant l’usage des ressources",
+            "C Se consacrer uniquement à l’innovation technologique sans considération sociale",
+            "D Maximiser exclusivement ses profits financiers à court terme"
+        ],
         "correct": 2
     },
     {
-        "text": "C est quoi un deepfake ?",
-        "answers": ["Une IA qui dort profondement", "Une video ou image modifiee grace a l IA", "Un robot espion", "Un filtre TikTok officiel"],
+        "text": "Quel type de contrat lie le plus souvent Veolia aux collectivités locales pour la gestion de l’eau ou des déchets ?",
+        "answers": [
+            "A Une délégation de service public ou un contrat de concession",
+            "B Un contrat de travail individuel à durée indéterminée",
+            "C Un traité international bilatéral",
+            "D Un contrat de location d’équipements"
+        ],
         "correct": 1
     },
     {
-        "text": "Quand une IA se trompe completement, on appelle ca souvent...",
-        "answers": ["Un bug emotionnel", "Une crise existentielle", "Une surcharge Wi-Fi", "Une hallucination"],
-        "correct": 3
+        "text": "Dans le domaine des déchets, quel objectif stratégique Veolia met-elle particulièrement en avant ?",
+        "answers": [
+            "A Développer le recyclage et la valorisation des déchets en nouvelles ressources",
+            "B Limiter le tri pour simplifier la collecte",
+            "C Interrompre toutes les activités liées aux déchets dangereux",
+            "D Augmenter systématiquement les volumes envoyés en centre d’enfouissement"
+        ],
+        "correct": 1
     }
 ]
 
