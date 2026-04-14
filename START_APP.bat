@@ -44,12 +44,11 @@ if exist ".env" (
 echo [CONFIG] IP robot : %ROBOT_IP%
 echo.
 
-:: ETAPE 1 : Interface Web tablette
 echo [1/5] Interface Web tablette (port 9091)...
-start cmd /k cd "PepperWebLocal"
-start cmd /k "%PY2% main.py --ip %ROBOT_IP%"
+cd "PepperWebLocal"
+start "PepperChat Web" cmd /k "title PepperChat Web && %PY2% main.py --ip %ROBOT_IP%"
+cd ..
 timeout /t 3 /nobreak >nul
-start cd "..\"
 
 :: ETAPE 2 : Serveur STT Google
 echo [2/5] Serveur STT Google (port 8889)...
