@@ -59,7 +59,7 @@ QUESTIONS = [
     },
     {
         "text": "Comment je m’appelle ?",
-        "answers": ["Inno", "Pepper", "Nao", "Alexa"],
+        "answers": ["Inno", "Nathan", "Nao", "Alexa"],
         "correct": 0,
         "good": "Exact ! Je suis Inno, ton robot préféré !",
         "bad": ["", "Non, c’est pas mon nom !", "Pas du tout !", "Hé non, cherche encore !"]
@@ -331,7 +331,7 @@ def render_quiz(speak_question=True):
         parts = [
             "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
             "<div class='container' style='justify-content:center; padding-top:90px; padding-bottom:20px; overflow-y:auto;'>",
-            "<h1 style='font-size:34px; margin:10px 0;'>Quiz termine !</h1>",
+            "<h1 style='font-size:34px; margin:10px 0;'>Quiz terminé !</h1>",
             "<div style='font-size:60px; color:#2ecc71; font-weight:bold; margin:10px 0;'>" + score_txt + "</div>",
             "<p style='font-size:20px; max-width:85%; line-height:1.5; margin:10px auto;'>" + QUIZ_END_TEXT.replace(". ", ".<br>") + "</p>",
             "<div style='display:flex; flex-direction:column; gap:15px; margin-top:10px;'>",
