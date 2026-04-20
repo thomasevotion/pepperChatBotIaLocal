@@ -66,6 +66,7 @@ QUESTIONS = [
     },
     {
         "text": "Quelle beauté va-t-on explorer aujourd’hui ?",
+        "tts": "Quelle beauté va-t-on èxploré aujourd’hui ?",
         "answers": ["Celle du futur", "Celle du passé", "Celle de l’espace", "Celle des océans"],
         "correct": 0,
         "good": "Oui ! La beauté du futur, c’est notre aventure !",
@@ -273,7 +274,7 @@ def render_chat():
 
 def _build_question_say_text(q):
     """Construit le texte oral : question + toutes les reponses."""
-    say_text = q["text"] + ". "
+    say_text = q.get("tts", q["text"]) + ". "
     for ans in q["answers"]:
         say_text += ans + ". "
     return say_text
