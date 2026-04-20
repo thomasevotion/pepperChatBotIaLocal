@@ -115,7 +115,7 @@ HEADER_HTML = """
 <div style="position:fixed; top:0; left:0; width:100%; height:80px; background:#ededed; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 20px; box-sizing:border-box; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
     <a href="/menu"><img src="/images/EvotionLogo.png" style="height:60px;" onerror="this.style.display='none'"></a>
     <div style="display:flex; gap:40px; margin-right:20px; align-items:center;">
-        <a href="/menu"><img src="/images/25694.png" style="height:50px; opacity:0.7;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/25/25694.png'"></a>
+        <a href="/menu"><img src="/images/25694.png" style="height:50px; opacity:0.7; margin-right:20px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/25/25694.png'"></a>
         <img src="/images/56763.png" style="height:50px; opacity:0.7; cursor:pointer;" onclick="toggleVolumeOverlay()" onerror="this.src='https://cdn-icons-png.flaticon.com/512/56/56763.png'">
     </div>
 </div>
@@ -314,12 +314,13 @@ def render_quiz(speak_question=True):
             "</script></head><body>", HEADER_HTML,
             "<div id='feedback-overlay'><div id='feedback-text' style='color:white;'></div></div>",
             "<div class='container'>",
-            "<h1 style='flex-shrink:0; max-height:30%; overflow-y:auto; font-size:36px; margin:20px 0; color:white;'>" + q["text"] + "</h1>",
-            "<div style='flex:1; display:flex; flex-wrap:wrap; align-content:flex-start; justify-content:center; width:100%; overflow-y:auto; padding-bottom:10px; gap:15px;'>"
+            "<br>"
+            "<h1 style='flex-shrink:0; max-height:30%; overflow-y:auto; font-size:36px; margin:20px 0; margin-bottom:60px; color:white;'>" + q["text"] + "</h1>",
+            "<div style='flex:1; display:flex; flex-wrap:wrap; align-content:flex-start; justify-content:center; width:100%; overflow-y:auto; padding-bottom:25px; gap:15px;'>"
         ]
         for i, ans in enumerate(q["answers"]):
             correct_idx = q["correct"]
-            parts.append("<div class='btn btn-answer' style='margin:0; margin-right:5px; margin-bottom:5px; padding:15px; font-size:22px; min-height:80px; width:40%; border-radius:20px;' onclick='clickAns(this, " + str(i) + ", " + str(correct_idx) + ")'>" + ans + "</div>")
+            parts.append("<div class='btn btn-answer' style='margin:0; margin-right:10px; margin-bottom:10px; padding:10px; font-size:22px; min-height:80px; width:40%; border-radius:20px;' onclick='clickAns(this, " + str(i) + ", " + str(correct_idx) + ")'>" + ans + "</div>")
         parts.append("</div><p style='margin:5px 0; flex-shrink:0; font-size:20px;'>Question " + str(state.quiz_index + 1) + "/" + str(len(QUESTIONS)) + "</p>")
         parts.append("<a class='btn' href='/menu' style='margin-bottom:20px;'>Quitter</a></div></body></html>")
 

@@ -57,6 +57,10 @@ TTS_PHONETIC_MAP = {
     u"Explorez":  u"Exploré",
     u"exploreur": u"exploreur",   # si le bug produit deja ce mot, on le laisse
     u"Véolia":    u"Véolia",      # force la prononciation avec accent
+    u"Just Dance" : u"Jeust dennsse",
+    u"photocall" : u"Photo kaulle",
+    u"Encore plus" : u"Encore plusse",
+    u"IATECH" : u"Iatech",
 }
 
 # --- Robust UTF-8 decoder ---
