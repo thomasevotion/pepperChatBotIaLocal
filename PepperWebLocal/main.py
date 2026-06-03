@@ -48,6 +48,8 @@ PORT = 9091
 WIFI_SSID = "Bbox-0283B47E"
 WIFI_PASSWORD = "4SDf7LzcJfsJT3hRXz"
 WIFI_SECURITY = "WPA2"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
 QUESTIONS = [
     {
@@ -111,6 +113,39 @@ class GameState:
 state = GameState()
 session_global = None
 
+THEME_PRIMARY = "#18C6D9"
+THEME_SECONDARY = "#18C6D9"
+THEME_BACKGROUND = "#1F365C"
+THEME_SURFACE = "#ECF4F8"
+THEME_TEXT_SURFACE = "#1A1A1A"
+THEME_TEXT_BACKGROUND = "#FFFFFF"
+THEME_OVERLAY = "rgba(31,54,92,0.96)"
+
+PEPPER_ANIMATIONS = [
+    {"id": "wave", "label": "Coucou", "icon": "👋", "say": "Coucou !"},
+    {"id": "dance", "label": "Danse", "icon": "🕺", "say": "Regardez ma petite danse !"},
+    {"id": "laugh", "label": "Rire", "icon": "😁", "say": "Ha ha ha !"},
+]
+
+PEPPER_ANIMATION_PATHS = {
+    "wave": [
+        "animations/Stand/Gestures/Hey_1",
+        "animations/Stand/Gestures/Hey_2",
+    ],
+    "dance": [
+        "animations/Stand/Gestures/Dance_1",
+        "animations/Stand/Gestures/Dance_2",
+    ],
+    "laugh": [
+        "animations/Stand/Emotions/Positive/Laugh_1",
+        "animations/Stand/Emotions/Positive/Happy_1",
+    ],
+}
+
+PEPPER_ANIMATION_BY_ID = {}
+for _anim in PEPPER_ANIMATIONS:
+    PEPPER_ANIMATION_BY_ID[_anim["id"]] = _anim
+
 # Fonction globale pour gerer l'etat de l'IA proprement
 def set_app_mode(mode):
     global session_global
@@ -121,23 +156,25 @@ def set_app_mode(mode):
             pass
 
 HEADER_HTML = """
-<div style="position:fixed; top:0; left:0; width:100%; height:80px; background:#ededed; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 20px; box-sizing:border-box; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-    <a href="/menu"><img src="/images/EvotionLogo.png" style="height:60px;" onerror="this.style.display='none'"></a>
-    <div style="display:flex; gap:40px; margin-right:20px; align-items:center;">
-        <a href="/menu"><img src="/images/25694.png" style="height:50px; opacity:0.7; margin-right:20px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/25/25694.png'"></a>
-        <img src="/images/56763.png" style="height:50px; opacity:0.7; cursor:pointer;" onclick="toggleVolumeOverlay()" onerror="this.src='https://cdn-icons-png.flaticon.com/512/56/56763.png'">
-    </div>
+<a href="/menu"><img class="top-logo" src="/images/EvotionLogo.png" onerror="this.style.display='none'"></a>
+<div class="hamburger" onclick="toggleVolumeOverlay()">
+    <span></span><span></span><span></span>
 </div>
 
 <!-- MENU BURGER : VOLUME OVERLAY -->
-<div id="volume-overlay" style="display:none; position:fixed; top:0; right:0; width:300px; height:100%; background:rgba(80,80,80,0.95); z-index:2000; color:white; flex-direction:column; align-items:center; padding-top:20px;">
-    <h3>Gestion du volume</h3>
+<div id="volume-overlay" style="display:none; position:fixed; top:0; right:0; width:320px; height:100%; background:__THEME_OVERLAY__; z-index:2000; color:white; flex-direction:column; align-items:center; padding:36px 24px; box-sizing:border-box; box-shadow:-16px 0 34px rgba(0,0,0,0.28);">
+    <div onclick="toggleVolumeOverlay()" style="position:absolute; top:22px; right:24px; width:34px; height:26px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer; opacity:0.8;">
+        <span style="display:block; height:4px; background:#ECF4F8; border-radius:99px;"></span>
+        <span style="display:block; height:4px; background:#ECF4F8; border-radius:99px; width:22px; margin-left:auto;"></span>
+        <span style="display:block; height:4px; background:#ECF4F8; border-radius:99px;"></span>
+    </div>
+    <h3 style="font-size:22px; margin:10px 0 28px;">Gestion du volume</h3>
     <div style="display:flex; align-items:center; justify-content:center; margin:20px 0;">
         <div onclick="changeVolume(10)" style="font-size:40px; cursor:pointer; background:white; color:#333; width:50px; height:50px; border-radius:50%; display:flex; justify-content:center; align-items:center;">+</div>
         <div id="vol-display" style="font-size:50px; font-weight:bold; margin:0 20px;">70</div>
         <div onclick="changeVolume(-10)" style="font-size:40px; cursor:pointer; background:white; color:#333; width:50px; height:50px; border-radius:50%; display:flex; justify-content:center; align-items:center;">-</div>
     </div>
-    <div style="display:flex; flex-direction:column; align-items:flex-start; margin-top:30px; padding:0 20px; width:100%; box-sizing:border-box;">
+    <div style="display:flex; flex-direction:column; align-items:flex-start; gap:28px; margin-top:30px; padding:0 6px; width:100%; box-sizing:border-box;">
         <label style="display:flex; align-items:center; font-size:20px; margin-bottom:30px; cursor:pointer; text-align:left;">
             <input type="checkbox" id="mute-robot" style="width:30px; height:30px; margin-right:20px;" onchange="toggleMute()">
             Couper le son<br>du robot
@@ -147,7 +184,7 @@ HEADER_HTML = """
             Désactiver la<br>reconnaissance<br>vocale
         </label>
     </div>
-    <div onclick="toggleVolumeOverlay()" style="margin-top:auto; margin-bottom:40px; background:#ededed; color:#333; padding:15px 40px; border-radius:30px; font-size:24px; font-weight:bold; cursor:pointer;">Fermer</div>
+    <div onclick="toggleVolumeOverlay()" style="margin-top:auto; margin-bottom:8px; background:#ECF4F8; color:#1F365C; padding:15px 42px; border-radius:30px; font-size:22px; font-weight:bold; cursor:pointer;">Fermer</div>
 </div>
 
 <script>
@@ -180,102 +217,207 @@ function toggleRecog() {
     img.src = '/setrecog?d=' + (disabled ? '1' : '0') + '&_=' + Date.now();
 }
 </script>
-"""
+""".replace("__THEME_OVERLAY__", THEME_OVERLAY)
 
-COMMON_CSS = """
+COMMON_CSS = (
+"<style>:root{"
+"--primary:" + THEME_PRIMARY + ";"
+"--secondary:" + THEME_SECONDARY + ";"
+"--background:" + THEME_BACKGROUND + ";"
+"--surface:" + THEME_SURFACE + ";"
+"--text-surface:" + THEME_TEXT_SURFACE + ";"
+"--text-background:" + THEME_TEXT_BACKGROUND + ";"
+"--overlay:" + THEME_OVERLAY + ";"
+"}</style>"
+"""
 <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; background: linear-gradient(135deg, #614d98 0%, #5E9bd4 100%); margin: 0; padding: 0; color: white; -webkit-user-select: none; overflow: hidden; width: 100%; height: 100vh; position: fixed; }
-    h1 { color: white; font-size: 40px; margin: 20px 0; text-shadow: none; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; background: """ + THEME_BACKGROUND + """; background: var(--background); margin: 0; padding: 0; color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); -webkit-user-select: none; overflow: hidden; width: 100%; height: 100vh; position: fixed; }
+    h1 { color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: 40px; margin: 20px 0; text-shadow: none; text-transform: uppercase; letter-spacing: 3px; }
     .container { width: 100%; height: 100vh; margin: 0 auto; padding-top: 80px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; background: #ecf0f1; border: none; border-radius: 30px; padding: 15px 30px; margin: 10px; font-size: 20px; color: #333; text-decoration: none; box-shadow: 0 5px 15px rgba(0,0,0,0.2); cursor: pointer; font-weight: bold; transition: transform 0.1s; }
-    .btn:active { transform: scale(0.95); background: #bdc3c7; }
+    .btn { display: inline-block; display: inline-flex; align-items: center; justify-content: center; background: """ + THEME_SURFACE + """; background: var(--surface); border: 2px solid rgba(24,198,217,0.45); border-radius: 26px; padding: 15px 30px; margin: 10px; font-size: 20px; color: """ + THEME_BACKGROUND + """; color: var(--background); text-decoration: none; box-shadow: 0 10px 28px rgba(0,0,0,0.2); cursor: pointer; font-weight: bold; transition: transform 0.1s; }
+    .btn:active { transform: scale(0.95); background: #dcecf2; }
     .btn-green { background: #2ecc71; color: white; }
     .btn-red { background: #e74c3c; color: white; }
-    .btn-menu { width: 280px; height: 80px; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-menu { width: 150px; height: 120px; padding: 12px; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; flex-direction: column; gap: 10px; }
+    .btn-menu span { display: block; }
+    .btn-menu .icon { font-size: 38px; line-height: 1; margin-bottom: 10px; }
     
-    .chat-container { display: flex; flex-direction: column; gap: 15px; padding: 15px; width: 90%; flex: 1; min-height: 0; overflow-y: auto; background: rgba(255,255,255,0.1); border-radius: 20px; margin-bottom: 10px; }
-    .bubble { padding: 15px; border-radius: 15px; background: #ededed; color: #474747; font-size: 20px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; font-weight: bold; }
-    .user-bubble { align-self: flex-start; margin-right: 20%; border-left: 10px solid #ff4081; }
-    .robot-bubble { align-self: flex-end; margin-left: 20%; text-align: right; border-right: 10px solid #00e676; }
+    .chat-container { display: flex; flex-direction: column; gap: 15px; padding: 18px; width: 100%; flex: 1; min-height: 0; overflow-y: auto; background: """ + THEME_SURFACE + """; background: var(--surface); border-radius: 0 0 30px 30px; margin-bottom: 10px; box-sizing: border-box; }
+    .bubble { padding: 15px; border-radius: 18px; background: #ffffff; color: """ + THEME_BACKGROUND + """; color: var(--background); font-size: 18px; text-align: left; box-shadow: 0 3px 10px rgba(0,0,0,0.08); position: relative; font-weight: bold; }
+    .user-bubble { align-self: flex-end; margin-left: 20%; border: 1px solid rgba(0,0,0,0.05); }
+    .robot-bubble { align-self: flex-start; margin-right: 20%; text-align: left; background: """ + THEME_SECONDARY + """; background: var(--secondary); color: white; }
     .status-bar { padding: 15px; font-size: 24px; font-weight: bold; color: white; background: #95a5a6; border-radius: 10px; margin-top: 10px; margin-bottom: 10px; width: 80%; flex-shrink: 0; }
     .status-listening { background: #00e676; }
     .status-speaking { background: #9c27b0; }
     .status-waiting { background: #bdc3c7; color: #333; }
+    .top-logo { position: fixed; top: 24px; left: 24px; z-index: 1100; height: 28px; opacity: 0.95; }
+    .hamburger { position: fixed; top: 22px; right: 24px; z-index: 1100; width: 34px; height: 26px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; }
+    .hamburger span { display: block; height: 4px; background: """ + THEME_SURFACE + """; background: var(--surface); border-radius: 99px; }
+    .surface-panel { background: """ + THEME_SURFACE + """; background: var(--surface); color: """ + THEME_TEXT_SURFACE + """; color: var(--text-surface); border-radius: 30px; box-shadow: 0 16px 36px rgba(0,0,0,0.22); }
+    .app-layout { width: 100%; height: 100vh; display: flex; overflow: hidden; }
+    .app-main { flex: 1; min-width: 0; height: 100vh; position: relative; box-sizing: border-box; }
+    .menu-layout { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 40px 36px 20px; }
+    .robot-zone { position: relative; width: 360px; height: 620px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+    .robot-zone img { max-width: 100%; max-height: 520px; object-fit: contain; }
+    .welcome-bubble { position: absolute; top: 8px; left: 0; background: #ffffff; color: """ + THEME_BACKGROUND + """; color: var(--background); border-radius: 18px; padding: 14px 18px; max-width: 250px; text-align: left; font-size: 15px; box-shadow: 0 6px 18px rgba(0,0,0,0.16); }
+    .welcome-bubble:after { content: ''; position: absolute; right: 22px; bottom: -14px; border-width: 14px 12px 0 0; border-style: solid; border-color: #ffffff transparent transparent transparent; }
+    .menu-cards { width: 340px; display: block; font-size: 0; text-align: center; margin-left: 70px; }
+    .menu-left { display: inline-block; vertical-align: middle; width: 174px; }
+    .menu-right { display: inline-block; vertical-align: middle; width: 166px; }
+    .menu-cards .btn-menu { display: block; box-sizing: border-box; margin: 9px auto; }
+    .chat-shell { width: 360px; height: 100vh; flex: 0 0 360px; background: """ + THEME_SURFACE + """; background: var(--surface); box-shadow: -18px 0 34px rgba(0,0,0,0.24); display: flex; flex-direction: column; overflow: hidden; }
+    .chat-title { height: 58px; line-height: 58px; color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: 18px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+    .chat-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(31,54,92,0.52); font-style: italic; padding: 22px; }
 </style>
+""")
+
+CHAT_POLL_SCRIPT = """
+<script>
+var lastStatus = '';
+function appendBubble(className, html) {
+  var container = document.getElementById('chat-container');
+  if (!container) return;
+  var placeholder = document.getElementById('chat-placeholder');
+  if (placeholder) placeholder.style.display = 'none';
+  var div = document.createElement('div');
+  div.className = className;
+  div.innerHTML = html;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+function startPolling() {
+  setInterval(function() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/poll?t=' + new Date().getTime(), true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4 && xhr.status == 200) {
+        try {
+          var data = JSON.parse(xhr.responseText);
+          var container = document.getElementById('chat-container');
+          if (data.user && data.user !== '') appendBubble('bubble user-bubble', data.user);
+          if (data.robot && data.robot !== '') {
+            var lastChild = container ? container.lastChild : null;
+            while (lastChild && lastChild.nodeType !== 1) { lastChild = lastChild.previousSibling; }
+            if (lastChild && lastChild.className && lastChild.className.indexOf('robot-bubble') !== -1) {
+                lastChild.innerHTML = data.robot;
+            } else {
+                appendBubble('bubble robot-bubble', data.robot);
+            }
+          }
+          if (data.status && data.status !== lastStatus) {
+            var bar = document.getElementById('status-bar');
+            if (bar) {
+              if(data.status === 'listening') { bar.className = 'status-bar status-listening'; bar.innerHTML = 'Je vous ecoute / Parlez !'; }
+              else if(data.status === 'robotspeaking') { bar.className = 'status-bar status-speaking'; bar.innerHTML = 'Je parle...'; }
+              else { bar.className = 'status-bar status-waiting'; bar.innerHTML = 'Un instant...'; }
+            }
+            lastStatus = data.status;
+          }
+        } catch(e) {}
+      }
+    };
+    xhr.send();
+  }, 500);
+}
+window.onload = function() {
+  var c=document.getElementById('chat-container');
+  if(c) c.scrollTop=c.scrollHeight;
+  startPolling();
+};
+</script>
 """
+
+def render_chat_sidebar(show_status=False, show_back=False):
+    parts = [
+        "<aside class='chat-shell'>",
+        "<div class='chat-title'>Discussion avec Pepper</div>",
+        "<div class='chat-container' id='chat-container'>",
+        "<div class='chat-placeholder' id='chat-placeholder'>Parlez à Pepper pour démarrer la discussion...</div>",
+        "</div>",
+    ]
+    if show_status:
+        parts.append("<div class='status-bar status-waiting' id='status-bar' style='font-size:16px; width:auto; margin:10px 18px;'>Initialisation...</div>")
+    if show_back:
+        parts.append("<a class='btn' href='/menu' style='margin:0 18px 18px;'>Retour Menu</a>")
+    parts.append("</aside>")
+    return "".join(parts)
 
 def render_menu():
     parts = [
-        "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
-        "<div class='container'>",
-        "<h1 style='font-size:45px; margin-top:45px; flex-shrink:0;'>Hello ! Je suis Inno,<br> que puis-je faire pour toi ?</h1>",
-        "<div style='display:flex; flex-direction:row; align-items:center; justify-content:center; gap:80px; width:100%; flex:1;'>",
-        "<div style='display:flex; flex-direction:column; gap:25px;'>",
-        "<a class='btn btn-menu' href='/quiz/start'>JOUONS AU QUIZ</a>",
-        "<a class='btn btn-menu' href='/ai_module'>IA CHAT</a>",
+        "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
+        "<div class='app-layout'>",
+        "<main class='app-main'>",
+        "<div class='menu-layout'>",
+        "<div class='robot-zone'>",
+        "<div class='welcome-bubble'>Salut ! Je suis Pepper,<br>Prêt à apprendre et jouer avec toi</div>",
+        "<img src='/images/pepper.png' alt='Pepper'>",
         "</div>",
-        "<img src='/images/pepperwebMenu.webp' style='height:45vh; max-height:350px; object-fit:contain;' onerror=\"this.src='https://techcrunch.com/wp-content/uploads/2015/06/pepper.jpg'; this.style.borderRadius='20px'\">",
-        "</div></div></body></html>"
+        "<div class='menu-cards'>",
+        "<div class='menu-left'>",
+        "<a class='btn btn-menu' href='/quiz/start'><span class='icon'>?</span><span>Quiz</span></a>",
+        "<a class='btn btn-menu' href='/animations'><span class='icon'>🎭</span><span>Animations</span></a>",
+        "</div>",
+        "<div class='menu-right'>",
+        "<a class='btn btn-menu' href='/catalogue'><span class='icon'>📖</span><span>Catalogue</span></a>",
+        "</div>",
+        "</div>",
+        "</div>",
+        "</main>",
+        render_chat_sidebar(),
+        "</div></body></html>"
     ]
     return "".join(parts)
 
 def render_chat():
     parts = [
-        "<html><head><meta charset='utf-8'>", COMMON_CSS,
-        "<script>",
-        "var lastStatus = '';",
-        "function startPolling() {",
-        "  setInterval(function() {",
-        "    var xhr = new XMLHttpRequest();",
-        "    xhr.open('GET', '/poll?t=' + new Date().getTime(), true);",
-        "    xhr.onreadystatechange = function() {",
-        "      if (xhr.readyState == 4 && xhr.status == 200) {",
-        "        try {",
-        "          var data = JSON.parse(xhr.responseText);",
-        "          var container = document.getElementById('chat-container');",
-        "          if (data.user && data.user !== '') {",
-        "            var div = document.createElement('div');",
-        "            div.className = 'bubble user-bubble';",
-        "            div.innerHTML = data.user;",
-        "            container.appendChild(div);",
-        "            container.scrollTop = container.scrollHeight;",
-        "          }",
-        "          if (data.robot && data.robot !== '') {",
-        "            var lastChild = container.lastChild;",
-        "            while (lastChild && lastChild.nodeType !== 1) { lastChild = lastChild.previousSibling; }",
-        "            if (lastChild && lastChild.className && lastChild.className.indexOf('robot-bubble') !== -1) {",
-        "                lastChild.innerHTML = data.robot;",
-        "            } else {",
-        "                var divR = document.createElement('div');",
-        "                divR.className = 'bubble robot-bubble';",
-        "                divR.innerHTML = data.robot;",
-        "                container.appendChild(divR);",
-        "            }",
-        "            container.scrollTop = container.scrollHeight;",
-        "          }",
-        "          if (data.status && data.status !== lastStatus) {",
-        "            var bar = document.getElementById('status-bar');",
-        "            if(data.status === 'listening') { bar.className = 'status-bar status-listening'; bar.innerHTML = 'Je vous ecoute / Parlez !'; }",
-        "            else if(data.status === 'robotspeaking') { bar.className = 'status-bar status-speaking'; bar.innerHTML = 'Je parle...'; }",
-        "            else { bar.className = 'status-bar status-waiting'; bar.innerHTML = 'Un instant...'; }",
-        "            lastStatus = data.status;",
-        "          }",
-        "        } catch(e) {}",
-        "      }",
-        "    };",
-        "    xhr.send();",
-        "  }, 500);",
-        "}",
-        "window.onload = function() {",
-        "  var c=document.getElementById('chat-container');",
-        "  if(c) c.scrollTop=c.scrollHeight;",
-        "  startPolling();",
-        "};",
-        "</script></head><body>", HEADER_HTML,
-        "<div class='container'><h1>Discussion avec l'IA Pepper</h1>",
-        "<div class='chat-container' id='chat-container'></div>",
-        "<div class='status-bar status-waiting' id='status-bar'>Initialisation...</div>",
-        "<a class='btn' href='/menu' style='margin-bottom:20px;'>Retour Menu</a>",
+        "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
+        "<div class='app-layout'>",
+        "<main class='app-main' style='display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.68); font-style:italic;'>",
+        "Parlez à Pepper, la discussion s'affiche à droite.",
+        "</main>",
+        render_chat_sidebar(show_status=True, show_back=True),
+        "</div></body></html>"
+    ]
+    return "".join(parts)
+
+def render_animations(feedback=None):
+    parts = [
+        "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
+        "<div class='app-layout'>",
+        "<main class='app-main' style='padding:110px 50px 40px; box-sizing:border-box;'>",
+        "<a class='btn' href='/menu' style='position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px;'>← Retour au menu</a>",
+        "<div class='surface-panel' style='width:72%; max-width:760px; padding:36px 34px 42px; margin:0 auto;'>",
+        "<h1 style='margin-top:0;'>Animations</h1>",
+        "<p style='color:" + THEME_BACKGROUND + "; opacity:0.65; font-style:italic; margin-top:-8px;'>Touchez un bouton ou dites le nom de l'animation à voix haute.</p>",
+    ]
+    if feedback:
+        parts.append("<div style='display:inline-block; background:rgba(24,198,217,0.18); color:#1F365C; padding:10px 18px; border-radius:99px; font-weight:bold; margin:8px 0 18px;'>" + feedback + "</div>")
+    parts.append("<div style='display:flex; justify-content:center; gap:18px; flex-wrap:wrap; margin-top:18px;'>")
+    for anim in PEPPER_ANIMATIONS:
+        parts.append(
+            "<a class='btn btn-menu' href='/animation/run/" + anim["id"] + "'>"
+            "<span class='icon'>" + anim["icon"] + "</span>"
+            "<span>" + anim["label"] + "</span>"
+            "</a>"
+        )
+    parts.append("</div></main>")
+    parts.append(render_chat_sidebar())
+    parts.append("</div></body></html>")
+    return "".join(parts)
+
+def render_catalogue():
+    parts = [
+        "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
+        "<div class='container' style='padding:110px 50px 40px;'>",
+        "<a class='btn' href='/menu' style='position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px;'>← Retour au menu</a>",
+        "<h1>Catalogue</h1>",
+        "<div style='display:flex; flex:1; align-items:center; justify-content:center; width:100%;'>",
+        "<div style='color:#ECF4F8; opacity:0.72; font-style:italic;'>Aucune fiche dans le catalogue pour le moment.</div>",
+        "</div>",
+        "<div style='position:fixed; right:0; top:0; bottom:0; width:260px; border-left:1px solid rgba(255,255,255,0.08);'>",
+        "<div class='welcome-bubble' style='top:160px; left:20px;'>Je ne peux pas discuter pendant une activité.</div>",
+        "<img src='/images/pepperMuted.png' style='position:absolute; bottom:0; left:8px; width:240px; max-height:70%; object-fit:contain;'>",
+        "</div>",
         "</div></body></html>"
     ]
     return "".join(parts)
@@ -372,6 +514,24 @@ def action_say_then(text1, text2):
             print("[ROBOT] Say question: " + text2)
             tts.say(str(text2))
         except: pass
+
+def action_animation(animation_id):
+    anim = PEPPER_ANIMATION_BY_ID.get(animation_id)
+    if not anim:
+        return
+    if session_global and qi:
+        try:
+            player = session_global.service("ALAnimationPlayer")
+            for path in PEPPER_ANIMATION_PATHS.get(animation_id, []):
+                try:
+                    print("[ROBOT] Animation: " + path)
+                    player.run(path)
+                    return
+                except Exception as e_path:
+                    print("[ROBOT] Animation echec " + path + ": " + str(e_path))
+        except Exception as e_anim:
+            print("[ROBOT] ALAnimationPlayer indisponible: " + str(e_anim))
+    action_say(anim.get("say", anim.get("label", "")))
 
 class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -567,6 +727,24 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     except Exception as e: 
                         print("Erreur Answer: " + str(e))
                 content = render_quiz(speak_question=speak)
+
+            elif self.path.startswith("/animations"):
+                set_app_mode("animations")
+                content = render_animations()
+
+            elif self.path.startswith("/animation/run/"):
+                set_app_mode("animations")
+                anim_id = self.path.split("/animation/run/")[1].split("?")[0]
+                anim = PEPPER_ANIMATION_BY_ID.get(anim_id)
+                if anim:
+                    threading.Thread(target=action_animation, args=(anim_id,)).start()
+                    content = render_animations(anim["icon"] + " " + anim["label"] + " en cours...")
+                else:
+                    content = render_animations("Animation indisponible.")
+
+            elif self.path.startswith("/catalogue"):
+                set_app_mode("catalogue")
+                content = render_catalogue()
                 
             else:
                 set_app_mode("chat")

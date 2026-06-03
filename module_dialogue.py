@@ -425,8 +425,8 @@ class DialogueModule(naoqi.ALModule):
             beh = ALProxy("ALBehaviorManager", self.strNaoIp, ROBOT_PORT)
             behavior_list = [
                 "peppers-date-dance-bis",
-                "animations/Stand/Waiting/FunnyDancer_1",
-                "locomotion-dancebehavior_1",
+                # "animations/Stand/Waiting/FunnyDancer_1",
+                # "locomotion-dancebehavior_1",
             ]
             for beh_name in behavior_list:
                 try:
