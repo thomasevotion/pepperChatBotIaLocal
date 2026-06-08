@@ -119,7 +119,7 @@ THEME_BACKGROUND = "#1F365C"
 THEME_SURFACE = "#ECF4F8"
 THEME_TEXT_SURFACE = "#1A1A1A"
 THEME_TEXT_BACKGROUND = "#FFFFFF"
-THEME_OVERLAY = "rgba(31,54,92,0.96)"
+THEME_OVERLAY = THEME_BACKGROUND
 
 PEPPER_ANIMATIONS = [
     {"id": "wave", "label": "Coucou", "icon": "👋", "say": "Coucou !"},
@@ -133,8 +133,7 @@ PEPPER_ANIMATION_PATHS = {
         "animations/Stand/Gestures/Hey_2",
     ],
     "dance": [
-        "animations/Stand/Gestures/Dance_1",
-        "animations/Stand/Gestures/Dance_2",
+        "peppers-date-dance-bis",
     ],
     "laugh": [
         "animations/Stand/Emotions/Positive/Laugh_1",
@@ -263,7 +262,7 @@ COMMON_CSS = (
     .welcome-bubble:after { content: ''; position: absolute; right: 22px; bottom: -14px; border-width: 14px 12px 0 0; border-style: solid; border-color: #ffffff transparent transparent transparent; }
     .menu-cards { width: 340px; display: block; font-size: 0; text-align: center; margin-left: 70px; }
     .menu-left { display: inline-block; vertical-align: middle; width: 174px; }
-    .menu-right { display: inline-block; vertical-align: middle; width: 166px; }
+    .menu-right { display: inline-block; vertical-align: bottom; width: 166px; }
     .menu-cards .btn-menu { display: block; box-sizing: border-box; margin: 9px auto; }
     .chat-shell { width: 360px; height: 100vh; flex: 0 0 360px; background: """ + THEME_SURFACE + """; background: var(--surface); box-shadow: -18px 0 34px rgba(0,0,0,0.24); display: flex; flex-direction: column; overflow: hidden; }
     .chat-title { height: 58px; line-height: 58px; color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: 18px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
@@ -520,6 +519,21 @@ def action_animation(animation_id):
     if not anim:
         return
     if session_global and qi:
+        if animation_id == "dance":
+            try:
+                behavior = session_global.service("ALBehaviorManager")
+                for path in PEPPER_ANIMATION_PATHS.get(animation_id, []):
+                    try:
+                        print("[ROBOT] Behavior: " + path)
+                        behavior.runBehavior(path)
+                        return
+                    except Exception as e_path:
+                        print("[ROBOT] Behavior echec " + path + ": " + str(e_path))
+            except Exception as e_beh:
+                print("[ROBOT] ALBehaviorManager indisponible: " + str(e_beh))
+            action_say(anim.get("say", anim.get("label", "")))
+            return
+
         try:
             player = session_global.service("ALAnimationPlayer")
             for path in PEPPER_ANIMATION_PATHS.get(animation_id, []):

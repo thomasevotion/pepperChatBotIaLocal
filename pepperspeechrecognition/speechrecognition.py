@@ -10,6 +10,7 @@ import sys
 import time
 import threading
 import traceback
+import json
 import numpy as np
 from optparse import OptionParser
 import naoqi
@@ -254,8 +255,19 @@ class SpeechRecognitionModule(naoqi.ALModule):
                     break # EOF
                 
                 text = data.decode('utf-8')
-                if text.startswith("FINAL:"):
-                    final_text = text.replace("FINAL:", "").strip()
+                if text.startswith("FINAL_JSON:"):
+                    payload_text = text.replace("FINAL_JSON:", "", 1).strip()
+                    payload = json.loads(payload_text)
+                    final_text = payload.get("transcript", u"").strip()
+                    language_code = payload.get("languageCode", DEFAULT_LANGUAGE)
+                    print("INF: FINAL RESULT RECEIVED [{}]: {}".format(language_code, final_text))
+                    self.memory.raiseEvent("SpeechRecognition", json.dumps({
+                        "text": final_text,
+                        "languageCode": language_code
+                    }).encode('utf-8'))
+                    break # We are done after final result
+                elif text.startswith("FINAL:"):
+                    final_text = text.replace("FINAL:", "", 1).strip()
                     print("INF: FINAL RESULT RECEIVED: " + final_text)
                     self.memory.raiseEvent("SpeechRecognition", final_text.encode('utf-8'))
                     break # We are done after final result
