@@ -843,38 +843,39 @@ class DialogueModule(naoqi.ALModule):
         Thread de fond : capture une image toutes les CAMERA_INTERVAL secondes
         et la stocke dans self.last_image pour les prochaines reponses Gemini.
         """
-        print("[CAM] Boucle camera demarree.")
-        # Attendre que le robot soit completement initialise avant la 1ere capture
-        for _ in range(10):  # 5 secondes d'attente initiale
-            if not self._camera_running:
-                return
-            time.sleep(0.5)
-        print("[CAM] Initialisation terminee, debut des captures.")
-        while self._camera_running:
-            img = self._do_capture()
+        # print("[CAM] Boucle camera demarree.")
+        # # Attendre que le robot soit completement initialise avant la 1ere capture
+        # for _ in range(10):  # 5 secondes d'attente initiale
+        #     if not self._camera_running:
+        #         return
+        #     time.sleep(0.5)
+        # print("[CAM] Initialisation terminee, debut des captures.")
+        # while self._camera_running:
+        #     img = self._do_capture()
             
-            if img and not img.get('session_lost'):
-                # Capture reussie
-                self.last_image = img
-                print("[CAM] Image mise a jour en arriere-plan ({}x{})".format(
-                    img['width'], img['height']
-                ))
-                wait_seconds = CAMERA_INTERVAL  # Attente normale entre deux captures
-            elif img and img.get('session_lost'):
-                # Session temporairement perdue (changement de mode, reconnexion)
-                # Retenter rapidement (3s) sans effacer last_image
-                print("[CAM] Session perdue (module destroyed), reessai dans 3s...")
-                wait_seconds = 3
-            else:
-                # Echec definitif (camera inaccessible)
-                print("[CAM] Echec de capture, prochaine tentative dans {}s".format(CAMERA_INTERVAL))
-                wait_seconds = CAMERA_INTERVAL
+        #     if img and not img.get('session_lost'):
+        #         # Capture reussie
+        #         self.last_image = img
+        #         print("[CAM] Image mise a jour en arriere-plan ({}x{})".format(
+        #             img['width'], img['height']
+        #         ))
+        #         wait_seconds = CAMERA_INTERVAL  # Attente normale entre deux captures
+        #     elif img and img.get('session_lost'):
+        #         # Session temporairement perdue (changement de mode, reconnexion)
+        #         # Retenter rapidement (3s) sans effacer last_image
+        #         print("[CAM] Session perdue (module destroyed), reessai dans 3s...")
+        #         wait_seconds = 3
+        #     else:
+        #         # Echec definitif (camera inaccessible)
+        #         print("[CAM] Echec de capture, prochaine tentative dans {}s".format(CAMERA_INTERVAL))
+        #         wait_seconds = CAMERA_INTERVAL
             
-            # Attente fractionnee pour pouvoir s'arreter proprement
-            for _ in range(wait_seconds * 2):
-                if not self._camera_running:
-                    break
-                time.sleep(0.5)
+        #     # Attente fractionnee pour pouvoir s'arreter proprement
+        #     for _ in range(wait_seconds * 2):
+        #         if not self._camera_running:
+        #             break
+        #         time.sleep(0.5)
+        # print("[CAM] Boucle camera arretee.")
         print("[CAM] Boucle camera arretee.")
 
     def speak_async(self, text):
