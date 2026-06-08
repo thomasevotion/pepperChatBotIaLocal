@@ -51,41 +51,43 @@ WIFI_SECURITY = "WPA2"
 
 QUESTIONS = [
     {
-        "text": "Quel est le nom de l’entreprise de papa et maman ?",
-        "answers": ["L’Oréal", "Sanofi", "Auchan", "Disney"],
-        "correct": 0,
-        "good": "Bravo ! Tu connais bien l’entreprise de tes parents !",
-        "bad": ["", "Pas tout à fait !", "Non, essaie encore !", "Presque, mais non !"]
+        "text": "En quelle année a été fondé le bureau de Paris ?",
+        "answers": ["1980", "1983", "1985", "1988"],
+        "answers_tts": ["1980", "1983", "1985", "1988"],
+        "correct": 3,
+        "good": "Bravo !",
+        "bad": ["Pas tout à fait !", "Pas tout à fait !", "Non, essaie encore !", "Presque, mais non !"]
     },
     {
-        "text": "Comment je m’appelle ?",
-        "answers": ["Inno", "Nathan", "Nao", "Alexa"],
-        "correct": 0,
-        "good": "Exact ! Je suis Inno, ton robot préféré !",
-        "bad": ["", "Non, c’est pas mon nom !", "Pas du tout !", "Hé non, cherche encore !"]
+        "text": "Qui a été le 1er managing partner de Simmons & Simmons ?",
+        "tts": "Qui a été le 1er Managing Partenaire de Saïmmonnsse hennd Saïmmonnsse ?",
+        "answers": ["Jacques de Taisne", "Thierry Gontard", "Chris Watson", "Harvey Chalmers"],
+        "answers_tts": ["Jacques de Taisne", "Thierry Gontard", "Chris Watsonne", "Harvey Chalmers"],
+        "correct": 2,
+        "good": "Exact !",
+        "bad": ["Pas tout à fait !", "Pas tout à fait !", "Non, essaie encore !", "Presque, mais non !"]
     },
     {
-        "text": "Quelle beauté va-t-on explorer aujourd’hui ?",
-        "tts": "Quelle beauté va-t-on èxploré aujourd’hui ?",
-        "answers": ["Celle du futur", "Celle du passé", "Celle de l’espace", "Celle des océans"],
-        "correct": 0,
-        "good": "Oui ! La beauté du futur, c’est notre aventure !",
-        "bad": ["", "Non, on regarde vers l’avenir !", "Pas encore !", "Bonne idée, mais pas aujourd’hui !"]
+        "text": "Quel est le dernier secteur créé chez Simmons & Simmons ?",
+        "tts": "Quel est le dernier secteur crée chez Saïmmonnsse hennd Saïmmonnsse ?",
+        "answers": ["Santé et sciences de la Vie", "Gestion d’actifs et fonds d’investissement", "Technologie, médias et communications", "Energie, ressources naturelles, infrastructures et construction","Institutions financières, Gestions d’actifs et fonds d’investissements"],
+        "answers_tts": ["Santé et Sciences de la Vie", "Gestion d’actifs et Fonds d’investissement", "Technologie, Médias et Communications", "Energie, ressources naturelles, infrastructures et construction", "Institutions financières, Gestions d’actifs et fonds d’investissements"],
+        "correct": 3,
+        "good": "Oui !",
+        "bad": ["Pas tout à fait !", "Non, on regarde vers l’avenir !", "Pas encore !", "Bonne idée, mais pas aujourd’hui !"]
     },
     {
-        "text": "Que célèbre-t-on aujourd’hui ?",
-        "answers": ["Le Family Day", "Noël", "Halloween", "La rentrée"],
-        "correct": 0,
-        "good": "Bravo ! Aujourd’hui c’est le Family Day !",
-        "bad": ["", "C’est pas Noël aujourd’hui !", "Pas de citrouilles ici !", "Les vacances ne sont pas finies !"]
+        "text": "Combien d’adresses a connu le bureau de Paris ?",
+        "answers": ["Un", "Deux", "Trois", "Quatre"],
+        "answers_tts": ["Un", "Deux", "Trois", "Quatre"],
+        "correct": 3,
+        "good": "Bravo !",
+        "bad": ["Pas tout à fait !", "Pas tout à fait !", "Non, essaie encore !", "Presque, mais non !"]
     }
 ]
 
 QUIZ_END_TEXT = (
-    "Analyse des résultats... bip bip... "
-    "Mission réussie ! "
-    "Bravo, tu es prêt pour inventer la beauté du futur ! "
-    "À bientôt petit inventeur !"
+    "À bientôt n'hesitez pas à venir visiter notre, stand !"
 )
 
 class GameState:
@@ -200,7 +202,7 @@ def render_menu():
     parts = [
         "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
         "<div class='container'>",
-        "<h1 style='font-size:45px; margin-top:45px; flex-shrink:0;'>Hello ! Je suis Inno,<br> que puis-je faire pour toi ?</h1>",
+        "<h1 style='font-size:45px; margin-top:45px; flex-shrink:0;'>Hello ! Je suis Pepper,<br> que puis-je faire pour toi ?</h1>",
         "<div style='display:flex; flex-direction:row; align-items:center; justify-content:center; gap:80px; width:100%; flex:1;'>",
         "<div style='display:flex; flex-direction:column; gap:25px;'>",
         "<a class='btn btn-menu' href='/quiz/start'>JOUONS AU QUIZ</a>",
@@ -275,7 +277,8 @@ def render_chat():
 def _build_question_say_text(q):
     """Construit le texte oral : question + toutes les reponses."""
     say_text = q.get("tts", q["text"]) + ". "
-    for ans in q["answers"]:
+    answers_tts = q.get("answers_tts", q["answers"])
+    for ans in answers_tts:
         say_text += ans + ". "
     return say_text
 
@@ -306,7 +309,7 @@ def render_quiz(speak_question=True):
             "  } else {",
             "    btn.style.backgroundColor = '#e74c3c'; btn.style.color = 'white';",
             "    overlay.style.background = 'rgba(231,76,60,0.92)';",
-            "    var msg = (badMsgs && badMsgs[idx]) ? badMsgs[idx] : 'Mauvaise reponse !';",
+            "    var msg = (badMsgs && badMsgs[idx]) ? badMsgs[idx] : 'Mauvaise réponse !';",
             "    fbText.innerText = msg;",
             "  }",
             "  overlay.style.display = 'flex';",
@@ -548,7 +551,7 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                             say_txt = q.get("good", "Bonne reponse !")
                         else:
                             bad_msgs = q.get("bad", [])
-                            say_txt = bad_msgs[ans] if ans < len(bad_msgs) and bad_msgs[ans] else "Mauvaise reponse !"
+                            say_txt = bad_msgs[ans] if ans < len(bad_msgs) and bad_msgs[ans] else "Mauvaise réponse !"
                         state.quiz_index += 1
                         if state.quiz_index < len(QUESTIONS):
                             next_q_text = _build_question_say_text(QUESTIONS[state.quiz_index])
