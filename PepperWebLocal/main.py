@@ -155,7 +155,7 @@ def set_app_mode(mode):
             pass
 
 HEADER_HTML = """
-<a href="/menu"><img class="top-logo" src="/images/EvotionLogo.png" onerror="this.style.display='none'"></a>
+<a href="/menu"><img class="top-logo" src="/images/EvotionLogo.png" style="display:none;" onerror="this.style.display='none'"></a>
 <div class="hamburger" onclick="toggleVolumeOverlay()">
     <span></span><span></span><span></span>
 </div>
@@ -344,6 +344,7 @@ def render_chat_sidebar(show_status=False, show_back=False):
 def render_menu():
     parts = [
         "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
+        "<img src='/images/fond.png' alt='Pepper' style='width:100%; height:100%; position:absolute; top:0; left:0; z-index:1;'>",
         "<div class='app-layout'>",
         "<main class='app-main'>",
         "<div class='menu-layout'>",
