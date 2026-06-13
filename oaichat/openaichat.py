@@ -14,6 +14,7 @@
 import os, sys, codecs, json
 from datetime import datetime
 from oaichat.oairesponse import OaiResponse
+MAX_AI_HISTORY_MESSAGES = 5
 
 import dotenv
 dotenv.load_dotenv()
@@ -55,7 +56,9 @@ class OaiChat:
         pass
 
     def add_to_history(self, user_input, assistant_response):
-        """Ajoute un echange complet a l'historique (utilise apres streaming)."""
+        """Ajoute un echange complet a l'historique (utilise apres streaming). limite le nombre de messages a MAX_AI_HISTORY_MESSAGES"""
+        if len(self.history) >= MAX_AI_HISTORY_MESSAGES:
+            self.history = self.history[-(MAX_AI_HISTORY_MESSAGES - 2):]
         self.history.append({'role': 'user', 'content': user_input})
         self.history.append({'role': 'assistant', 'content': assistant_response})
 

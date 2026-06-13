@@ -60,7 +60,7 @@ QUESTIONS = [
     },
     {
         "text": "Qui a été le 1er managing partner de Simmons & Simmons ?",
-        "tts": "Qui a été le 1er Managing Partenaire de Saïmmonnsse hennd Saïmmonnsse ?",
+        "tts": "Qui a été le 1er Managing Partenaire de Simmonnsse hennd Simmonnsse ?",
         "answers": ["Jacques de Taisne", "Thierry Gontard", "Chris Watson", "Harvey Chalmers"],
         "answers_tts": ["Jacques de Taisne", "Thierry Gontard", "Chris Watsonne", "Harvey Chalmers"],
         "correct": 2,
@@ -69,7 +69,7 @@ QUESTIONS = [
     },
     {
         "text": "Quel est le dernier secteur créé chez Simmons & Simmons ?",
-        "tts": "Quel est le dernier secteur crée chez Saïmmonnsse hennd Saïmmonnsse ?",
+        "tts": "Quel est le dernier secteur crée chez Simmonnsse hennd Simmonnsse ?",
         "answers": ["Santé et sciences de la Vie", "Gestion d’actifs et fonds d’investissement", "Technologie, médias et communications", "Energie, ressources naturelles, infrastructures et construction","Institutions financières, Gestions d’actifs et fonds d’investissements"],
         "answers_tts": ["Santé et Sciences de la Vie", "Gestion d’actifs et Fonds d’investissement", "Technologie, Médias et Communications", "Energie, ressources naturelles, infrastructures et construction", "Institutions financières, Gestions d’actifs et fonds d’investissements"],
         "correct": 3,
@@ -77,12 +77,12 @@ QUESTIONS = [
         "bad": ["Pas tout à fait !", "Non, on regarde vers l’avenir !", "Pas encore !", "Bonne idée, mais pas aujourd’hui !"]
     },
     {
-        "text": "Combien d’adresses a connu le bureau de Paris ?",
-        "answers": ["Un", "Deux", "Trois", "Quatre"],
-        "answers_tts": ["Un", "Deux", "Trois", "Quatre"],
-        "correct": 3,
+        "text": "En 2025, combien de personnes travaillent chez S&S à travers l'ensemble du cabinet, y compris les avocats et le personnel administratif ?",
+        "answers": ["1300", "2000", "2600",],
+        "answers_tts": ["1300", "2000", "2600",],
+        "correct": 2,
         "good": "Bravo !",
-        "bad": ["Pas tout à fait !", "Pas tout à fait !", "Non, essaie encore !", "Presque, mais non !"]
+        "bad": ["Pas tout à fait !", "Pas tout à fait !", "Non, essaie encore !",]
     }
 ]
 

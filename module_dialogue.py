@@ -61,7 +61,7 @@ TTS_PHONETIC_MAP = {
     u"photocall" : u"Photo kaulle",
     u"Encore plus" : u"Encore plusse",
     u"IATECH" : u"Iatech",
-    u"Simmons & Simmons" : u"Saïmmonnsse hennd Saïmmonnsse",
+    u"Simmons & Simmons" : u"Simmonnsse hennd Simmonnsse",
 }
 
 # --- Robust UTF-8 decoder ---
