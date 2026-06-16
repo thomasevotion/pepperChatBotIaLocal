@@ -51,6 +51,42 @@ WIFI_SECURITY = "WPA2"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
+def _load_client_config():
+    config_path = os.path.join(SCRIPT_DIR, "client.json")
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except TypeError:
+        try:
+            with open(config_path, "r") as f:
+                return json.loads(f.read().decode("utf-8"))
+        except Exception as e:
+            print("[CONFIG] Impossible de charger client.json: " + str(e))
+    except Exception as e:
+        print("[CONFIG] Impossible de charger client.json: " + str(e))
+    return {}
+
+CLIENT_CONFIG = _load_client_config()
+PY2 = sys.version_info[0] < 3
+
+def cfg_get(path, default=None):
+    cur = CLIENT_CONFIG
+    for key in path.split("."):
+        if not isinstance(cur, dict) or key not in cur:
+            return default
+        cur = cur[key]
+    return cur
+
+def html_text(value):
+    """Retourne une chaine compatible avec les templates HTML Python 2/3."""
+    if value is None:
+        return ""
+    if PY2:
+        if isinstance(value, unicode):
+            return value.encode("utf-8")
+        return str(value)
+    return str(value)
+
 QUESTIONS = [
     {
         "text": "Que peux-tu faire à l'atelier parfums ?",
@@ -88,6 +124,9 @@ QUESTIONS = [
         "bad": ["", "Non", "Parfois... mais pas tout le temps !", "Pourquoi pas !"]
     }
 ]
+CONFIG_QUIZ = cfg_get("quiz", None)
+if CONFIG_QUIZ:
+    QUESTIONS = CONFIG_QUIZ
 
 QUIZ_END_TEXT = (
     "Analyse des résultats... bip bip... "
@@ -97,6 +136,7 @@ QUIZ_END_TEXT = (
     "Et si tu veux en découvrir encore plus... les animateurs sont là pour t'aider ! "
     "À bientôt petit inventeur du futur !"
 )
+QUIZ_END_TEXT = cfg_get("quizEndText", QUIZ_END_TEXT)
 
 class GameState:
     def __init__(self):
@@ -113,19 +153,34 @@ class GameState:
 state = GameState()
 session_global = None
 
-THEME_PRIMARY = "#18C6D9"
-THEME_SECONDARY = "#18C6D9"
-THEME_BACKGROUND = "#1F365C"
-THEME_SURFACE = "#ECF4F8"
-THEME_TEXT_SURFACE = "#1A1A1A"
-THEME_TEXT_BACKGROUND = "#FFFFFF"
+THEME_PRIMARY = html_text(cfg_get("theme.primary", "#18C6D9"))
+THEME_SECONDARY = html_text(cfg_get("theme.secondary", "#18C6D9"))
+THEME_BACKGROUND = html_text(cfg_get("theme.background", "#1F365C"))
+THEME_SURFACE = html_text(cfg_get("theme.surface", "#ECF4F8"))
+THEME_TEXT_SURFACE = html_text(cfg_get("theme.textOnSurface", "#1A1A1A"))
+THEME_TEXT_BACKGROUND = html_text(cfg_get("theme.textOnBackground", "#FFFFFF"))
 THEME_OVERLAY = THEME_BACKGROUND
+CLIENT_LOGO = html_text(cfg_get("client.logo", "/images/EvotionLogo.png"))
+HOME_GREETING = html_text(cfg_get("home.greeting", "Salut ! Je suis Pepper,\nPrêt à apprendre et jouer avec toi"))
+CHAT_TITLE = html_text(cfg_get("home.chatTitle", "DISCUSSION AVEC PEPPER"))
+CHAT_PLACEHOLDER = html_text(cfg_get("home.chatPlaceholder", "Parlez à Pepper pour démarrer la discussion..."))
+STATUS_LISTENING_TEXT = html_text(cfg_get("status.listening", "Vous pouvez parler"))
+STATUS_SPEAKING_TEXT = html_text(cfg_get("status.speaking", "🔊 Attendez, c'est au tour de Pepper de parler"))
+STATUS_WAITING_TEXT = html_text(cfg_get("status.waiting", "Veuillez patienter"))
 
-PEPPER_ANIMATIONS = [
+PEPPER_ANIMATIONS = cfg_get("interactions", None) or [
     {"id": "wave", "label": "Coucou", "icon": "👋", "say": "Coucou !"},
     {"id": "dance", "label": "Danse", "icon": "🕺", "say": "Regardez ma petite danse !"},
     {"id": "laugh", "label": "Rire", "icon": "😁", "say": "Ha ha ha !"},
 ]
+for _anim in PEPPER_ANIMATIONS:
+    if "id" not in _anim and "animationId" in _anim:
+        _anim["id"] = _anim["animationId"]
+    _anim["id"] = html_text(_anim.get("id", ""))
+    _anim["label"] = html_text(_anim.get("label", _anim["id"]))
+    _anim["icon"] = html_text(_anim.get("icon", "?"))
+    if "say" in _anim:
+        _anim["say"] = html_text(_anim["say"])
 
 PEPPER_ANIMATION_PATHS = {
     "wave": [
@@ -155,7 +210,7 @@ def set_app_mode(mode):
             pass
 
 HEADER_HTML = """
-<a href="/menu"><img class="top-logo" src="/images/EvotionLogo.png" onerror="this.style.display='none'"></a>
+<a href="/menu"><img class="top-logo" src="__CLIENT_LOGO__" onerror="this.style.display='none'"></a>
 <div class="hamburger" onclick="toggleVolumeOverlay()">
     <span></span><span></span><span></span>
 </div>
@@ -216,7 +271,7 @@ function toggleRecog() {
     img.src = '/setrecog?d=' + (disabled ? '1' : '0') + '&_=' + Date.now();
 }
 </script>
-""".replace("__THEME_OVERLAY__", THEME_OVERLAY)
+""".replace("__THEME_OVERLAY__", THEME_OVERLAY).replace("__CLIENT_LOGO__", CLIENT_LOGO)
 
 COMMON_CSS = (
 "<style>:root{"
@@ -231,48 +286,106 @@ COMMON_CSS = (
 """
 <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; background: """ + THEME_BACKGROUND + """; background: var(--background); margin: 0; padding: 0; color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); -webkit-user-select: none; overflow: hidden; width: 100%; height: 100vh; position: fixed; }
-    h1 { color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: 40px; margin: 20px 0; text-shadow: none; text-transform: uppercase; letter-spacing: 3px; }
+    h1 { color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: clamp(28px, 4vw, 44px); margin: 16px 0; text-shadow: none; text-transform: uppercase; letter-spacing: 3px; }
     .container { width: 100%; height: 100vh; margin: 0 auto; padding-top: 80px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
     .btn { display: inline-block; display: inline-flex; align-items: center; justify-content: center; background: """ + THEME_SURFACE + """; background: var(--surface); border: 2px solid rgba(24,198,217,0.45); border-radius: 26px; padding: 15px 30px; margin: 10px; font-size: 20px; color: """ + THEME_BACKGROUND + """; color: var(--background); text-decoration: none; box-shadow: 0 10px 28px rgba(0,0,0,0.2); cursor: pointer; font-weight: bold; transition: transform 0.1s; }
     .btn:active { transform: scale(0.95); background: #dcecf2; }
     .btn-green { background: #2ecc71; color: white; }
     .btn-red { background: #e74c3c; color: white; }
-    .btn-menu { width: 150px; height: 120px; padding: 12px; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; flex-direction: column; gap: 10px; }
+    .btn-menu { width: 150px; height: 120px; padding: 12px; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; flex-direction: column; }
     .btn-menu span { display: block; }
     .btn-menu .icon { font-size: 38px; line-height: 1; margin-bottom: 10px; }
+    .btn-menu .icon-img { display:block; max-width:42px; max-height:42px; margin:0 auto 10px; object-fit:contain; }
     
     .chat-container { display: flex; flex-direction: column; gap: 15px; padding: 18px; width: 100%; flex: 1; min-height: 0; overflow-y: auto; background: """ + THEME_SURFACE + """; background: var(--surface); border-radius: 0 0 30px 30px; margin-bottom: 10px; box-sizing: border-box; }
     .bubble { padding: 15px; border-radius: 18px; background: #ffffff; color: """ + THEME_BACKGROUND + """; color: var(--background); font-size: 18px; text-align: left; box-shadow: 0 3px 10px rgba(0,0,0,0.08); position: relative; font-weight: bold; }
     .user-bubble { align-self: flex-end; margin-left: 20%; border: 1px solid rgba(0,0,0,0.05); }
     .robot-bubble { align-self: flex-start; margin-right: 20%; text-align: left; background: """ + THEME_SECONDARY + """; background: var(--secondary); color: white; }
-    .status-bar { padding: 15px; font-size: 24px; font-weight: bold; color: white; background: #95a5a6; border-radius: 10px; margin-top: 10px; margin-bottom: 10px; width: 80%; flex-shrink: 0; }
-    .status-listening { background: #00e676; }
-    .status-speaking { background: #9c27b0; }
-    .status-waiting { background: #bdc3c7; color: #333; }
-    .top-logo { position: fixed; top: 24px; left: 24px; z-index: 1100; height: 28px; opacity: 0.95; }
+    .status-bar { padding: 12px 16px; font-size: clamp(13px, 1.5vw, 16px); font-weight: bold; color: white; background: """ + THEME_SURFACE + """; margin: 10px 18px 18px; width: auto; flex-shrink: 0; }
+    .status-listening { color: #00b864; }
+    .status-speaking { color: #8e24aa; }
+    .status-waiting { color: #333; }
+    .top-logo { position: fixed; top: 28px; left: 24px; z-index: 1100; height: 42px; max-width: 120px; object-fit: contain; opacity: 0.95; }
     .hamburger { position: fixed; top: 22px; right: 24px; z-index: 1100; width: 34px; height: 26px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; }
     .hamburger span { display: block; height: 4px; background: """ + THEME_SURFACE + """; background: var(--surface); border-radius: 99px; }
     .surface-panel { background: """ + THEME_SURFACE + """; background: var(--surface); color: """ + THEME_TEXT_SURFACE + """; color: var(--text-surface); border-radius: 30px; box-shadow: 0 16px 36px rgba(0,0,0,0.22); }
     .app-layout { width: 100%; height: 100vh; display: flex; overflow: hidden; }
     .app-main { flex: 1; min-width: 0; height: 100vh; position: relative; box-sizing: border-box; }
-    .menu-layout { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 40px 36px 20px; }
-    .robot-zone { position: relative; width: 360px; height: 620px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
-    .robot-zone img { max-width: 100%; max-height: 520px; object-fit: contain; }
-    .welcome-bubble { position: absolute; top: 8px; left: 0; background: #ffffff; color: """ + THEME_BACKGROUND + """; color: var(--background); border-radius: 18px; padding: 14px 18px; max-width: 250px; text-align: left; font-size: 15px; box-shadow: 0 6px 18px rgba(0,0,0,0.16); }
+    .menu-layout { width: 100%; height: 100%; display: block; box-sizing: border-box; padding: 54px 28px 22px; white-space: nowrap; }
+    .robot-zone {
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+        width: 280px;
+        height: 620px;
+        margin-left: 18px;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .robot-zone img {
+        max-width: 230px;
+        max-height: 420px;
+        object-fit: contain;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .welcome-bubble { position: absolute; top: 18px; left: 0; background: #ffffff; color: """ + THEME_BACKGROUND + """; color: var(--background); border-radius: 18px; padding: 14px 18px; max-width: 250px; text-align: left; font-size: 15px; box-shadow: 0 6px 18px rgba(0,0,0,0.16); white-space: normal; }
     .welcome-bubble:after { content: ''; position: absolute; right: 22px; bottom: -14px; border-width: 14px 12px 0 0; border-style: solid; border-color: #ffffff transparent transparent transparent; }
-    .menu-cards { width: 340px; display: block; font-size: 0; text-align: center; margin-left: 70px; }
-    .menu-left { display: inline-block; vertical-align: middle; width: 174px; }
-    .menu-right { display: inline-block; vertical-align: bottom; width: 166px; }
-    .menu-cards .btn-menu { display: block; box-sizing: border-box; margin: 9px auto; }
-    .chat-shell { width: 360px; height: 100vh; flex: 0 0 360px; background: """ + THEME_SURFACE + """; background: var(--surface); box-shadow: -18px 0 34px rgba(0,0,0,0.24); display: flex; flex-direction: column; overflow: hidden; }
-    .chat-title { height: 58px; line-height: 58px; color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: 18px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+    .menu-cards { display: inline-block; vertical-align: middle; width: 170px; margin-left: 46px; font-size: 0; text-align: center; white-space: normal; }
+    .menu-cards .btn-menu { display: block; box-sizing: border-box; margin: 0 auto 20px auto; }
+    .chat-shell {
+        width: 320px; /* Fallback lu par la tablette de Pepper */
+        width: clamp(280px, 36vw, 360px);
+        height: 100vh;
+        flex: 0 0 320px; /* Fallback lu par la tablette de Pepper */
+        flex: 0 0 clamp(280px, 36vw, 360px);
+        background: """ + THEME_SURFACE + """;
+        background: var(--surface);
+        box-shadow: -18px 0 34px rgba(0,0,0,0.24);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .bubble {
+        padding: 15px; 
+        border-radius: 18px;
+        background: #ffffff; 
+        color: """ + THEME_BACKGROUND + """;
+        color: var(--background);
+        font-size: 18px; 
+        text-align: left;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        position: relative; 
+        font-weight: bold;
+        word-wrap: break-word; /* Force les mots longs à aller à la ligne */
+        max-width: 90%; /* Garde une marge interne dans le panneau */
+    }
+    .chat-title { min-height: 58px; padding: 0 76px 0 22px; display:flex; align-items:center; justify-content:center; color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: clamp(15px, 1.8vw, 18px); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; box-sizing: border-box; }
     .chat-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(31,54,92,0.52); font-style: italic; padding: 22px; }
+    .animations-main { padding: clamp(76px, 11vh, 110px) clamp(22px, 4vw, 50px) 28px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; }
+    .animations-panel { width:min(760px, 82%); max-height:86vh; overflow-y:auto; padding: clamp(24px, 5vh, 36px) clamp(24px, 4vw, 34px) clamp(28px, 5vh, 42px); margin:0 auto; box-sizing:border-box; }
+    .animations-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: clamp(14px, 3vh, 22px); margin-top:18px; justify-items:center; }
+    .back-menu { position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px; z-index: 1110; }
+    @media (max-width: 900px) {
+        .menu-layout { padding-left: 18px; padding-right: 18px; }
+        .chat-shell { width: 31vw; flex-basis: 31vw; }
+        .menu-cards { width: 168px; margin-left: 36px; }
+        .robot-zone { width: 252px; margin-left: 0; }
+        .robot-zone img { max-width: 238px; }
+    }
 </style>
 """)
 
 CHAT_POLL_SCRIPT = """
 <script>
 var lastStatus = '';
+var STATUS_LISTENING_TEXT = "__STATUS_LISTENING__";
+var STATUS_SPEAKING_TEXT = "__STATUS_SPEAKING__";
+var STATUS_WAITING_TEXT = "__STATUS_WAITING__";
 function appendBubble(className, html) {
   var container = document.getElementById('chat-container');
   if (!container) return;
@@ -306,9 +419,9 @@ function startPolling() {
           if (data.status && data.status !== lastStatus) {
             var bar = document.getElementById('status-bar');
             if (bar) {
-              if(data.status === 'listening') { bar.className = 'status-bar status-listening'; bar.innerHTML = 'Je vous ecoute / Parlez !'; }
-              else if(data.status === 'robotspeaking') { bar.className = 'status-bar status-speaking'; bar.innerHTML = 'Je parle...'; }
-              else { bar.className = 'status-bar status-waiting'; bar.innerHTML = 'Un instant...'; }
+              if(data.status === 'listening') { bar.className = 'status-bar status-listening'; bar.innerHTML = STATUS_LISTENING_TEXT; }
+              else if(data.status === 'robotspeaking') { bar.className = 'status-bar status-speaking'; bar.innerHTML = STATUS_SPEAKING_TEXT; }
+              else { bar.className = 'status-bar status-waiting'; bar.innerHTML = STATUS_WAITING_TEXT; }
             }
             lastStatus = data.status;
           }
@@ -324,22 +437,57 @@ window.onload = function() {
   startPolling();
 };
 </script>
-"""
+""".replace("__STATUS_LISTENING__", STATUS_LISTENING_TEXT).replace("__STATUS_SPEAKING__", STATUS_SPEAKING_TEXT).replace("__STATUS_WAITING__", STATUS_WAITING_TEXT)
 
-def render_chat_sidebar(show_status=False, show_back=False):
+def render_chat_sidebar(show_back=False):
     parts = [
         "<aside class='chat-shell'>",
-        "<div class='chat-title'>Discussion avec Pepper</div>",
+        "<div class='chat-title'>" + CHAT_TITLE + "</div>",
         "<div class='chat-container' id='chat-container'>",
-        "<div class='chat-placeholder' id='chat-placeholder'>Parlez à Pepper pour démarrer la discussion...</div>",
+        "<div class='chat-placeholder' id='chat-placeholder'>" + CHAT_PLACEHOLDER + "</div>",
         "</div>",
+        "<div class='status-bar status-waiting' id='status-bar'>" + STATUS_WAITING_TEXT + "</div>",
     ]
-    if show_status:
-        parts.append("<div class='status-bar status-waiting' id='status-bar' style='font-size:16px; width:auto; margin:10px 18px;'>Initialisation...</div>")
     if show_back:
         parts.append("<a class='btn' href='/menu' style='margin:0 18px 18px;'>Retour Menu</a>")
     parts.append("</aside>")
     return "".join(parts)
+
+def _activity_icon_html(icon):
+    icon = html_text(icon)
+    if icon and (icon.startswith("/") or icon.startswith("http://") or icon.startswith("https://")):
+        return "<img class='icon-img' src='" + icon + "' onerror=\"this.style.display='none'\">"
+    return "<span class='icon'>" + (icon or "?") + "</span>"
+
+def get_enabled_activities():
+    configured = cfg_get("activities", None)
+    if configured:
+        activities = []
+        for item in configured:
+            if item.get("enabled", True) == False:
+                continue
+            activity_id = item.get("id", "").upper()
+            href = item.get("href")
+            if not href:
+                if activity_id == "QUIZ":
+                    href = "/quiz/start"
+                elif activity_id in ["INTERACTIONS", "ANIMATIONS"]:
+                    href = "/animations"
+                elif activity_id in ["CATALOG", "CATALOGUE"]:
+                    href = "/catalogue"
+                else:
+                    href = "/menu"
+            activities.append({
+                "label": html_text(item.get("label", activity_id.title())),
+                "icon": html_text(item.get("icon", "?")),
+                "href": html_text(href)
+            })
+        return activities
+    return [
+        {"label": "Quiz", "icon": "?", "href": "/quiz/start"},
+        {"label": "Animations", "icon": "🎭", "href": "/animations"},
+        {"label": "Catalogue", "icon": "📖", "href": "/catalogue"},
+    ]
 
 def render_menu():
     parts = [
@@ -348,23 +496,25 @@ def render_menu():
         "<main class='app-main'>",
         "<div class='menu-layout'>",
         "<div class='robot-zone'>",
-        "<div class='welcome-bubble'>Salut ! Je suis Pepper,<br>Prêt à apprendre et jouer avec toi</div>",
-        "<img src='/images/pepper.png' alt='Pepper'>",
+        "<div class='welcome-bubble'>" + HOME_GREETING.replace("\n", "<br>") + "</div>",
+        "<br>",
+        "<img style='width: 80vh; height: 60vh; object-fit: contain;' src='/images/pepper.png' alt='Pepper'>",
         "</div>",
         "<div class='menu-cards'>",
-        "<div class='menu-left'>",
-        "<a class='btn btn-menu' href='/quiz/start'><span class='icon'>?</span><span>Quiz</span></a>",
-        "<a class='btn btn-menu' href='/animations'><span class='icon'>🎭</span><span>Animations</span></a>",
-        "</div>",
-        "<div class='menu-right'>",
-        "<a class='btn btn-menu' href='/catalogue'><span class='icon'>📖</span><span>Catalogue</span></a>",
-        "</div>",
+    ]
+    for activity in get_enabled_activities():
+        parts.append(
+            "<a class='btn btn-menu' href='" + activity["href"] + "'>"
+            + _activity_icon_html(activity.get("icon"))
+            + "<span>" + activity["label"] + "</span></a>"
+        )
+    parts.extend([
         "</div>",
         "</div>",
         "</main>",
         render_chat_sidebar(),
         "</div></body></html>"
-    ]
+    ])
     return "".join(parts)
 
 def render_chat():
@@ -374,7 +524,7 @@ def render_chat():
         "<main class='app-main' style='display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.68); font-style:italic;'>",
         "Parlez à Pepper, la discussion s'affiche à droite.",
         "</main>",
-        render_chat_sidebar(show_status=True, show_back=True),
+        render_chat_sidebar(show_back=True),
         "</div></body></html>"
     ]
     return "".join(parts)
@@ -383,15 +533,15 @@ def render_animations(feedback=None):
     parts = [
         "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
         "<div class='app-layout'>",
-        "<main class='app-main' style='padding:110px 50px 40px; box-sizing:border-box;'>",
-        "<a class='btn' href='/menu' style='position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px;'>← Retour au menu</a>",
-        "<div class='surface-panel' style='width:72%; max-width:760px; padding:36px 34px 42px; margin:0 auto;'>",
+        "<main class='app-main animations-main'>",
+        "<a class='btn back-menu' href='/menu'>← Retour au menu</a>",
+        "<div class='surface-panel animations-panel'>",
         "<h1 style='margin-top:0;'>Animations</h1>",
         "<p style='color:" + THEME_BACKGROUND + "; opacity:0.65; font-style:italic; margin-top:-8px;'>Touchez un bouton ou dites le nom de l'animation à voix haute.</p>",
     ]
     if feedback:
         parts.append("<div style='display:inline-block; background:rgba(24,198,217,0.18); color:#1F365C; padding:10px 18px; border-radius:99px; font-weight:bold; margin:8px 0 18px;'>" + feedback + "</div>")
-    parts.append("<div style='display:flex; justify-content:center; gap:18px; flex-wrap:wrap; margin-top:18px;'>")
+    parts.append("<div class='animations-grid'>")
     for anim in PEPPER_ANIMATIONS:
         parts.append(
             "<a class='btn btn-menu' href='/animation/run/" + anim["id"] + "'>"
@@ -423,8 +573,8 @@ def render_catalogue():
 
 def _build_question_say_text(q):
     """Construit le texte oral : question + toutes les reponses."""
-    say_text = q["text"] + ". "
-    for ans in q["answers"]:
+    say_text = q.get("tts", q["text"]) + ". "
+    for ans in q.get("answers_tts", q["answers"]):
         say_text += ans + ". "
     return say_text
 
@@ -633,7 +783,7 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 return
 
             # 2. Fichiers statiques (Images globales)
-            if self.path.startswith("/images/"):
+            if self.path.startswith("/images/") or self.path.startswith("/config-assets/"):
                 fpath = self.path[1:]
                 if ".." in fpath: return
                 if os.path.exists(fpath):
@@ -641,6 +791,7 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     self.send_header("Cache-Control", "public, max-age=86400")
                     if fpath.endswith(".css"): self.send_header("Content-type", "text/css")
                     elif fpath.endswith(".js"): self.send_header("Content-type", "application/javascript")
+                    elif fpath.endswith(".svg"): self.send_header("Content-type", "image/svg+xml")
                     elif fpath.endswith(".png"): self.send_header("Content-type", "image/png")
                     elif fpath.endswith(".jpg") or fpath.endswith(".jpeg"): self.send_header("Content-type", "image/jpeg")
                     elif fpath.endswith(".webp"): self.send_header("Content-type", "image/webp")

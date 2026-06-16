@@ -34,6 +34,25 @@ if sys.version_info[0] < 3:
 from google import genai
 from google.genai import types
 
+MAX_AI_HISTORY_MESSAGES = 5
+
+def load_config_system_prompt():
+    config_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        'PepperWebLocal',
+        'client.json'
+    )
+    try:
+        with codecs.open(config_path, encoding='utf-8') as f:
+            config = json.load(f)
+        prompt = config.get('llm', {}).get('systemPrompt')
+        if prompt:
+            print('Prompt IA charge depuis PepperWebLocal/client.json')
+            return prompt
+    except Exception:
+        pass
+    return None
+
 
 class OaiChat:
 
@@ -58,9 +77,18 @@ class OaiChat:
         """Ajoute un echange complet a l'historique (utilise apres streaming)."""
         self.history.append({'role': 'user', 'content': user_input})
         self.history.append({'role': 'assistant', 'content': assistant_response})
+        self._trim_history()
+
+    def _trim_history(self):
+        """Garde seulement les derniers messages envoyes a Gemini."""
+        if len(self.history) > MAX_AI_HISTORY_MESSAGES:
+            self.history = self.history[-MAX_AI_HISTORY_MESSAGES:]
+        while self.history and isinstance(self.history[0], dict) and self.history[0].get('role') == 'assistant':
+            self.history.pop(0)
 
     def _build_gemini_history(self):
         """Convertit l'historique (format OpenAI) vers le format attendu par Gemini."""
+        self._trim_history()
         gemini_history = []
         for msg in self.history:
             role = msg['role']
@@ -161,6 +189,7 @@ class OaiChat:
         # Mettre a jour l'historique de la session
         self.history.append({'role': 'user', 'content': inputText})
         self.history.append({'role': 'assistant', 'content': answer})
+        self._trim_history()
 
         print('Request delay', datetime.now() - start)
 
@@ -175,6 +204,10 @@ class OaiChat:
         return self.respond(inputText, image_data=image_data, stream=True)
 
     def loadPrompt(self, promptFile):
+        config_prompt = load_config_system_prompt()
+        if config_prompt:
+            return config_prompt, []
+
         promptFile = promptFile or 'openai.prompt'
         promptPath = (
             promptFile

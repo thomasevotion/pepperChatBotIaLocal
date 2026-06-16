@@ -70,28 +70,21 @@ class GoogleSTTServer:
             print(f"ERREUR lors du chargement du client: {e}")
             return False
     
-    def request_generator(self, client_socket):
-        """Générateur qui lit le socket et produit des chunks pour Google"""
-        # Remplacer None (bloquant) par un timeout de 1.0 seconde
-        client_socket.settimeout(1.0) 
+    def request_generator(self, clientsocket):
+        # Remplacer 1.0 par 3.0 ou 5.0 secondes pour laisser le temps à l'humain de respirer
+        clientsocket.settimeout(3.0) 
         print("Debut du streaming audio...")
-
         try:
             while True:
                 try:
-                    data = client_socket.recv(4096)
+                    data = clientsocket.recv(4096)
                     if not data:
                         print("Fin du flux audio (socket fermé par le client).")
                         break
-                    
-                    # On envoie direct à Google
                     yield speech.StreamingRecognizeRequest(audio_content=data)
-                    
                 except socket.timeout:
-                    # Plus d'audio reçu pendant 1 seconde : l'utilisateur a fini de parler
-                    print("Silence détecté (timeout socket), fin de la phrase.")
-                    break # On casse la boucle pour clôturer la requête proprement
-                    
+                    print("Silence détecté (timeout socket 4s), fin de la phrase.")
+                    break 
         except Exception as e:
             print(f"Erreur lecture socket: {e}")
             
@@ -127,7 +120,8 @@ class GoogleSTTServer:
             # Mais ici on veut contrôler manuellement via le client
             streaming_config = speech.StreamingRecognitionConfig(
                 config=config,
-                interim_results=True # Important pour le feedback et la rapidité
+                interim_results=True,
+                single_utterance=True  # Ajoute cette ligne !
             )
 
             # Lancer la reconnaissance

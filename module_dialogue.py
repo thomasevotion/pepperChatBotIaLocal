@@ -256,6 +256,7 @@ class DialogueModule(naoqi.ALModule):
         self.current_input_language_code = DEFAULT_STT_LANGUAGE_CODE
         self.current_tts_language = DEFAULT_NAOQI_LANGUAGE
         self._pending_recognition_message = None
+        self._ai_user_message_count = 0
         
         # Camera : derniere image capturee (mise a jour toutes les CAMERA_INTERVAL s)
         self.last_image = None
@@ -1070,6 +1071,8 @@ class DialogueModule(naoqi.ALModule):
             self.listen(False)
             print(u"USER: " + message_str)
             self._last_speech_time = time.time()  # L'user parle → reset timer de silence
+
+            self._ai_user_message_count += 1
             
             # Ajout a l'historique local
             self.history.append({'role': 'user', 'text': message_str})
@@ -1168,6 +1171,13 @@ class DialogueModule(naoqi.ALModule):
                 pass
         finally:
             self.processing = False
+            if getattr(self, '_ai_user_message_count', 0) >= 5:
+                try:
+                    chatbot.reset()
+                    print(u"[AI] Historique Gemini vide apres 5 messages utilisateur.")
+                except Exception as e_reset:
+                    print(u"[AI] Reset historique Gemini impossible: " + str(e_reset))
+                self._ai_user_message_count = 0
             if self.app_mode not in ["quiz", "quizz"] and not self.force_recog_disabled:
                 self.listen(True)
             pending_message = self._pending_recognition_message
