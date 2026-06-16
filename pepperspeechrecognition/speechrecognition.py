@@ -7,6 +7,8 @@
 import socket
 import os
 import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 import time
 import threading
 import traceback
