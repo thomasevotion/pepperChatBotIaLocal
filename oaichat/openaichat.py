@@ -34,7 +34,7 @@ if sys.version_info[0] < 3:
 from google import genai
 from google.genai import types
 
-MAX_AI_HISTORY_MESSAGES = 5
+MAX_AI_HISTORY_MESSAGES = 11
 
 def load_config_system_prompt():
     config_path = os.path.join(
@@ -80,11 +80,12 @@ class OaiChat:
         self._trim_history()
 
     def _trim_history(self):
-        """Garde seulement les derniers messages envoyes a Gemini."""
-        if len(self.history) > MAX_AI_HISTORY_MESSAGES:
-            self.history = self.history[-MAX_AI_HISTORY_MESSAGES:]
-        while self.history and isinstance(self.history[0], dict) and self.history[0].get('role') == 'assistant':
-            self.history.pop(0)
+        """Garde le prompt systeme puis les derniers echanges user/assistant."""
+        while len(self.history) > MAX_AI_HISTORY_MESSAGES:
+            if self.history and isinstance(self.history[0], dict) and self.history[0].get('role') == 'system':
+                del self.history[1:3]
+            else:
+                del self.history[0:2]
 
     def _build_gemini_history(self):
         """Convertit l'historique (format OpenAI) vers le format attendu par Gemini."""
@@ -206,7 +207,7 @@ class OaiChat:
     def loadPrompt(self, promptFile):
         config_prompt = load_config_system_prompt()
         if config_prompt:
-            return config_prompt, []
+            return config_prompt, [{'role': 'system', 'content': config_prompt}]
 
         promptFile = promptFile or 'openai.prompt'
         promptPath = (
@@ -220,7 +221,10 @@ class OaiChat:
         else:
             with codecs.open(promptPath, encoding='utf-8') as f:
                 system_instruction = f.read()
-        return system_instruction, []
+        history = []
+        if system_instruction:
+            history.append({'role': 'system', 'content': system_instruction})
+        return system_instruction, history
 
 
 if __name__ == '__main__':
