@@ -164,7 +164,7 @@ CLIENT_LOGO = html_text(cfg_get("client.logo", "/images/EvotionLogo.png"))
 HOME_GREETING = html_text(cfg_get("home.greeting", "Salut ! Je suis Pepper,\nPrêt à apprendre et jouer avec toi"))
 CHAT_TITLE = html_text(cfg_get("home.chatTitle", "DISCUSSION AVEC PEPPER"))
 CHAT_PLACEHOLDER = html_text(cfg_get("home.chatPlaceholder", "Parlez à Pepper pour démarrer la discussion..."))
-STATUS_LISTENING_TEXT = html_text(cfg_get("status.listening", "Vous pouvez parler"))
+STATUS_LISTENING_TEXT = html_text(cfg_get("status.listening", "Vous pouvez parler !"))
 STATUS_SPEAKING_TEXT = html_text(cfg_get("status.speaking", "🔊 Attendez, c'est au tour de Pepper de parler"))
 STATUS_WAITING_TEXT = html_text(cfg_get("status.waiting", "Veuillez patienter"))
 
@@ -215,30 +215,43 @@ HEADER_HTML = """
     <span></span><span></span><span></span>
 </div>
 
-<!-- MENU BURGER : VOLUME OVERLAY -->
-<div id="volume-overlay" style="display:none; position:fixed; top:0; right:0; width:320px; height:100%; background:__THEME_OVERLAY__; z-index:2000; color:white; flex-direction:column; align-items:center; padding:36px 24px; box-sizing:border-box; box-shadow:-16px 0 34px rgba(0,0,0,0.28);">
-    <div onclick="toggleVolumeOverlay()" style="position:absolute; top:22px; right:24px; width:34px; height:26px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer; opacity:0.8;">
-        <span style="display:block; height:4px; background:#ECF4F8; border-radius:99px;"></span>
-        <span style="display:block; height:4px; background:#ECF4F8; border-radius:99px; width:22px; margin-left:auto;"></span>
-        <span style="display:block; height:4px; background:#ECF4F8; border-radius:99px;"></span>
+<div id="volume-overlay" class="side-overlay" style="display:none;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+        <div style="font-size:34px; letter-spacing:8px; color:__THEME_PRIMARY__;">MENU</div>
+        <div onclick="toggleVolumeOverlay()" style="font-size:42px; line-height:42px; color:#9aa8b8; cursor:pointer;">×</div>
     </div>
-    <h3 style="font-size:22px; margin:10px 0 28px;">Gestion du volume</h3>
-    <div style="display:flex; align-items:center; justify-content:center; margin:20px 0;">
-        <div onclick="changeVolume(10)" style="font-size:40px; cursor:pointer; background:white; color:#333; width:50px; height:50px; border-radius:50%; display:flex; justify-content:center; align-items:center;">+</div>
-        <div id="vol-display" style="font-size:50px; font-weight:bold; margin:0 20px;">70</div>
-        <div onclick="changeVolume(-10)" style="font-size:40px; cursor:pointer; background:white; color:#333; width:50px; height:50px; border-radius:50%; display:flex; justify-content:center; align-items:center;">-</div>
+    <div class="side-section-title">
+        <span style="height:1px; background:#126273; flex:1;"></span>
+        <span style="padding:0 14px;">NAVIGATION</span>
+        <span style="height:1px; background:#126273; flex:1;"></span>
     </div>
-    <div style="display:flex; flex-direction:column; align-items:flex-start; gap:28px; margin-top:30px; padding:0 6px; width:100%; box-sizing:border-box;">
-        <label style="display:flex; align-items:center; font-size:20px; margin-bottom:30px; cursor:pointer; text-align:left;">
-            <input type="checkbox" id="mute-robot" style="width:30px; height:30px; margin-right:20px;" onchange="toggleMute()">
-            Couper le son<br>du robot
-        </label>
-        <label style="display:flex; align-items:center; font-size:20px; cursor:pointer; text-align:left;">
-            <input type="checkbox" id="mute-recog" style="width:30px; height:30px; margin-right:20px;" onchange="toggleRecog()">
-            Désactiver la<br>reconnaissance<br>vocale
-        </label>
+    <a class="side-nav active" href="/menu"><span>🏠</span><b>Accueil</b><i>•</i></a>
+    <a class="side-nav" href="/quiz/start"><span>🎯</span><b>Quiz</b></a>
+    <a class="side-nav" href="/animations"><span>🎭</span><b>Interactions</b></a>
+    <a class="side-nav" href="/catalogue"><span>📖</span><b>Catalogue</b></a>
+    <div class="side-section-title">
+        <span style="height:1px; background:#126273; flex:1;"></span>
+        <span style="padding:0 14px;">ROBOT</span>
+        <span style="height:1px; background:#126273; flex:1;"></span>
     </div>
-    <div onclick="toggleVolumeOverlay()" style="margin-top:auto; margin-bottom:8px; background:#ECF4F8; color:#1F365C; padding:15px 42px; border-radius:30px; font-size:22px; font-weight:bold; cursor:pointer;">Fermer</div>
+    <div class="side-card side-card-compact">
+        <div class="side-info-row"><span class="side-pill">🔋</span><b>Batterie</b><strong id="battery-display">...</strong></div>
+    </div>
+    <div class="side-section-title">
+        <span style="height:1px; background:#126273; flex:1;"></span>
+        <span style="padding:0 14px;">SON</span>
+        <span style="height:1px; background:#126273; flex:1;"></span>
+    </div>
+    <div class="side-card side-card-compact">
+        <label class="side-check"><input type="checkbox" id="mute-robot" onchange="toggleMute()"> <span>Couper le son du robot</span></label>
+        <label class="side-check"><input type="checkbox" id="mute-recog" onchange="toggleRecog()"> <span>Désactiver la reconnaissance vocale</span></label>
+        <div style="display:flex; align-items:center; justify-content:center; margin-top:12px;">
+            <div onclick="changeVolume(-5)" class="vol-btn">-</div>
+            <div id="vol-display" style="font-size:22px; font-weight:bold; margin:0 14px; min-width:46px; text-align:center;">70</div>
+            <div onclick="changeVolume(5)" class="vol-btn">+</div>
+        </div>
+    </div>
+    <div class="side-footer">Pepper</div>
 </div>
 
 <script>
@@ -247,9 +260,9 @@ function toggleVolumeOverlay() {
     _volOverlayOpen = !_volOverlayOpen;
     var el = document.getElementById('volume-overlay');
     el.style.display = _volOverlayOpen ? 'flex' : 'none';
+    if (_volOverlayOpen) refreshRobotStatus();
 }
 function _sendVol(vol) {
-    /* Methode Image() : compatible 100% des WebViews (Android ancien, Pepper...) */
     var img = new Image();
     img.src = '/setvolume?v=' + vol + '&_=' + Date.now();
 }
@@ -270,8 +283,29 @@ function toggleRecog() {
     var img = new Image();
     img.src = '/setrecog?d=' + (disabled ? '1' : '0') + '&_=' + Date.now();
 }
+function refreshRobotStatus() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/robotstatus?t=' + Date.now(), true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                var battery = document.getElementById('battery-display');
+                var connection = document.getElementById('connection-display');
+                var volume = document.getElementById('vol-display');
+                if (battery) battery.innerText = data.battery;
+                if (connection) {
+                    connection.innerText = data.connected ? 'OK' : 'Hors ligne';
+                    connection.style.color = data.connected ? '#63e6be' : '#ff7f9a';
+                }
+                if (volume && data.volume !== null) volume.innerText = data.volume;
+            } catch(e) {}
+        }
+    };
+    xhr.send();
+}
 </script>
-""".replace("__THEME_OVERLAY__", THEME_OVERLAY).replace("__CLIENT_LOGO__", CLIENT_LOGO)
+""".replace("__THEME_OVERLAY__", THEME_OVERLAY).replace("__CLIENT_LOGO__", CLIENT_LOGO).replace("__THEME_PRIMARY__", THEME_PRIMARY)
 
 COMMON_CSS = (
 "<style>:root{"
@@ -305,9 +339,27 @@ COMMON_CSS = (
     .status-listening { color: #00b864; }
     .status-speaking { color: #8e24aa; }
     .status-waiting { color: #333; }
-    .top-logo { position: fixed; top: 28px; left: 24px; z-index: 1100; height: 42px; max-width: 120px; object-fit: contain; opacity: 0.95; }
+    .top-logo { position: fixed; top: 28px; left: 24px; z-index: 1100; height: 52px; max-width: 120px; object-fit: contain; opacity: 0.95; }
     .hamburger { position: fixed; top: 22px; right: 24px; z-index: 1100; width: 34px; height: 26px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; }
-    .hamburger span { display: block; height: 4px; background: """ + THEME_SURFACE + """; background: var(--surface); border-radius: 99px; }
+    .hamburger span { display: block; height: 4px; background: """ + THEME_BACKGROUND + """; border-radius: 99px; margin-bottom: 2px; }
+    .side-overlay { position:fixed; top:0; right:0; width:320px; max-width:88vw; height:100%; max-height:100vh; background:""" + THEME_OVERLAY + """; background:var(--overlay); z-index:2000; color:white; flex-direction:column; padding:24px 20px 14px; box-sizing:border-box; box-shadow:-16px 0 34px rgba(0,0,0,0.28); overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
+    .side-section-title { display:flex; align-items:center; color:""" + THEME_PRIMARY + """; color:var(--primary); letter-spacing:4px; font-size:13px; margin:18px 0 12px; flex-shrink:0; }
+    .side-nav { display:flex; align-items:center; height:48px; padding:0 14px; margin:8px 0; color:#c6d1dc; text-decoration:none; border-radius:14px; font-size:17px; box-sizing:border-box; flex-shrink:0; }
+    .side-nav.active { background:""" + THEME_PRIMARY + """; color:white; box-shadow:0 8px 20px rgba(0,0,0,0.22); }
+    .side-nav span { width:38px; font-size:22px; text-align:left; }
+    .side-nav b { flex:1; text-align:left; }
+    .side-nav i { font-style:normal; font-size:26px; opacity:0.85; }
+    .side-card { background:rgba(236,244,248,0.10); border-radius:16px; padding:14px 16px; color:#dce6ee; text-align:left; flex-shrink:0; }
+    .side-card-compact { padding:12px 14px; }
+    .side-info-row { display:flex; align-items:center; min-height:32px; margin:6px 0; }
+    .side-pill { display:inline-flex; align-items:center; justify-content:center; width:36px; height:24px; margin-right:10px; border-radius:8px; background:rgba(236,244,248,0.14); color:""" + THEME_PRIMARY + """; color:var(--primary); font-size:11px; font-weight:800; letter-spacing:1px; }
+    .side-card b { flex:1; font-size:17px; font-weight:600; }
+    .side-card strong { font-size:17px; }
+    .side-check { display:flex; align-items:center; font-size:15px; line-height:1.2; margin:10px 0; color:#dce6ee; }
+    .side-check input { width:22px; height:22px; margin:0 10px 0 0; flex:0 0 auto; }
+    .side-check span { flex:1; }
+    .vol-btn { width:40px; height:40px; line-height:40px; border-radius:50%; background:#ECF4F8; color:#1F365C; text-align:center; font-size:28px; font-weight:bold; cursor:pointer; flex:0 0 auto; }
+    .side-footer { margin:18px 0 4px; text-align:center; opacity:0.25; flex-shrink:0; }
     .surface-panel { background: """ + THEME_SURFACE + """; background: var(--surface); color: """ + THEME_TEXT_SURFACE + """; color: var(--text-surface); border-radius: 30px; box-shadow: 0 16px 36px rgba(0,0,0,0.22); }
     .app-layout { width: 100%; height: 100vh; display: flex; overflow: hidden; }
     .app-main { flex: 1; min-width: 0; height: 100vh; position: relative; box-sizing: border-box; }
@@ -337,10 +389,10 @@ COMMON_CSS = (
     .menu-cards { display: inline-block; vertical-align: middle; width: 170px; margin-left: 46px; font-size: 0; text-align: center; white-space: normal; }
     .menu-cards .btn-menu { display: block; box-sizing: border-box; margin: 0 auto 20px auto; }
     .chat-shell {
-        width: 320px; /* Fallback lu par la tablette de Pepper */
+        width: 320px;
         width: clamp(280px, 36vw, 360px);
         height: 100vh;
-        flex: 0 0 320px; /* Fallback lu par la tablette de Pepper */
+        flex: 0 0 320px;
         flex: 0 0 clamp(280px, 36vw, 360px);
         background: """ + THEME_SURFACE + """;
         background: var(--surface);
@@ -361,8 +413,8 @@ COMMON_CSS = (
         box-shadow: 0 3px 10px rgba(0,0,0,0.08);
         position: relative; 
         font-weight: bold;
-        word-wrap: break-word; /* Force les mots longs à aller à la ligne */
-        max-width: 90%; /* Garde une marge interne dans le panneau */
+        word-wrap: break-word;
+        max-width: 90%;
     }
     .chat-title { min-height: 58px; padding: 0 76px 0 22px; display:flex; align-items:center; justify-content:center; color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: clamp(15px, 1.8vw, 18px); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; box-sizing: border-box; }
     .chat-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(31,54,92,0.52); font-style: italic; padding: 22px; }
@@ -386,6 +438,21 @@ var lastStatus = '';
 var STATUS_LISTENING_TEXT = "__STATUS_LISTENING__";
 var STATUS_SPEAKING_TEXT = "__STATUS_SPEAKING__";
 var STATUS_WAITING_TEXT = "__STATUS_WAITING__";
+var MAX_CHAT_BUBBLES = 4;
+function trimChatHistory(container) {
+  if (!container) return;
+  var bubbles = [];
+  for (var i = 0; i < container.childNodes.length; i++) {
+    var node = container.childNodes[i];
+    if (node.nodeType === 1 && node.className && node.className.indexOf('bubble') !== -1) {
+      bubbles.push(node);
+    }
+  }
+  while (bubbles.length > MAX_CHAT_BUBBLES) {
+    var old = bubbles.shift();
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+  }
+}
 function appendBubble(className, html) {
   var container = document.getElementById('chat-container');
   if (!container) return;
@@ -395,6 +462,7 @@ function appendBubble(className, html) {
   div.className = className;
   div.innerHTML = html;
   container.appendChild(div);
+  trimChatHistory(container);
   container.scrollTop = container.scrollHeight;
 }
 function startPolling() {
@@ -412,6 +480,8 @@ function startPolling() {
             while (lastChild && lastChild.nodeType !== 1) { lastChild = lastChild.previousSibling; }
             if (lastChild && lastChild.className && lastChild.className.indexOf('robot-bubble') !== -1) {
                 lastChild.innerHTML = data.robot;
+                trimChatHistory(container);
+                container.scrollTop = container.scrollHeight;
             } else {
                 appendBubble('bubble robot-bubble', data.robot);
             }
@@ -564,7 +634,7 @@ def render_catalogue():
         "<div style='color:#ECF4F8; opacity:0.72; font-style:italic;'>Aucune fiche dans le catalogue pour le moment.</div>",
         "</div>",
         "<div style='position:fixed; right:0; top:0; bottom:0; width:260px; border-left:1px solid rgba(255,255,255,0.08);'>",
-        "<div class='welcome-bubble' style='top:160px; left:20px;'>Je ne peux pas discuter pendant une activité.</div>",
+        "<div class='welcome-bubble' style='top:240px; left:20px;'>Je ne peux pas discuter pendant une activité.</div>",
         "<img src='/images/pepperMuted.png' style='position:absolute; bottom:0; left:8px; width:240px; max-height:70%; object-fit:contain;'>",
         "</div>",
         "</div></body></html>"
@@ -581,14 +651,21 @@ def _build_question_say_text(q):
 def render_quiz(speak_question=True):
     if state.quiz_index < len(QUESTIONS):
         q = QUESTIONS[state.quiz_index]
-        good_msg = q.get("good", "Bonne reponse !")
+        good_msg = q.get("good", "Bonne réponse !")
         bad_msgs = q.get("bad", [])
         bad_json = json.dumps(bad_msgs)
         parts = [
             "<html><head><meta charset='utf-8'>", COMMON_CSS,
-            "<style>.btn-answer { width: 45%; font-size: 24px; min-height: 100px; transition: background-color 0.2s; }",
-            "#feedback-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:5000; flex-direction:column; align-items:center; justify-content:center; }",
-            "#feedback-text { font-size:36px; font-weight:bold; padding:30px 50px; border-radius:20px; max-width:80%; text-align:center; }</style>",
+            "<style>",
+            "  .btn-answer { width: 100%; box-sizing: border-box; font-size: 20px; font-weight: bold; height: 62px; transition: background-color 0.2s, color 0.2s, border-color 0.2s; background: white; color: #1F365C; border: 2px solid #18C6D9 !important; margin: 0 0 14px 0 !important; border-radius: 30px !important; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; box-shadow: none !important; text-decoration: none; }",
+            "  .btn-answer:last-child { margin-bottom: 0 !important; }",
+            "  .btn-answer:active { transform: scale(0.99); background: #f0f8fa; }",
+            "  #feedback-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:5000; flex-direction:column; align-items:center; justify-content:center; }",
+            "  #feedback-text { font-size:36px; font-weight:bold; padding:30px 50px; border-radius:20px; max-width:80%; text-align:center; }",
+            "  .quiz-back-btn { position: fixed; top: 96px; left: 24px; z-index: 1110; padding: 10px 24px; font-size: 15px; font-weight: bold; color: white; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 20px; text-decoration: none; transition: background 0.2s; }",
+            "  .quiz-back-btn:active { background: rgba(255, 255, 255, 0.2); }",
+            "  .hamburger span { background-color: " + THEME_SURFACE + "; !important; }",
+            "</style>",
             "<script>",
             "var answered = false;",
             "var goodMsg = " + json.dumps(good_msg) + ";",
@@ -599,13 +676,13 @@ def render_quiz(speak_question=True):
             "  var overlay = document.getElementById('feedback-overlay');",
             "  var fbText = document.getElementById('feedback-text');",
             "  if (idx == correctIdx) {",
-            "    btn.style.backgroundColor = '#2ecc71'; btn.style.color = 'white';",
+            "    btn.style.backgroundColor = '#2ecc71'; btn.style.color = 'white'; btn.style.borderColor = '#2ecc71';",
             "    overlay.style.background = 'rgba(46,204,113,0.92)';",
             "    fbText.innerText = goodMsg;",
             "  } else {",
-            "    btn.style.backgroundColor = '#e74c3c'; btn.style.color = 'white';",
+            "    btn.style.backgroundColor = '#e74c3c'; btn.style.color = 'white'; btn.style.borderColor = '#e74c3c';",
             "    overlay.style.background = 'rgba(231,76,60,0.92)';",
-            "    var msg = (badMsgs && badMsgs[idx]) ? badMsgs[idx] : 'Mauvaise reponse !';",
+            "    var msg = (badMsgs && badMsgs[idx]) ? badMsgs[idx] : 'Mauvaise réponse !';",
             "    fbText.innerText = msg;",
             "  }",
             "  overlay.style.display = 'flex';",
@@ -613,16 +690,30 @@ def render_quiz(speak_question=True):
             "}",
             "</script></head><body>", HEADER_HTML,
             "<div id='feedback-overlay'><div id='feedback-text' style='color:white;'></div></div>",
-            "<div class='container'>",
-            "<br>"
-            "<h1 style='flex-shrink:0; max-height:30%; overflow-y:auto; font-size:36px; margin:20px 0; margin-bottom:60px; color:white;'>" + q["text"] + "</h1>",
-            "<div style='flex:1; display:flex; flex-wrap:wrap; align-content:flex-start; justify-content:center; width:100%; overflow-y:auto; padding-bottom:25px; gap:15px;'>"
+            "<a class='quiz-back-btn' href='/menu'>← Retour au menu</a>",            
+            "<div style='position:fixed; top:80px; right:12px; z-index:1200; display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:horizontal; -webkit-box-direction:normal; -webkit-flex-direction:row; flex-direction:column; -webkit-box-align:center; -webkit-align-items:center; align-items:flex-end; margin-bottom:6px;'>",
+            "  <div style='background:white; color:#1F365C; padding:10px 22px; border-radius:24px; font-weight:bold; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.15); border:1px solid rgba(0,0,0,0.05); white-space:nowrap;'>",
+            "    Je ne peux pas t'écouter pendant l'activité.",
+            "  </div>",
+            "  <div>",
+            "  <img src='/images/pepperHeadMuted.png' onerror=\"this.src='/images/pepperMuted.png'\" style='width:90px; height:90px; object-fit:contain;'>",
+            "  </div>",
+            "</div>",            
+            '<div class="container" style="background-color: transparent; padding: 165px 30px 24px 30px; height: 100vh; box-sizing: border-box; justify-content: center;">',            
+            '  <div class="surface-panel" style="width:100%; height:100%; padding:30px 45px 24px; box-sizing:border-box; display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; -webkit-box-align:center; -webkit-align-items:center; align-items:center; border-radius:36px; box-shadow:0 16px 36px rgba(0,0,0,0.22); overflow:hidden;">',
+            '    <h1 style="font-size: 50px; margin: 0 0 14px 0; color: #18C6D9; letter-spacing: 4px; font-weight:800; text-shadow:none;">QUIZ AVEC MIROKA</h1>',
+            '    <h2 style="font-size: 26px; font-weight: normal; margin: 0 0 28px 0; color: #1F365C; line-height:1.2;">' + q['text'] + '</h2>',
+            '    <div style="display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; width: 100%; max-width: 820px; -webkit-box-flex:1; -webkit-flex:1; flex:1; -webkit-box-pack:center; -webkit-justify-content:center; justify-content:center; box-sizing:border-box;">'
         ]
+        
         for i, ans in enumerate(q["answers"]):
             correct_idx = q["correct"]
-            parts.append("<div class='btn btn-answer' style='margin:0; margin-right:10px; margin-bottom:10px; padding:10px; font-size:22px; min-height:80px; width:40%; border-radius:20px;' onclick='clickAns(this, " + str(i) + ", " + str(correct_idx) + ")'>" + ans + "</div>")
-        parts.append("</div><p style='margin:5px 0; flex-shrink:0; font-size:20px;'>Question " + str(state.quiz_index + 1) + "/" + str(len(QUESTIONS)) + "</p>")
-        parts.append("<a class='btn' href='/menu' style='margin-bottom:20px;'>Quitter</a></div></body></html>")
+            parts.append("      <div class='btn btn-answer' onclick='clickAns(this, " + str(i) + ", " + str(correct_idx) + ")'>" + ans + "</div>")
+        
+        parts.append("    </div>")
+        parts.append("    <p style='margin:16px 0 0 0; flex-shrink:0; font-size:18px; color:#1F365C; font-weight:bold;'>Question " + str(state.quiz_index + 1) + "/" + str(len(QUESTIONS)) + "</p>")
+        parts.append("  </div>")
+        parts.append("</div></body></html>")
 
         if speak_question:
             threading.Thread(target=action_say, args=(_build_question_say_text(q),)).start()
@@ -631,14 +722,17 @@ def render_quiz(speak_question=True):
         score_txt = str(state.quiz_score) + " sur " + str(len(QUESTIONS))
         parts = [
             "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
-            "<div class='container' style='justify-content:center; padding:100px 30px;'>",
-            "<h1 style='font-size:36px; margin-bottom:20px;'>Quiz termin\u00e9 !</h1>",
-            "<div style='font-size:70px; color:#2ecc71; font-weight:bold; margin:20px 0;'>" + score_txt + "</div>",
-            "<p style='font-size:22px; max-width:80%; line-height:1.6; margin:20px auto;'>" + QUIZ_END_TEXT.replace(". ", ".<br>") + "</p>",
-            "<div style='display:flex; flex-direction:column; gap:20px; margin-top:20px;'>",
-            "<a class='btn btn-green' href='/quiz/start' style='width:300px;' onclick=\"this.href='/quiz/start?t=' + new Date().getTime()\">Recommencer</a>",
-            "<a class='btn' href='/menu' style='width:300px;'>Menu principal</a>",
-            "</div></div></body></html>"
+            "<div class='container' style='justify-content:center; padding:40px 40px;'>",
+            "  <div class='surface-panel' style='width:100%; max-width:680px; padding:40px; border-radius:36px; box-shadow:0 16px 36px rgba(0,0,0,0.22); display:flex; flex-direction:column; align-items:center;'>",
+            "    <h1 style='font-size:38px; margin-top:0; margin-bottom:15px;'>Quiz terminé !</h1>",
+            "    <div style='font-size:72px; color:#2ecc71; font-weight:bold; margin:15px 0;'>" + score_txt + "</div>",
+            "    <p style='font-size:20px; max-width:90%; line-height:1.5; margin:15px auto; color:#1F365C; font-weight:500;'>" + QUIZ_END_TEXT.replace(". ", ".<br>") + "</p>",
+            "    <div style='display:flex; flex-direction:column; gap:12px; margin-top:20px; width:100%; align-items:center;'>",
+            "      <a class='btn btn-green' href='/quiz/start' style='width:260px; border-radius:22px; font-size:18px;' onclick=\"this.href='/quiz/start?t=' + new Date().getTime()\">Recommencer</a>",
+            "      <a class='btn' href='/menu' style='width:260px; border-radius:22px; font-size:18px; color:var(--background);'>Menu principal</a>",
+            "    </div>",
+            "  </div>",
+            "</div></body></html>"
         ]
         threading.Thread(target=action_say, args=(QUIZ_END_TEXT,)).start()
         return "".join(parts)
@@ -733,6 +827,30 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             print("[VOLUME] ECHEC total - verifier robot_ip et connexion NaoQI")
         return done
 
+    def _get_robot_status(self):
+        status = {"connected": False, "battery": "N/D", "volume": None}
+        if _ALProxy and ROBOT_IP_GLOBAL:
+            try:
+                status["battery"] = str(_ALProxy("ALBattery", ROBOT_IP_GLOBAL, 9559).getBatteryCharge()) + "%"
+                status["connected"] = True
+            except Exception as e:
+                print("[STATUS] Batterie ALProxy echec: " + str(e))
+            try:
+                status["volume"] = _ALProxy("ALAudioDevice", ROBOT_IP_GLOBAL, 9559).getOutputVolume()
+                status["connected"] = True
+            except Exception as e:
+                print("[STATUS] Volume ALProxy echec: " + str(e))
+        if session_global:
+            try:
+                if status["battery"] == "N/D":
+                    status["battery"] = str(session_global.service("ALBattery").getBatteryCharge()) + "%"
+                if status["volume"] is None:
+                    status["volume"] = session_global.service("ALAudioDevice").getOutputVolume()
+                status["connected"] = True
+            except Exception as e:
+                print("[STATUS] qi.Session echec: " + str(e))
+        return status
+
     def do_GET(self):
         try:
             # 0. Volume via GET  (/setvolume?v=70)
@@ -774,7 +892,18 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.wfile.write(gif1px)
                 return
 
-            # 1. Racine → menu principal directement
+            if self.path.startswith("/robotstatus"):
+                payload = json.dumps(self._get_robot_status())
+                if sys.version_info[0] >= 3:
+                    payload = payload.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-type", "application/json; charset=utf-8")
+                self.send_header("Cache-Control", "no-cache, no-store")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+                return
+
             if self.path == "/" or self.path == "/index.html":
                 set_app_mode("chat")
                 self.send_response(302)
@@ -805,15 +934,11 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             # 3. Fichiers statiques du module VEOLIA
             if self.path.startswith("/veolia/"):
-                fpath = self.path[1:] # Retire le premier '/'
+                fpath = self.path[1:]
                 if ".." in fpath: return
                 if os.path.exists(fpath) and os.path.isfile(fpath):
-                    
-                    # --- GESTION DE L'IA DANS LES PRESENTATIONS ---
-                    # Des qu'une page HTML de Veolia est chargee, on force l'IA a s'allumer
                     if fpath.endswith(".html") or "." not in fpath:
                         set_app_mode("chat")
-                    # ----------------------------------------------
 
                     with open(fpath, "rb") as f:
                         content_bytes = f.read()
@@ -834,7 +959,6 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     self.end_headers()
                 return
 
-            # 4. Polling chat IA
             if self.path.startswith('/poll'):
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
@@ -851,19 +975,18 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.wfile.write(out.encode('utf-8') if sys.version_info[0] >= 3 else out)
                 return
             
-            # 5. Pages de l'application Pepper (Menu, Chat, Quiz)
             content = ""
             if self.path == "/menu": 
-                set_app_mode("chat") # IA active sur le menu principal
+                set_app_mode("chat")
                 content = render_menu()
                 
             elif self.path.startswith("/ai_module"): 
                 state.chat_status = "waiting"
-                set_app_mode("chat") # IA active dans la page chat
+                set_app_mode("chat")
                 content = render_chat()
                 
             elif self.path.startswith("/quiz"):
-                set_app_mode("quiz") # SEUL ENDROIT OU L'IA EST COUPEE !
+                set_app_mode("quiz")
                 
                 speak = True
                 if "/start" in self.path: 
@@ -962,7 +1085,6 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.wfile.write(b"OK" if sys.version_info[0] >= 3 else "OK")
 
             elif self.path == "/setvolume":
-                # Compatibilite ancienne version (POST) — redirige vers la logique GET
                 length_str = self.headers.get('Content-Length', '0')
                 length = int(length_str) if length_str else 0
                 if length > 0:
@@ -1016,7 +1138,6 @@ def main():
             try:
                 tab = session_global.service("ALTabletService")
                 
-                # Detection IP PC pour l'URL
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 try:
                     s.connect(("8.8.8.8", 80))

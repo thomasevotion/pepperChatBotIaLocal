@@ -377,9 +377,9 @@ class DialogueModule(naoqi.ALModule):
         
         if self.app_mode not in ["quiz", "quizz"]:
             # Tous les modes SAUF quiz → Pepper ecoute et repond
-            if self.app_mode == "chat":
+            #if self.app_mode == "chat":
                 # Restaurer l'historique sur la tablette quand on revient en mode chat
-                self.restore_history_to_tablet()
+                #self.restore_history_to_tablet()
                 
             if not self.force_recog_disabled:
                 self.listen(True)
@@ -632,7 +632,7 @@ class DialogueModule(naoqi.ALModule):
     def laugh(self):
         try:
             beh = ALProxy("ALBehaviorManager", self.strNaoIp, ROBOT_PORT)
-            beh.runBehavior("animations/Stand/Emotions/Positive/Laugh_1")
+            beh.runBehavior("animations/Stand/Emotions/Positive/Laugh_2")
         except Exception as e:
             print(u"[LAUGH] Echec behavior: " + str(e))
 
@@ -657,13 +657,13 @@ class DialogueModule(naoqi.ALModule):
         # resolution : 0=160x120, 1=320x240
         strategies = [
             # --- API ancienne (subscribe) : compatible avec toutes les versions ---
-            ('old', 13, 1, None, "old-API BGR 320x240"),
-            ('old', 11, 1, None, "old-API RGB 320x240"),
-            ('old', 13, 0, None, "old-API BGR 160x120"),
+            # ('old', 13, 1, None, "old-API BGR 320x240"),
+            # ('old', 11, 1, None, "old-API RGB 320x240"),
+            # ('old', 13, 0, None, "old-API BGR 160x120"),
             # --- API nouvelle (subscribeCamera) avec camera 0 (top) puis 1 (bas) ---
             ('new', 13, 1, 0,   "new-API cam0 BGR 320x240"),
-            ('new', 11, 1, 0,   "new-API cam0 RGB 320x240"),
-            ('new', 13, 1, 1,   "new-API cam1 BGR 320x240"),
+            # ('new', 11, 1, 0,   "new-API cam0 RGB 320x240"),
+            # ('new', 13, 1, 1,   "new-API cam1 BGR 320x240"),
         ]
 
         try:

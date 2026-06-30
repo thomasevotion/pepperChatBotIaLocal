@@ -15,14 +15,14 @@
     "textOnPrimary": "#FFFFFF"
   },
   "home": {
-    "greeting": "Salut ! Je suis Pepper,\nPrêt à apprendre et jouer avec toi",
+    "greeting": "Salut ! Je suis Pepper,\nPrêt à discuter et jouer avec toi",
     "chatTitle": "DISCUSSION AVEC PEPPER",
     "chatPlaceholder": "Parlez à Pepper pour démarrer la discussion..."
   },
   "status": {
-    "listening": "🎙️ Vous pouvez parler",
+    "listening": "Vous pouvez parler !",
     "speaking": "🔊 Attendez, c'est au tour de Pepper de parler",
-    "waiting": "🎙️ Vous pouvez parler"
+    "waiting": "Veuillez patienter"
   },
   "activities": [
     {
