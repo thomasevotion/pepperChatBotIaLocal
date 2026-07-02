@@ -36,6 +36,10 @@ class OaiClient:
         self.name = name
         self.user = user
         self.context = zmq.Context()
+        # emotion_tag choisi par le LLM pour le tour de dialogue en cours (voir respond_stream) :
+        # deja connu des le premier chunk recu, module_dialogue.py peut le lire immediatement
+        # pour lancer l'animation en parallele du TTS.
+        self.last_emotion_tag = None
 
         self.log = None
         if user:
@@ -79,6 +83,8 @@ class OaiClient:
 
         while True:
             r = self.send({'next_chunk': True})
+            if 'emotion_tag' in r:
+                self.last_emotion_tag = r['emotion_tag']
             if r.get('stream_finished'):
                 break
             if r.get('error'):

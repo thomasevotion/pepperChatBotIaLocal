@@ -116,12 +116,16 @@ class GoogleSTTServer:
                 ]
             )
             
-            # config single_utterance=True permet de dire à Google de s'arrêter dès qu'une phrase est finie
-            # Mais ici on veut contrôler manuellement via le client
+            # single_utterance=False: la fin de la phrase est décidée uniquement par la fermeture
+            # du socket côté client (cf. request_generator). Avec single_utterance=True, Google
+            # gère son propre endpointing en parallèle de celui du client, et les deux détections
+            # entrent en concurrence: si le client ferme le socket juste avant que l'endpointer de
+            # Google n'ait fini, Google renvoie un FINAL avec un transcript tronqué/vide au lieu
+            # d'une vraie erreur.
             streaming_config = speech.StreamingRecognitionConfig(
                 config=config,
                 interim_results=True,
-                single_utterance=True  # Ajoute cette ligne !
+                single_utterance=False
             )
 
             # Lancer la reconnaissance
@@ -148,7 +152,7 @@ class GoogleSTTServer:
                 last_language_code = language_code
                 
                 # Gestion des résultats
-                if result.is_final:
+                if result.is_final and transcript.strip():
                     print(f"FINAL [{language_code}]: {transcript}")
                     msg = "FINAL_JSON:" + json.dumps({
                         "transcript": transcript,
@@ -157,12 +161,18 @@ class GoogleSTTServer:
                     # Envoyer la taille (4 bytes) puis le message
                     # msg_bytes = msg.encode('utf-8')
                     # client_socket.send(len(msg_bytes).to_bytes(4, 'big') + msg_bytes)
-                    
+
                     # Simplification: Protocole texte simple avec séparateur, car Python 2.7 struct est chiant
                     # On envoie juste le texte brut utf-8. Le client lira tout.
                     client_socket.send(msg.encode('utf-8'))
                     sent_final = True
-                    
+
+                elif result.is_final:
+                    # Final vide/tronqué (race entre l'endpointing de Google et la fermeture du
+                    # socket côté client) : on l'ignore et on laisse le fallback last_partial
+                    # prendre le relais en fin de fonction.
+                    print(f"FINAL [{language_code}] vide, ignoré (fallback sur last_partial)")
+
                 else:
                     # Resultat partiel (interim)
                     last_partial = transcript

@@ -30,6 +30,7 @@ import threading
 import naoqi
 from naoqi import ALProxy
 from oaichat.oaiclient import OaiClient
+import animation_selector
 
 # --- Configuration camera ---
 # Mettre a False pour desactiver completement l'envoi d'image a Gemini
@@ -915,15 +916,35 @@ class DialogueModule(naoqi.ALModule):
         t = re.sub(ur'\s+', u' ', t).strip()
         return t
 
-    def handle_streaming_response(self, input_text, image_data=None):
+    def _trigger_emotion_animation(self):
+        """Lance (thread non-bloquant) l'emotion_tag choisi par le LLM lui-meme pour ce tour
+        de dialogue (voir oaichat/openaichat.py:respond_stream, qui recoit le catalogue
+        tag/description_courte dans son prompt systeme et renvoie {"speech","emotion_tag"}).
+        Si emotion_tag est absent/invalide, on ne lance rien : ALAnimatedSpeech (self.aup)
+        genere deja un geste de parole neutre standard (bras qui bougent) a chaque say(),
+        c'est le fallback par defaut, pas un pool aleatoire d'emotions."""
+        try:
+            tag = getattr(chatbot, 'last_emotion_tag', None)
+            if not animation_selector.is_valid_tag(tag):
+                return
+            print(u"[ANIM] emotion_tag choisi par le LLM (parallele au TTS): " + tag)
+            t_reac = threading.Thread(target=animation_selector.play_animation,
+                                       args=(self.strNaoIp, ROBOT_PORT, tag))
+            t_reac.daemon = True
+            t_reac.start()
+        except Exception as e_anim:
+            print(u"[ANIM] Erreur lancement emotion_tag: " + str(e_anim))
+
+    def handle_streaming_response(self, input_text, image_data=None, skip_reactive_animation=False):
         full_answer = u""
         sentence_buffer = u""
         print(">> ROBOT streaming...")
-        
+
         self.setEyeColor("purple")
         update_tablet_interface(None, u"...", status="robotspeaking")
         last_task_id = None
-        
+        reactive_triggered = skip_reactive_animation
+
         try:
             for chunk in chatbot.respond_stream(input_text, image_data=image_data):
                 chunk = repair_mojibake(chunk)
@@ -966,6 +987,9 @@ class DialogueModule(naoqi.ALModule):
                     
                     if len(mots_seulement) > 1:
                         last_task_id = self.speak_async(clean_sentence)
+                        if not reactive_triggered:
+                            reactive_triggered = True
+                            self._trigger_emotion_animation()
 
             # Fin du flux (derniers mots restants dans le buffer)
             if sentence_buffer:
@@ -975,12 +999,15 @@ class DialogueModule(naoqi.ALModule):
                     try:
                         self.aup.wait(last_task_id, 0)
                     except Exception: pass
-                
+
                 import re as reg_test2
                 mots_seulement = reg_test2.sub(ur'[^\w\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\u0600-\u06ff]', u'', clean_sentence)
-                
+
                 if len(mots_seulement) > 1:
                     last_task_id = self.speak_async(clean_sentence)
+                    if not reactive_triggered:
+                        reactive_triggered = True
+                        self._trigger_emotion_animation()
                     
                 print("") # Retour a la ligne dans la console
                 
@@ -1097,7 +1124,15 @@ class DialogueModule(naoqi.ALModule):
                 ai_input = message_str
                 if requested_tts_language:
                     ai_input = message_str + u"\n\nInstruction systeme: reponds uniquement en " + requested_tts_language + u"."
-                
+                else:
+                    # Renforce la langue detectee par le STT au plus pres de la generation (voir
+                    # oaichat/openaichat.py:LANGUAGE_PRIORITY_INSTRUCTION) : sans ce hint par tour,
+                    # le LLM doit deviner la langue depuis le seul texte utilisateur, ce qui echoue
+                    # par intermittence une fois le prompt systeme alourdi par le catalogue
+                    # d'animations (voir tests de la PR).
+                    ai_input = message_str + u"\n\n(Langue detectee : {}. Reponds dans cette langue.)".format(
+                        self.current_tts_language)
+
                 # L'image n'est envoyee a Gemini QUE si l'utilisateur demande explicitement
                 # une description visuelle. Sinon Gemini decrit l'environnement sur chaque
                 # message meme quand c'est hors-sujet (ex: "Spotify", "volume 50").
@@ -1151,15 +1186,21 @@ class DialogueModule(naoqi.ALModule):
                     except Exception as e_spk:
                         print(u"[WAVE] Erreur speak: " + str(e_spk))
                 elif u"blague" in message_lower or u"rigole" in message_lower or u"rire" in message_lower:
-                    self.handle_streaming_response(ai_input, image_data=image_data)
+                    self.handle_streaming_response(ai_input, image_data=image_data, skip_reactive_animation=True)
                     self.laugh()
                 elif u"bonjour" in message_lower or u"salut" in message_lower or u"hello" in message_lower:
                     # Geste coucou SIMULTANE a la parole (thread daemon)
                     t_wave = threading.Thread(target=self.wave)
                     t_wave.daemon = True
                     t_wave.start()
-                    self.handle_streaming_response(ai_input, image_data=image_data)
+                    self.handle_streaming_response(ai_input, image_data=image_data, skip_reactive_animation=True)
                 else:
+                    # Les demandes explicites d'animation (ex: "montre tes muscles", "chante
+                    # joyeux anniversaire") et les reactions emotionnelles au contenu du message
+                    # sont desormais choisies ensemble par le LLM, dans le meme appel Gemini que
+                    # la reponse parlee, quelle que soit la langue (voir
+                    # oaichat/openaichat.py:respond_stream). _trigger_emotion_animation lance
+                    # l'animation correspondante des que la 1ere phrase est prete a etre dite.
                     self.handle_streaming_response(ai_input, image_data=image_data)
                     
         except Exception as e_main:
