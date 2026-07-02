@@ -1033,7 +1033,7 @@ class DialogueModule(naoqi.ALModule):
             ])
             if not session_dead:
                 try:
-                    self.speak("Desole, j'ai eu un probleme technique.")
+                    self.speak("Désolé, j'ai eu un problème technique.")
                 except Exception:
                     pass
             
@@ -1111,9 +1111,9 @@ class DialogueModule(naoqi.ALModule):
                 if self.misunderstandings == 1:
                     answer = u"Je n'ai pas compris, peux-tu repeter ?"
                 elif self.misunderstandings == 2:
-                    answer = u"Desole, je n'ai pas compris. Pourrais-tu repeter encore ?"
+                    answer = u"Désolé, je n'ai pas compris. Pourrais-tu repèter encore ?"
                 else:
-                    answer = u"Aujourd'hui j'ai des difficultes a comprendre, desole."
+                    answer = u"Aujourd'hui j'ai des difficultes a comprendre, désole."
                 
                 print(u"ERREUR, REPONSE PAR DEFAUT: " + answer)
                 update_tablet_interface(None, answer)
@@ -1207,7 +1207,7 @@ class DialogueModule(naoqi.ALModule):
             # Capturer toutes les exceptions non gerees pour eviter un crash silencieux
             print(u"[ERREUR processRemote] Exception non geree: " + repr(e_main))
             try:
-                self.speak(u"Desole, j'ai eu un probleme. Repete ta question.")
+                self.speak(u"Désolé, j'ai eu un probleme. Répéte ta question.")
             except Exception:
                 pass
         finally:

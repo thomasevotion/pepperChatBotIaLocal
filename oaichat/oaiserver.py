@@ -90,7 +90,7 @@ class OaiServer(OaiChat):
                             # 503 UNAVAILABLE, 429 quota, etc. → ne pas planter le serveur
                             print("Erreur respond Gemini (non-stream):", e_respond)
                             response['error'] = str(e_respond)
-                            response['response'] = "Desole, Gemini est temporairement indisponible."
+                            response['response'] = "Désole, Gemini est temporairement indisponible."
 
                 elif 'next_chunk' in i:
                     if self.stream_generator:
