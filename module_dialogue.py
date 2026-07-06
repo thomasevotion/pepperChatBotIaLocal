@@ -152,6 +152,17 @@ def safedecode(s):
     else:
         return unicode(s)
 
+def safe_print(text):
+    """print() qui ne plante jamais sur un caractere absent du codepage de la console
+    (ex: 'oe' est present dans cp437 mais pas 'oe' ligature/'œ' -> UnicodeEncodeError).
+    Utilise pour tout texte libre (parole utilisateur, reponse LLM) dont le contenu
+    n'est pas maitrise."""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        enc = sys.stdout.encoding or 'ascii'
+        print(safedecode(text).encode(enc, 'replace'))
+
 def repair_mojibake(text):
     """Repare les textes UTF-8 parfois interpretes comme CP437 par la chaine Python 2/ZMQ."""
     text_u = safedecode(text)
@@ -805,7 +816,7 @@ class DialogueModule(naoqi.ALModule):
                     if comment:
                         comment_clean = comment.strip()
                         if comment_clean.upper() != u"RIEN" and len(comment_clean) > 8:
-                            print(u"[ENV] >>> Commentaire spontane: " + comment_clean)
+                            safe_print(u"[ENV] >>> Commentaire spontane: " + comment_clean)
                             self._last_speech_time = time.time()
                             # Couper le micro AVANT de parler pour eviter que Pepper
                             # s'entende et se reponde a lui-meme
@@ -1054,7 +1065,7 @@ class DialogueModule(naoqi.ALModule):
                 self.listen(True)
 
     def processRemote(self, signalName, message):
-        print("DEBUG_RAW_RECEIVE: Signal: {} Content: {}".format(signalName, message))
+        safe_print("DEBUG_RAW_RECEIVE: Signal: {} Content: {}".format(signalName, message))
         
         # Bloquer uniquement en mode quiz ; tous les autres modes → on traite
         if self.app_mode in ["quiz", "quizz"]:
@@ -1096,7 +1107,7 @@ class DialogueModule(naoqi.ALModule):
                 
             self.log.write(u"INP: " + message_str + u"\n")
             self.listen(False)
-            print(u"USER: " + message_str)
+            safe_print(u"USER: " + message_str)
             self._last_speech_time = time.time()  # L'user parle → reset timer de silence
 
             self._ai_user_message_count += 1
@@ -1166,7 +1177,7 @@ class DialogueModule(naoqi.ALModule):
                     ))
                 
                 if u"danse" in message_lower or u"dance" in message_lower or u"danser" in message_lower:
-                    print(u"[DANCE] Mot-cle detecte dans: " + message_lower)
+                    safe_print(u"[DANCE] Mot-cle detecte dans: " + message_lower)
                     answer = u"Je danse pour vous !"
                     update_tablet_interface(None, answer)
                     try:
@@ -1207,7 +1218,7 @@ class DialogueModule(naoqi.ALModule):
             # Capturer toutes les exceptions non gerees pour eviter un crash silencieux
             print(u"[ERREUR processRemote] Exception non geree: " + repr(e_main))
             try:
-                self.speak(u"Désolé, j'ai eu un probleme. Répéte ta question.")
+                self.speak(u"Désolé, j'ai eu un problème. Répéte ta question.")
             except Exception:
                 pass
         finally:

@@ -197,7 +197,7 @@
       ]
     },
     {
-      "tag": "Gesture/ComeOn_1",
+      "tag": "Gestures/ComeOn_1",
       "full_path": "animations/Stand/Gestures/ComeOn_1",
       "category": "gesture",
       "valence": "neutral",
@@ -903,7 +903,7 @@
       ]
     },
     {
-      "tag": "Gesture/Angry_3",
+      "tag": "Gestures/Angry_3",
       "full_path": "animations/Stand/Gestures/Angry_3",
       "category": "gesture",
       "valence": "negative",
@@ -942,7 +942,7 @@
       ]
     },
     {
-      "tag": "Gesture/BowShort_1",
+      "tag": "Gestures/BowShort_1",
       "full_path": "animations/Stand/Gestures/BowShort_1",
       "category": "gesture",
       "valence": "neutral",
@@ -976,7 +976,7 @@
       ]
     },
     {
-      "tag": "Gesture/BowShort_2",
+      "tag": "Gestures/BowShort_2",
       "full_path": "animations/Stand/Gestures/BowShort_2",
       "category": "gesture",
       "valence": "neutral",
@@ -1010,7 +1010,7 @@
       ]
     },
     {
-      "tag": "Gesture/BowShort_3",
+      "tag": "Gestures/BowShort_3",
       "full_path": "animations/Stand/Gestures/BowShort_3",
       "category": "gesture",
       "valence": "neutral",
@@ -1044,7 +1044,7 @@
       ]
     },
     {
-      "tag": "Gesture/CalmDown_1",
+      "tag": "Gestures/CalmDown_1",
       "full_path": "animations/Stand/Gestures/CalmDown_1",
       "category": "gesture",
       "valence": "neutral",
@@ -1075,8 +1075,8 @@
       ]
     },
     {
-      "tag": "Gesture/Desperate",
-      "full_path": "animations/Stand/Gestures/Desperate",
+      "tag": "Gestures/Desperate_1",
+      "full_path": "animations/Stand/Gestures/Desperate_1",
       "category": "gesture",
       "valence": "negative",
       "has_sound": false,
@@ -1105,7 +1105,7 @@
       ]
     },
     {
-      "tag": "Gesture/Far_3",
+      "tag": "Gestures/Far_3",
       "full_path": "animations/Stand/Gestures/Far_3",
       "category": "gesture",
       "valence": "neutral",
@@ -1136,8 +1136,8 @@
       ]
     },
     {
-      "tag": "Gesture/Kisses",
-      "full_path": "animations/Stand/Gestures/Kisses",
+      "tag": "Gestures/Kisses_1",
+      "full_path": "animations/Stand/Gestures/Kisses_1",
       "category": "gesture",
       "valence": "positive",
       "has_sound": false,
@@ -1168,7 +1168,7 @@
       ]
     },
     {
-      "tag": "Gesture/No_3",
+      "tag": "Gestures/No_3",
       "full_path": "animations/Stand/Gestures/No_3",
       "category": "gesture",
       "valence": "negative",
@@ -1198,7 +1198,7 @@
       ]
     },
     {
-      "tag": "Gesture/Reject_1",
+      "tag": "Gestures/Reject_1",
       "full_path": "animations/Stand/Gestures/Reject_1",
       "category": "gesture",
       "valence": "negative",
@@ -1230,8 +1230,8 @@
       ]
     },
     {
-      "tag": "Gesture/Show_Tablette_1",
-      "full_path": "animations/Stand/Gestures/Show_Tablette_1",
+      "tag": "Gestures/ShowTablet_1",
+      "full_path": "animations/Stand/Gestures/ShowTablet_1",
       "category": "gesture",
       "valence": "neutral",
       "has_sound": false,
@@ -1253,7 +1253,7 @@
       ]
     },
     {
-      "tag": "Gesture/Thinking_3",
+      "tag": "Gestures/Thinking_3",
       "full_path": "animations/Stand/Gestures/Thinking_3",
       "category": "gesture",
       "valence": "neutral",
@@ -1282,8 +1282,8 @@
       ]
     },
     {
-      "tag": "Gesture/YouKnowWhat81",
-      "full_path": "animations/Stand/Gestures/YouKnowWhat81",
+      "tag": "Gestures/YouKnowWhat_1",
+      "full_path": "animations/Stand/Gestures/YouKnowWhat_1",
       "category": "gesture",
       "valence": "neutral",
       "has_sound": false,
