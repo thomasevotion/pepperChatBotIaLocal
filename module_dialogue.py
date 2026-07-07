@@ -1110,6 +1110,9 @@ class DialogueModule(naoqi.ALModule):
             safe_print(u"USER: " + message_str)
             self._last_speech_time = time.time()  # L'user parle → reset timer de silence
 
+            global last_interaction_time
+            last_interaction_time = time.time()  # Reset du timeout d'inactivite (sortie du process)
+
             self._ai_user_message_count += 1
             
             # Ajout a l'historique local
@@ -1300,9 +1303,16 @@ def main():
     dialogueModule = DialogueModule("dialogueModule", pip)
     dialogueModule.start()
 
+    global last_interaction_time
+    last_interaction_time = time.time()
+
     try:
         while True:
             time.sleep(1)
+
+            if (time.time() - last_interaction_time) > 60:
+                print("[TIMEOUT] 60 seconds of inactivity detected. Closing dialogue module.")
+                sys.exit(0)
     except KeyboardInterrupt:
         print(u"Interrompu par l'utilisateur, extinction...")
         myBroker.shutdown()

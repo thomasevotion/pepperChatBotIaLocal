@@ -66,9 +66,9 @@ echo [4/5] Module reconnaissance vocale...
 start "PepperChat SpeechRecog" cmd /k "title PepperChat SpeechRecog && %PY2% module_speechrecognition.py --pip %ROBOT_IP%"
 timeout /t 3 /nobreak >nul
 
-:: ETAPE 5 : Module dialogue principal
-echo [5/5] Module dialogue principal...
-start "PepperChat Dialogue" cmd /k "title PepperChat Dialogue && echo 2 | %PY2% module_dialogue.py --pip %ROBOT_IP%"
+:: ETAPE 5 : Module Navigation et Dialogue
+echo [5/5] Module Navigation et Dialogue...
+start "PepperChat Navigation" cmd /k "title PepperChat Navigation && %PY2% pepper_navigation.py --pip %ROBOT_IP%"
 
 echo.
 echo ============================================================
@@ -79,7 +79,7 @@ echo    - STT Google        : fenetre PepperChat STT
 echo    - Serveur Gemini    : fenetre PepperChat Gemini
 echo    - Web Tablette      : fenetre PepperChat Web
 echo    - Speech Recognition: fenetre PepperChat SpeechRecog
-echo    - Dialogue NaoQI    : fenetre PepperChat Dialogue
+echo    - Navigation NaoQI  : fenetre PepperChat Navigation
 echo.
 echo  Pour tout arreter : STOP_APP.bat
 echo ============================================================
