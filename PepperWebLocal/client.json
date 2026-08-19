@@ -41,9 +41,9 @@
     },
     {
       "id": "CATALOG",
-      "label": "Catalogue",
+      "label": "Veolia",
       "icon": "📖",
-      "href": "/catalogue",
+      "href": "/veolia/presentation1.html",
       "enabled": true
     }
   ],
