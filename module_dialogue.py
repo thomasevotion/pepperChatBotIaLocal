@@ -18,6 +18,7 @@ import sys, os
 import codecs
 import socket
 import json
+import unicodedata
 
 try:
     import urllib2
@@ -29,6 +30,7 @@ import threading
 import naoqi
 from naoqi import ALProxy
 from oaichat.oaiclient import OaiClient
+import animation_selector
 
 # --- Configuration camera ---
 # Mettre a False pour desactiver completement l'envoi d'image a Gemini
@@ -37,13 +39,88 @@ CAMERA_ENABLED = True
 # On utilise 1 (320x240) : assez de detail, taille raisonnable
 CAMERA_RESOLUTION = 1
 # Intervalle en secondes entre deux captures automatiques
-CAMERA_INTERVAL = 10
+CAMERA_INTERVAL = 45
 
 # --- Commentaires proactifs sur l'environnement ---
 # Pepper observe la scene et fait spontanement un commentaire si quelque chose est notable
 ENV_COMMENT_ENABLED  = True  # Mettre False pour desactiver
-ENV_COMMENT_INTERVAL = 60    # Secondes entre deux tentatives de commentaire
-ENV_COMMENT_MIN_IDLE = 25    # Pepper parle seulement s'il est inactif depuis X secondes
+ENV_COMMENT_INTERVAL = 180   # Secondes entre deux tentatives de commentaire
+ENV_COMMENT_MIN_IDLE = 60    # Pepper parle seulement s'il est inactif depuis X secondes
+
+# --- Langues TTS NAOqi ---
+DEFAULT_STT_LANGUAGE_CODE = "fr-FR"
+DEFAULT_NAOQI_LANGUAGE = "French"
+BCP47_TO_NAOQI_LANGUAGE = {
+    "fr": "French",
+    "fr-fr": "French",
+    "en": "English",
+    "en-us": "English",
+    "en-gb": "English",
+    "es": "Spanish",
+    "es-es": "Spanish",
+    "de": "German",
+    "de-de": "German",
+    "it": "Italian",
+    "it-it": "Italian",
+    "ja": "Japanese",
+    "ja-jp": "Japanese",
+    "ar": "Arabic",
+    "ar-sa": "Arabic",
+    "zh": "Chinese",
+    "zh-cn": "Chinese",
+    "zh-tw": "Taiwanese",
+    "cs": "Czech",
+    "cs-cz": "Czech",
+    "da": "Danish",
+    "da-dk": "Danish",
+    "nl": "Dutch",
+    "nl-nl": "Dutch",
+    "fi": "Finnish",
+    "fi-fi": "Finnish",
+    "el": "Greek",
+    "el-gr": "Greek",
+    "ko": "Korean",
+    "ko-kr": "Korean",
+    "no": "Norwegian",
+    "nb": "Norwegian",
+    "nb-no": "Norwegian",
+    "pl": "Polish",
+    "pl-pl": "Polish",
+    "pt": "Portuguese",
+    "pt-pt": "Portuguese",
+    "pt-br": "Brazilian",
+    "ru": "Russian",
+    "ru-ru": "Russian",
+    "sv": "Swedish",
+    "sv-se": "Swedish",
+    "tr": "Turkish",
+    "tr-tr": "Turkish",
+}
+
+LANGUAGE_NAME_ALIASES = [
+    ("English",    [u"anglais", u"english", u"ingles", u"inglés", u"englisch", u"英語", u"英语", u"英文"]),
+    ("French",     [u"francais", u"français", u"french", u"frances", u"francés", u"franzosisch", u"französisch", u"francese", u"francés"]),
+    ("Japanese",   [u"japonais", u"japanese", u"japones", u"japonés", u"giapponese", u"japanisch", u"日本語", u"日本"]),
+    ("German",     [u"allemand", u"german", u"deutsch", u"aleman", u"alemán", u"tedesco"]),
+    ("Spanish",    [u"espagnol", u"spanish", u"espanol", u"español", u"castellano", u"spagnolo"]),
+    ("Italian",    [u"italien", u"italian", u"italiano", u"italienisch"]),
+    ("Arabic",     [u"arabe", u"arabic", u"arabe", u"arabisch", u"العربية", u"عربي"]),
+    ("Chinese",    [u"chinois", u"mandarin", u"chinese", u"中文", u"普通话", u"漢語", u"汉语"]),
+    ("Taiwanese",  [u"taiwanais", u"taiwanese", u"taiwan", u"台灣", u"台湾"]),
+    ("Czech",      [u"tcheque", u"tchèque", u"czech", u"cesky", u"česky", u"ceco"]),
+    ("Danish",     [u"danois", u"danish", u"dansk", u"danese"]),
+    ("Dutch",      [u"neerlandais", u"néerlandais", u"dutch", u"nederlands", u"hollandais", u"olandese"]),
+    ("Finnish",    [u"finnois", u"finnish", u"suomi", u"finlandese"]),
+    ("Greek",      [u"grec", u"greek", u"ellinika", u"ελληνικά", u"greco"]),
+    ("Korean",     [u"coreen", u"coréen", u"korean", u"hanguk", u"한국어", u"coreano"]),
+    ("Norwegian",  [u"norvegien", u"norvégien", u"norwegian", u"norsk", u"norvegese"]),
+    ("Polish",     [u"polonais", u"polish", u"polski", u"polaco", u"polacco"]),
+    ("Portuguese", [u"portugais", u"portuguese", u"portugues", u"português", u"portoghese"]),
+    ("Brazilian",  [u"bresilien", u"brésilien", u"brazilian", u"brasilien", u"brasileiro", u"brasiliano"]),
+    ("Russian",    [u"russe", u"russian", u"russkiy", u"русский", u"russo"]),
+    ("Swedish",    [u"suedois", u"suédois", u"swedish", u"svenska", u"svedese"]),
+    ("Turkish",    [u"turc", u"turkish", u"turkce", u"türkçe", u"turco"]),
+]
 
 # --- Corrections phonetiques TTS ---
 # Le moteur TTS de Pepper mispronounce certains mots.
@@ -57,6 +134,10 @@ TTS_PHONETIC_MAP = {
     u"Explorez":  u"Exploré",
     u"exploreur": u"exploreur",   # si le bug produit deja ce mot, on le laisse
     u"Véolia":    u"Véolia",      # force la prononciation avec accent
+    u"Just Dance" : u"Jeust dennsse",
+    u"photocall" : u"Photo kaulle",
+    u"Encore plus" : u"Encore plusse",
+    u"IATECH" : u"Iatech",
 }
 
 # --- Robust UTF-8 decoder ---
@@ -70,6 +151,42 @@ def safedecode(s):
             return unicode(s, errors='replace')
     else:
         return unicode(s)
+
+def safe_print(text):
+    """print() qui ne plante jamais sur un caractere absent du codepage de la console
+    (ex: 'oe' est present dans cp437 mais pas 'oe' ligature/'œ' -> UnicodeEncodeError).
+    Utilise pour tout texte libre (parole utilisateur, reponse LLM) dont le contenu
+    n'est pas maitrise."""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        enc = sys.stdout.encoding or 'ascii'
+        print(safedecode(text).encode(enc, 'replace'))
+
+def repair_mojibake(text):
+    """Repare les textes UTF-8 parfois interpretes comme CP437 par la chaine Python 2/ZMQ."""
+    text_u = safedecode(text)
+    suspicious_markers = [
+        u"Ò", u"Þ", u"Õ", u"µ", u"╬", u"╧", u"╨", u"Ð", u"Ñ", u"╟", u"├", u"┘", u"┙", u"┌"
+    ]
+    if not any(marker in text_u for marker in suspicious_markers):
+        return text_u
+
+    try:
+        repaired = text_u.encode('cp437').decode('utf-8')
+        # On garde la correction seulement si elle produit de vrais caracteres non latins.
+        if re.search(ur'[\u0370-\u03ff\u0400-\u04ff\u0600-\u06ff\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]', repaired):
+            return repaired
+    except Exception:
+        pass
+    return text_u
+
+def normalize_lang_text(text):
+    text = repair_mojibake(text).lower()
+    text = unicodedata.normalize('NFKD', text)
+    text = u"".join(ch for ch in text if not unicodedata.combining(ch))
+    text = re.sub(ur"[^\w\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\u0600-\u06ff]+", u" ", text, flags=re.UNICODE)
+    return re.sub(ur"\s+", u" ", text).strip()
 
 STARTPROMPT_PATH = os.getenv('DIALOGUE_STARTPROMPT_FILE')
 if STARTPROMPT_PATH and os.path.isfile(STARTPROMPT_PATH):
@@ -118,23 +235,20 @@ def update_tablet_interface(user_text, robot_text, status=None):
         
         data = {}
         if user_text is not None:
-            if isinstance(user_text, unicode):
-                data['user'] = user_text.encode('utf-8')
-            else:
-                data['user'] = str(user_text)
+            data['user'] = repair_mojibake(user_text)
                 
         if robot_text is not None:
-            if isinstance(robot_text, unicode):
-                data['robot'] = robot_text.encode('utf-8')
-            else:
-                data['robot'] = str(robot_text)
+            data['robot'] = repair_mojibake(robot_text)
                 
         if status is not None:
             data['status'] = status
             
         req = urllib2.Request(url)
         req.add_header('Content-Type', 'application/json')
-        response = urllib2.urlopen(req, json.dumps(data))
+        body = json.dumps(data, ensure_ascii=False)
+        if isinstance(body, unicode):
+            body = body.encode('utf-8')
+        response = urllib2.urlopen(req, body)
     except Exception as e:
         pass # On retire le print d'erreur pour ne pas polluer la console si la tablette n'est pas prete
 
@@ -151,6 +265,10 @@ class DialogueModule(naoqi.ALModule):
         self.app_mode = "menu"
         self.force_recog_disabled = False
         self.history = [] # Historique local de la conversation (User + Robot)
+        self.current_input_language_code = DEFAULT_STT_LANGUAGE_CODE
+        self.current_tts_language = DEFAULT_NAOQI_LANGUAGE
+        self._pending_recognition_message = None
+        self._ai_user_message_count = 0
         
         # Camera : derniere image capturee (mise a jour toutes les CAMERA_INTERVAL s)
         self.last_image = None
@@ -271,9 +389,9 @@ class DialogueModule(naoqi.ALModule):
         
         if self.app_mode not in ["quiz", "quizz"]:
             # Tous les modes SAUF quiz → Pepper ecoute et repond
-            if self.app_mode == "chat":
+            #if self.app_mode == "chat":
                 # Restaurer l'historique sur la tablette quand on revient en mode chat
-                self.restore_history_to_tablet()
+                #self.restore_history_to_tablet()
                 
             if not self.force_recog_disabled:
                 self.listen(True)
@@ -375,7 +493,64 @@ class DialogueModule(naoqi.ALModule):
         except Exception as e:
             print(u"Erreur leds : %s" % safedecode(e))
 
+    def _parse_recognition_payload(self, message):
+        """Accepte l'ancien texte brut et le nouveau JSON STT avec languageCode."""
+        message_u = safedecode(message).strip()
+        if not message_u.startswith(u"{"):
+            return message_u, None
+
+        try:
+            payload = json.loads(message_u)
+            text = repair_mojibake(payload.get("text", message_u)).strip()
+            language_code = payload.get("languageCode")
+            if language_code:
+                language_code = safedecode(language_code)
+            return text, language_code
+        except Exception as e:
+            print(u"[LANG] Payload STT non JSON, fallback texte brut: " + str(e))
+            return message_u, None
+
+    def _map_stt_language_to_naoqi(self, language_code):
+        if not language_code:
+            return DEFAULT_NAOQI_LANGUAGE
+        code = safedecode(language_code).replace(u"_", u"-").lower()
+        if code in BCP47_TO_NAOQI_LANGUAGE:
+            return BCP47_TO_NAOQI_LANGUAGE[code]
+        primary = code.split(u"-")[0]
+        return BCP47_TO_NAOQI_LANGUAGE.get(primary, DEFAULT_NAOQI_LANGUAGE)
+
+    def _detect_requested_tts_language(self, message_text):
+        normalized_message = u" " + normalize_lang_text(message_text) + u" "
+        for naoqi_language, aliases in LANGUAGE_NAME_ALIASES:
+            for alias in aliases:
+                normalized_alias = normalize_lang_text(alias)
+                if not normalized_alias:
+                    continue
+                if u" " + normalized_alias + u" " in normalized_message:
+                    return naoqi_language
+                # Langues CJK/arabe/coreen : les separateurs de mots ne sont pas fiables.
+                if normalized_alias in normalized_message and any(ord(ch) > 127 for ch in normalized_alias):
+                    return naoqi_language
+        return None
+
+    def _set_tts_language_for_current_input(self):
+        language_code = getattr(self, 'current_input_language_code', DEFAULT_STT_LANGUAGE_CODE)
+        naoqi_language = getattr(self, 'current_tts_language', None) or self._map_stt_language_to_naoqi(language_code)
+        try:
+            self.tts.setLanguage(naoqi_language)
+            print(u"[LANG] TTS NAOqi: {} depuis {}".format(naoqi_language, language_code))
+            return naoqi_language
+        except Exception as e:
+            print(u"[LANG] Avertissement: langue '{}' indisponible ({}). Fallback francais.".format(
+                naoqi_language, str(e)))
+            try:
+                self.tts.setLanguage(DEFAULT_NAOQI_LANGUAGE)
+            except Exception as e_fr:
+                print(u"[LANG] Avertissement: fallback francais impossible: " + str(e_fr))
+            return DEFAULT_NAOQI_LANGUAGE
+
     def speak(self, text):
+        text = repair_mojibake(text)
         # Appliquer les corrections phonetiques AVANT encodage pour le TTS
         text_fixed = apply_tts_fixes(text)
         if isinstance(text_fixed, unicode):
@@ -385,15 +560,18 @@ class DialogueModule(naoqi.ALModule):
         self._last_speech_time = time.time()   # Pepper parle → reset timer de silence
         self.setEyeColor("purple")
         update_tablet_interface(None, text, status="robotspeaking")  # tablette : texte original
+        self._set_tts_language_for_current_input()
         self.aup.say(text_fixed)              # TTS : texte avec corrections phonetiques
         self.setEyeColor("green")
 
     def speak_static(self, text):
+        text = repair_mojibake(text)
         text_fixed = apply_tts_fixes(text)
         if isinstance(text_fixed, unicode):
             text_fixed = text_fixed.encode('utf-8')
         
         self.setEyeColor("purple")
+        self._set_tts_language_for_current_input()
         self.tts.say(text_fixed)
         self.setEyeColor("green")
 
@@ -421,8 +599,8 @@ class DialogueModule(naoqi.ALModule):
             beh = ALProxy("ALBehaviorManager", self.strNaoIp, ROBOT_PORT)
             behavior_list = [
                 "peppers-date-dance-bis",
-                "animations/Stand/Waiting/FunnyDancer_1",
-                "locomotion-dancebehavior_1",
+                # "animations/Stand/Waiting/FunnyDancer_1",
+                # "locomotion-dancebehavior_1",
             ]
             for beh_name in behavior_list:
                 try:
@@ -458,7 +636,7 @@ class DialogueModule(naoqi.ALModule):
             
             # 3. Sécurisation : on force le retour à l'origine
             posture.goToPosture("StandInit", 0.5)
-            print(u"[WAVE] Terminé — bras redescendu comme à l'origine.")
+            print(u"[WAVE] Termine - bras redescendu comme a l'origine.")
             
         except Exception as e:
             print(u"[WAVE] Erreur lors de l'animation : " + str(e))
@@ -466,7 +644,7 @@ class DialogueModule(naoqi.ALModule):
     def laugh(self):
         try:
             beh = ALProxy("ALBehaviorManager", self.strNaoIp, ROBOT_PORT)
-            beh.runBehavior("animations/Stand/Emotions/Positive/Laugh_1")
+            beh.runBehavior("animations/Stand/Emotions/Positive/Laugh_2")
         except Exception as e:
             print(u"[LAUGH] Echec behavior: " + str(e))
 
@@ -491,13 +669,13 @@ class DialogueModule(naoqi.ALModule):
         # resolution : 0=160x120, 1=320x240
         strategies = [
             # --- API ancienne (subscribe) : compatible avec toutes les versions ---
-            ('old', 13, 1, None, "old-API BGR 320x240"),
-            ('old', 11, 1, None, "old-API RGB 320x240"),
-            ('old', 13, 0, None, "old-API BGR 160x120"),
+            # ('old', 13, 1, None, "old-API BGR 320x240"),
+            # ('old', 11, 1, None, "old-API RGB 320x240"),
+            # ('old', 13, 0, None, "old-API BGR 160x120"),
             # --- API nouvelle (subscribeCamera) avec camera 0 (top) puis 1 (bas) ---
             ('new', 13, 1, 0,   "new-API cam0 BGR 320x240"),
-            ('new', 11, 1, 0,   "new-API cam0 RGB 320x240"),
-            ('new', 13, 1, 1,   "new-API cam1 BGR 320x240"),
+            # ('new', 11, 1, 0,   "new-API cam0 RGB 320x240"),
+            # ('new', 13, 1, 1,   "new-API cam1 BGR 320x240"),
         ]
 
         try:
@@ -638,7 +816,7 @@ class DialogueModule(naoqi.ALModule):
                     if comment:
                         comment_clean = comment.strip()
                         if comment_clean.upper() != u"RIEN" and len(comment_clean) > 8:
-                            print(u"[ENV] >>> Commentaire spontane: " + comment_clean)
+                            safe_print(u"[ENV] >>> Commentaire spontane: " + comment_clean)
                             self._last_speech_time = time.time()
                             # Couper le micro AVANT de parler pour eviter que Pepper
                             # s'entende et se reponde a lui-meme
@@ -713,11 +891,13 @@ class DialogueModule(naoqi.ALModule):
         print("[CAM] Boucle camera arretee.")
 
     def speak_async(self, text):
+        text = repair_mojibake(text)
         # Appliquer les corrections phonetiques AVANT encodage
         text_fixed = apply_tts_fixes(text)
         if isinstance(text_fixed, unicode):
             text_fixed = text_fixed.encode('utf-8')
         try:
+            self._set_tts_language_for_current_input()
             return self.aup.post.say(text_fixed)
         except Exception as e:
             err_str = str(e)
@@ -728,6 +908,7 @@ class DialogueModule(naoqi.ALModule):
                 return None
             print("Erreur speak_async: ", e)
             try:
+                self._set_tts_language_for_current_input()
                 self.aup.say(text_fixed)
             except Exception:
                 pass
@@ -735,13 +916,7 @@ class DialogueModule(naoqi.ALModule):
 
     def clean_for_speech(self, text):
         import re
-        if isinstance(text, str):
-            try:
-                t = text.decode('utf-8')
-            except Exception:
-                t = unicode(text, errors='replace')
-        else:
-            t = unicode(text)
+        t = repair_mojibake(text)
             
         t = t.replace(u'\n', u' ').replace(u'\r', u' ').replace(u'**', u'').replace(u'*', u'')
         # On garde les accents pour la prononciation francaise !
@@ -750,25 +925,45 @@ class DialogueModule(naoqi.ALModule):
         t = t.replace(u'•', u' ').replace(u'-', u' ')
         
         t = re.sub(ur'\s+', u' ', t).strip()
-        return t.encode('utf-8')
+        return t
 
-    def handle_streaming_response(self, input_text, image_data=None):
+    def _trigger_emotion_animation(self):
+        """Lance (thread non-bloquant) l'emotion_tag choisi par le LLM lui-meme pour ce tour
+        de dialogue (voir oaichat/openaichat.py:respond_stream, qui recoit le catalogue
+        tag/description_courte dans son prompt systeme et renvoie {"speech","emotion_tag"}).
+        Si emotion_tag est absent/invalide, on ne lance rien : ALAnimatedSpeech (self.aup)
+        genere deja un geste de parole neutre standard (bras qui bougent) a chaque say(),
+        c'est le fallback par defaut, pas un pool aleatoire d'emotions."""
+        try:
+            tag = getattr(chatbot, 'last_emotion_tag', None)
+            if not animation_selector.is_valid_tag(tag):
+                return
+            print(u"[ANIM] emotion_tag choisi par le LLM (parallele au TTS): " + tag)
+            t_reac = threading.Thread(target=animation_selector.play_animation,
+                                       args=(self.strNaoIp, ROBOT_PORT, tag))
+            t_reac.daemon = True
+            t_reac.start()
+        except Exception as e_anim:
+            print(u"[ANIM] Erreur lancement emotion_tag: " + str(e_anim))
+
+    def handle_streaming_response(self, input_text, image_data=None, skip_reactive_animation=False):
         full_answer = u""
         sentence_buffer = u""
         print(">> ROBOT streaming...")
-        
+
         self.setEyeColor("purple")
         update_tablet_interface(None, u"...", status="robotspeaking")
         last_task_id = None
-        
+        reactive_triggered = skip_reactive_animation
+
         try:
             for chunk in chatbot.respond_stream(input_text, image_data=image_data):
-                chunk = safedecode(chunk)
+                chunk = repair_mojibake(chunk)
                 full_answer += chunk
                 sentence_buffer += chunk
 
                 try:
-                    sys.stdout.write(chunk.encode(sys.stdout.encoding or 'utf-8', 'replace'))
+                    sys.stdout.write(chunk.encode('utf-8'))
                     sys.stdout.flush()
                 except: pass
 
@@ -799,10 +994,13 @@ class DialogueModule(naoqi.ALModule):
                     
                     # SECURITE ANTI LETTRE ISOLEE
                     import re as reg_test
-                    mots_seulement = reg_test.sub(ur'[^\w]', u'', clean_sentence)
+                    mots_seulement = reg_test.sub(ur'[^\w\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\u0600-\u06ff]', u'', clean_sentence)
                     
                     if len(mots_seulement) > 1:
                         last_task_id = self.speak_async(clean_sentence)
+                        if not reactive_triggered:
+                            reactive_triggered = True
+                            self._trigger_emotion_animation()
 
             # Fin du flux (derniers mots restants dans le buffer)
             if sentence_buffer:
@@ -812,12 +1010,15 @@ class DialogueModule(naoqi.ALModule):
                     try:
                         self.aup.wait(last_task_id, 0)
                     except Exception: pass
-                
+
                 import re as reg_test2
-                mots_seulement = reg_test2.sub(ur'[^\w]', u'', clean_sentence)
-                
+                mots_seulement = reg_test2.sub(ur'[^\w\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\u0600-\u06ff]', u'', clean_sentence)
+
                 if len(mots_seulement) > 1:
                     last_task_id = self.speak_async(clean_sentence)
+                    if not reactive_triggered:
+                        reactive_triggered = True
+                        self._trigger_emotion_animation()
                     
                 print("") # Retour a la ligne dans la console
                 
@@ -843,7 +1044,7 @@ class DialogueModule(naoqi.ALModule):
             ])
             if not session_dead:
                 try:
-                    self.speak("Desole, j'ai eu un probleme technique.")
+                    self.speak("Désolé, j'ai eu un problème technique.")
                 except Exception:
                     pass
             
@@ -864,14 +1065,18 @@ class DialogueModule(naoqi.ALModule):
                 self.listen(True)
 
     def processRemote(self, signalName, message):
-        print("DEBUG_RAW_RECEIVE: Signal: {} Content: {}".format(signalName, message))
+        safe_print("DEBUG_RAW_RECEIVE: Signal: {} Content: {}".format(signalName, message))
         
         # Bloquer uniquement en mode quiz ; tous les autres modes → on traite
         if self.app_mode in ["quiz", "quizz"]:
             return
 
         if self.processing:
-            print("Message ignore car deja en traitement.")
+            if message is not None and message != "None" and message != "<error>":
+                self._pending_recognition_message = message
+                print("Message mis en attente car deja en traitement.")
+            else:
+                print("Message ignore car deja en traitement.")
             return
 
         if message is None or message == "None" or message == "<error>":
@@ -882,7 +1087,18 @@ class DialogueModule(naoqi.ALModule):
         self.processing = True
         
         try:
-            message_str = safedecode(message)
+            message_str, language_code = self._parse_recognition_payload(message)
+            if language_code:
+                self.current_input_language_code = language_code
+                print(u"[LANG] Langue STT detectee: " + language_code)
+            else:
+                self.current_input_language_code = DEFAULT_STT_LANGUAGE_CODE
+            requested_tts_language = self._detect_requested_tts_language(message_str)
+            if requested_tts_language:
+                self.current_tts_language = requested_tts_language
+                print(u"[LANG] Langue demandee explicitement: " + requested_tts_language)
+            else:
+                self.current_tts_language = self._map_stt_language_to_naoqi(self.current_input_language_code)
             if len(message_str.strip()) == 0:
                 self.processing = False
                 if not self.force_recog_disabled:
@@ -891,8 +1107,10 @@ class DialogueModule(naoqi.ALModule):
                 
             self.log.write(u"INP: " + message_str + u"\n")
             self.listen(False)
-            print(u"USER: " + message_str)
+            safe_print(u"USER: " + message_str)
             self._last_speech_time = time.time()  # L'user parle → reset timer de silence
+
+            self._ai_user_message_count += 1
             
             # Ajout a l'historique local
             self.history.append({'role': 'user', 'text': message_str})
@@ -904,9 +1122,9 @@ class DialogueModule(naoqi.ALModule):
                 if self.misunderstandings == 1:
                     answer = u"Je n'ai pas compris, peux-tu repeter ?"
                 elif self.misunderstandings == 2:
-                    answer = u"Desole, je n'ai pas compris. Pourrais-tu repeter encore ?"
+                    answer = u"Désolé, je n'ai pas compris. Pourrais-tu repèter encore ?"
                 else:
-                    answer = u"Aujourd'hui j'ai des difficultes a comprendre, desole."
+                    answer = u"Aujourd'hui j'ai des difficultes a comprendre, désole."
                 
                 print(u"ERREUR, REPONSE PAR DEFAUT: " + answer)
                 update_tablet_interface(None, answer)
@@ -914,21 +1132,32 @@ class DialogueModule(naoqi.ALModule):
             else:
                 self.misunderstandings = 0
                 message_lower = message_str.lower()
-                
+                ai_input = message_str
+                if requested_tts_language:
+                    ai_input = message_str + u"\n\nInstruction systeme: reponds uniquement en " + requested_tts_language + u"."
+                else:
+                    # Renforce la langue detectee par le STT au plus pres de la generation (voir
+                    # oaichat/openaichat.py:LANGUAGE_PRIORITY_INSTRUCTION) : sans ce hint par tour,
+                    # le LLM doit deviner la langue depuis le seul texte utilisateur, ce qui echoue
+                    # par intermittence une fois le prompt systeme alourdi par le catalogue
+                    # d'animations (voir tests de la PR).
+                    ai_input = message_str + u"\n\n(Langue detectee : {}. Reponds dans cette langue.)".format(
+                        self.current_tts_language)
+
                 # L'image n'est envoyee a Gemini QUE si l'utilisateur demande explicitement
                 # une description visuelle. Sinon Gemini decrit l'environnement sur chaque
                 # message meme quand c'est hors-sujet (ex: "Spotify", "volume 50").
+                normalized_for_vision = normalize_lang_text(message_str)
                 VISION_KEYWORDS = [
-                    u"vois-tu", u"vois tu", u"tu vois",
-                    u"regarde", u"regardes",
+                    u"vois tu", u"tu vois", u"regarde", u"regardes",
                     u"autour", u"devant toi", u"environnement",
-                    u"qu'est-ce que tu vois", u"ce que tu vois",
-                    u"describe", u"decris", u"d\xe9cris",   # decris / décris
-                    u"montre", u"camera", u"cam\xe9ra",
-                    u"qu'est-ce que je tiens", u"qu'est-ce que c'est",
+                    u"qu est ce que tu vois", u"ce que tu vois",
+                    u"what do you see", u"describe what you see",
+                    u"montre", u"camera", u"caméra", u"image", u"photo",
+                    u"qu est ce que je tiens", u"qu est ce que c est",
                     u"quel objet", u"quelle couleur",
                 ]
-                wants_vision = any(kw in message_lower for kw in VISION_KEYWORDS)
+                wants_vision = any(normalize_lang_text(kw) in normalized_for_vision for kw in VISION_KEYWORDS)
                 
                 image_data = None  # Par defaut : pas d'image
                 if wants_vision:
@@ -948,7 +1177,7 @@ class DialogueModule(naoqi.ALModule):
                     ))
                 
                 if u"danse" in message_lower or u"dance" in message_lower or u"danser" in message_lower:
-                    print(u"[DANCE] Mot-cle detecte dans: " + message_lower)
+                    safe_print(u"[DANCE] Mot-cle detecte dans: " + message_lower)
                     answer = u"Je danse pour vous !"
                     update_tablet_interface(None, answer)
                     try:
@@ -968,28 +1197,46 @@ class DialogueModule(naoqi.ALModule):
                     except Exception as e_spk:
                         print(u"[WAVE] Erreur speak: " + str(e_spk))
                 elif u"blague" in message_lower or u"rigole" in message_lower or u"rire" in message_lower:
-                    self.handle_streaming_response(message_str, image_data=image_data)
+                    self.handle_streaming_response(ai_input, image_data=image_data, skip_reactive_animation=True)
                     self.laugh()
                 elif u"bonjour" in message_lower or u"salut" in message_lower or u"hello" in message_lower:
                     # Geste coucou SIMULTANE a la parole (thread daemon)
                     t_wave = threading.Thread(target=self.wave)
                     t_wave.daemon = True
                     t_wave.start()
-                    self.handle_streaming_response(message_str, image_data=image_data)
+                    self.handle_streaming_response(ai_input, image_data=image_data, skip_reactive_animation=True)
                 else:
-                    self.handle_streaming_response(message_str, image_data=image_data)
+                    # Les demandes explicites d'animation (ex: "montre tes muscles", "chante
+                    # joyeux anniversaire") et les reactions emotionnelles au contenu du message
+                    # sont desormais choisies ensemble par le LLM, dans le meme appel Gemini que
+                    # la reponse parlee, quelle que soit la langue (voir
+                    # oaichat/openaichat.py:respond_stream). _trigger_emotion_animation lance
+                    # l'animation correspondante des que la 1ere phrase est prete a etre dite.
+                    self.handle_streaming_response(ai_input, image_data=image_data)
                     
         except Exception as e_main:
             # Capturer toutes les exceptions non gerees pour eviter un crash silencieux
             print(u"[ERREUR processRemote] Exception non geree: " + repr(e_main))
             try:
-                self.speak(u"Desole, j'ai eu un probleme. Repete ta question.")
+                self.speak(u"Désolé, j'ai eu un problème. Répéte ta question.")
             except Exception:
                 pass
         finally:
             self.processing = False
+            if getattr(self, '_ai_user_message_count', 0) >= 5:
+                try:
+                    chatbot.reset()
+                    print(u"[AI] Historique Gemini vide apres 5 messages utilisateur.")
+                except Exception as e_reset:
+                    print(u"[AI] Reset historique Gemini impossible: " + str(e_reset))
+                self._ai_user_message_count = 0
             if self.app_mode not in ["quiz", "quizz"] and not self.force_recog_disabled:
                 self.listen(True)
+            pending_message = self._pending_recognition_message
+            self._pending_recognition_message = None
+            if pending_message is not None and self.app_mode not in ["quiz", "quizz"]:
+                print("Traitement du message mis en attente.")
+                self.processRemote(signalName, pending_message)
 
     def react(self, s):
         s = safedecode(s)

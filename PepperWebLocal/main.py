@@ -48,49 +48,95 @@ PORT = 9091
 WIFI_SSID = "Bbox-0283B47E"
 WIFI_PASSWORD = "4SDf7LzcJfsJT3hRXz"
 WIFI_SECURITY = "WPA2"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+
+def _load_client_config():
+    config_path = os.path.join(SCRIPT_DIR, "client.json")
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except TypeError:
+        try:
+            with open(config_path, "r") as f:
+                return json.loads(f.read().decode("utf-8"))
+        except Exception as e:
+            print("[CONFIG] Impossible de charger client.json: " + str(e))
+    except Exception as e:
+        print("[CONFIG] Impossible de charger client.json: " + str(e))
+    return {}
+
+CLIENT_CONFIG = _load_client_config()
+PY2 = sys.version_info[0] < 3
+
+def cfg_get(path, default=None):
+    cur = CLIENT_CONFIG
+    for key in path.split("."):
+        if not isinstance(cur, dict) or key not in cur:
+            return default
+        cur = cur[key]
+    return cur
+
+def html_text(value):
+    """Retourne une chaine compatible avec les templates HTML Python 2/3."""
+    if value is None:
+        return ""
+    if PY2:
+        if isinstance(value, unicode):
+            return value.encode("utf-8")
+        return str(value)
+    return str(value)
 
 QUESTIONS = [
     {
-        "text": "Quel est aujourd’hui le cœur de métier principal de Véolia au niveau mondial ?",
-        "answers": [
-            "A Le développement de logiciels informatiques de gestion",
-            "B La fabrication d’équipements industriels lourds",
-            "C Exclusivement le transport urbain de passagers",
-            "D La gestion optimisée de l’eau, des déchets et de l’énergie"
-            ],
-        "correct": 4
+        "text": "Que peux-tu faire à l'atelier parfums ?",
+        "answers": ["Créer un parfum", "Construire un robot", "Faire du sport", "Cuisiner"],
+        "correct": 0,
+        "good": "Bravo ! Tu es un créateur du futur !",
+        "bad": ["", "Pas ici, mais bonne idée !", "Presque, mais non !", "Miam ! Mais ce n'est pas ici"]
     },
     {
-        "text": "Dans quel objectif principal Véolia développe-t-elle ses solutions pour les territoires et les entreprises ?",
-        "answers": [
-            "A Remplacer les services publics par des services totalement privés",
-            "B Assurer la transition écologique en optimisant l’usage des ressources",
-            "C Se consacrer uniquement à l’innovation technologique sans considération sociale",
-            "D Maximiser exclusivement ses profits financiers à court terme"
-        ],
-        "correct": 2
+        "text": "Pourquoi faut-il protéger sa peau ?",
+        "answers": ["Contre le soleil", "Pour dormir", "Pour courir", "Pour jouer"],
+        "correct": 0,
+        "good": "Exact ! Tu es un expert !",
+        "bad": ["", "Pas vraiment", "Non plus !", "Pas exactement !"]
     },
     {
-        "text": "Quel type de contrat lie le plus souvent Véolia aux collectivités locales pour la gestion de l’eau ou des déchets ?",
-        "answers": [
-            "A Une délégation de service public ou un contrat de concession",
-            "B Un contrat de travail individuel à durée indéterminée",
-            "C Un traité international bilatéral",
-            "D Un contrat de location d’équipements"
-        ],
-        "correct": 1
+        "text": "Que permet l'intelligence artificielle ?",
+        "answers": ["Créer et inventer", "Dormir", "Manger", "Disparaître"],
+        "correct": 0,
+        "good": "Bravo ! Tu es prêt pour le futur !",
+        "bad": ["", "Non", "Pas encore !", "Impossible !"]
     },
     {
-        "text": "Dans le domaine des déchets, quel objectif stratégique Véolia met-elle particulièrement en avant ?",
-        "answers": [
-            "A Développer le recyclage et la valorisation des déchets en nouvelles ressources",
-            "B Limiter le tri pour simplifier la collecte",
-            "C Interrompre toutes les activités liées aux déchets dangereux",
-            "D Augmenter systématiquement les volumes envoyés en centre d’enfouissement"
-        ],
-        "correct": 1
+        "text": "Où peux-tu jouer librement ?",
+        "answers": ["Fun Zone", "Zone Zen", "Atelier peau", "Accueil"],
+        "correct": 0,
+        "good": "Oui !! Amuse-toi bien !",
+        "bad": ["", "Là on se détend", "On apprend ici !", "On commence ici !"]
+    },
+    {
+        "text": "Que fait un scientifique ?",
+        "answers": ["Il expérimente", "Il dort", "Il joue", "Il chante"],
+        "correct": 0,
+        "good": "Exact ! Comme toi aujourd'hui !",
+        "bad": ["", "Non", "Parfois... mais pas tout le temps !", "Pourquoi pas !"]
     }
 ]
+CONFIG_QUIZ = cfg_get("quiz", None)
+if CONFIG_QUIZ:
+    QUESTIONS = CONFIG_QUIZ
+
+QUIZ_END_TEXT = (
+    "Analyse des résultats... bip bip... "
+    "Mission réussie ! "
+    "Tu es officiellement un explorateur de la beauté du futur ! "
+    "Tu peux continuer ton aventure et tester plein d'ateliers autour de toi ! "
+    "Et si tu veux en découvrir encore plus... les animateurs sont là pour t'aider ! "
+    "À bientôt petit inventeur du futur !"
+)
+QUIZ_END_TEXT = cfg_get("quizEndText", QUIZ_END_TEXT)
 
 class GameState:
     def __init__(self):
@@ -107,6 +153,53 @@ class GameState:
 state = GameState()
 session_global = None
 
+THEME_PRIMARY = html_text(cfg_get("theme.primary", "#18C6D9"))
+THEME_SECONDARY = html_text(cfg_get("theme.secondary", "#18C6D9"))
+THEME_BACKGROUND = html_text(cfg_get("theme.background", "#1F365C"))
+THEME_SURFACE = html_text(cfg_get("theme.surface", "#ECF4F8"))
+THEME_TEXT_SURFACE = html_text(cfg_get("theme.textOnSurface", "#1A1A1A"))
+THEME_TEXT_BACKGROUND = html_text(cfg_get("theme.textOnBackground", "#FFFFFF"))
+THEME_OVERLAY = THEME_BACKGROUND
+CLIENT_LOGO = html_text(cfg_get("client.logo", "/images/EvotionLogo.png"))
+HOME_GREETING = html_text(cfg_get("home.greeting", "Salut ! Je suis Pepper,\nPrêt à apprendre et jouer avec toi"))
+CHAT_TITLE = html_text(cfg_get("home.chatTitle", "DISCUSSION AVEC PEPPER"))
+CHAT_PLACEHOLDER = html_text(cfg_get("home.chatPlaceholder", "Parlez à Pepper pour démarrer la discussion..."))
+STATUS_LISTENING_TEXT = html_text(cfg_get("status.listening", "Vous pouvez parler !"))
+STATUS_SPEAKING_TEXT = html_text(cfg_get("status.speaking", "🔊 Attendez, c'est au tour de Pepper de parler"))
+STATUS_WAITING_TEXT = html_text(cfg_get("status.waiting", "Veuillez patienter"))
+
+PEPPER_ANIMATIONS = cfg_get("interactions", None) or [
+    {"id": "wave", "label": "Coucou", "icon": "👋", "say": "Coucou !"},
+    {"id": "dance", "label": "Danse", "icon": "🕺", "say": "Regardez ma petite danse !"},
+    {"id": "laugh", "label": "Rire", "icon": "😁", "say": "Ha ha ha !"},
+]
+for _anim in PEPPER_ANIMATIONS:
+    if "id" not in _anim and "animationId" in _anim:
+        _anim["id"] = _anim["animationId"]
+    _anim["id"] = html_text(_anim.get("id", ""))
+    _anim["label"] = html_text(_anim.get("label", _anim["id"]))
+    _anim["icon"] = html_text(_anim.get("icon", "?"))
+    if "say" in _anim:
+        _anim["say"] = html_text(_anim["say"])
+
+PEPPER_ANIMATION_PATHS = {
+    "wave": [
+        "animations/Stand/Gestures/Hey_1",
+        "animations/Stand/Gestures/Hey_2",
+    ],
+    "dance": [
+        "peppers-date-dance-bis",
+    ],
+    "laugh": [
+        "animations/Stand/Emotions/Positive/Laugh_1",
+        "animations/Stand/Emotions/Positive/Happy_1",
+    ],
+}
+
+PEPPER_ANIMATION_BY_ID = {}
+for _anim in PEPPER_ANIMATIONS:
+    PEPPER_ANIMATION_BY_ID[_anim["id"]] = _anim
+
 # Fonction globale pour gerer l'etat de l'IA proprement
 def set_app_mode(mode):
     global session_global
@@ -117,33 +210,48 @@ def set_app_mode(mode):
             pass
 
 HEADER_HTML = """
-<div style="position:fixed; top:0; left:0; width:100%; height:80px; background:#ededed; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 20px; box-sizing:border-box; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-    <a href="/menu"><img src="/images/EvotionLogo.png" style="height:60px;" onerror="this.style.display='none'"></a>
-    <div style="display:flex; gap:40px; margin-right:20px; align-items:center;">
-        <a href="/menu"><img src="/images/25694.png" style="height:50px; opacity:0.7;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/25/25694.png'"></a>
-        <img src="/images/56763.png" style="height:50px; opacity:0.7; cursor:pointer;" onclick="toggleVolumeOverlay()" onerror="this.src='https://cdn-icons-png.flaticon.com/512/56/56763.png'">
-    </div>
+<a href="/menu"><img class="top-logo" src="__CLIENT_LOGO__" onerror="this.style.display='none'"></a>
+<div class="hamburger" onclick="toggleVolumeOverlay()">
+    <span></span><span></span><span></span>
 </div>
 
-<!-- MENU BURGER : VOLUME OVERLAY -->
-<div id="volume-overlay" style="display:none; position:fixed; top:0; right:0; width:300px; height:100%; background:rgba(80,80,80,0.95); z-index:2000; color:white; flex-direction:column; align-items:center; padding-top:20px;">
-    <h3>Gestion du volume</h3>
-    <div style="display:flex; align-items:center; justify-content:center; margin:20px 0;">
-        <div onclick="changeVolume(10)" style="font-size:40px; cursor:pointer; background:white; color:#333; width:50px; height:50px; border-radius:50%; display:flex; justify-content:center; align-items:center;">+</div>
-        <div id="vol-display" style="font-size:50px; font-weight:bold; margin:0 20px;">70</div>
-        <div onclick="changeVolume(-10)" style="font-size:40px; cursor:pointer; background:white; color:#333; width:50px; height:50px; border-radius:50%; display:flex; justify-content:center; align-items:center;">-</div>
+<div id="volume-overlay" class="side-overlay" style="display:none;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+        <div style="font-size:34px; letter-spacing:8px; color:__THEME_PRIMARY__;">MENU</div>
+        <div onclick="toggleVolumeOverlay()" style="font-size:42px; line-height:42px; color:#9aa8b8; cursor:pointer;">×</div>
     </div>
-    <div style="display:flex; flex-direction:column; align-items:flex-start; margin-top:30px; padding:0 20px; width:100%; box-sizing:border-box;">
-        <label style="display:flex; align-items:center; font-size:20px; margin-bottom:30px; cursor:pointer; text-align:left;">
-            <input type="checkbox" id="mute-robot" style="width:30px; height:30px; margin-right:20px;" onchange="toggleMute()">
-            Couper le son<br>du robot
-        </label>
-        <label style="display:flex; align-items:center; font-size:20px; cursor:pointer; text-align:left;">
-            <input type="checkbox" id="mute-recog" style="width:30px; height:30px; margin-right:20px;" onchange="toggleRecog()">
-            Désactiver la<br>reconnaissance<br>vocale
-        </label>
+    <div class="side-section-title">
+        <span style="height:1px; background:#126273; flex:1;"></span>
+        <span style="padding:0 14px;">NAVIGATION</span>
+        <span style="height:1px; background:#126273; flex:1;"></span>
     </div>
-    <div onclick="toggleVolumeOverlay()" style="margin-top:auto; margin-bottom:40px; background:#ededed; color:#333; padding:15px 40px; border-radius:30px; font-size:24px; font-weight:bold; cursor:pointer;">Fermer</div>
+    <a class="side-nav active" href="/menu"><span>🏠</span><b>Accueil</b><i>•</i></a>
+    <a class="side-nav" href="/quiz/start"><span>🎯</span><b>Quiz</b></a>
+    <a class="side-nav" href="/animations"><span>🎭</span><b>Interactions</b></a>
+    <a class="side-nav" href="/catalogue"><span>📖</span><b>Catalogue</b></a>
+    <div class="side-section-title">
+        <span style="height:1px; background:#126273; flex:1;"></span>
+        <span style="padding:0 14px;">ROBOT</span>
+        <span style="height:1px; background:#126273; flex:1;"></span>
+    </div>
+    <div class="side-card side-card-compact">
+        <div class="side-info-row"><span class="side-pill">🔋</span><b>Batterie</b><strong id="battery-display">...</strong></div>
+    </div>
+    <div class="side-section-title">
+        <span style="height:1px; background:#126273; flex:1;"></span>
+        <span style="padding:0 14px;">SON</span>
+        <span style="height:1px; background:#126273; flex:1;"></span>
+    </div>
+    <div class="side-card side-card-compact">
+        <label class="side-check"><input type="checkbox" id="mute-robot" onchange="toggleMute()"> <span>Couper le son du robot</span></label>
+        <label class="side-check"><input type="checkbox" id="mute-recog" onchange="toggleRecog()"> <span>Désactiver la reconnaissance vocale</span></label>
+        <div style="display:flex; align-items:center; justify-content:center; margin-top:12px;">
+            <div onclick="changeVolume(-5)" class="vol-btn">-</div>
+            <div id="vol-display" style="font-size:22px; font-weight:bold; margin:0 14px; min-width:46px; text-align:center;">70</div>
+            <div onclick="changeVolume(5)" class="vol-btn">+</div>
+        </div>
+    </div>
+    <div class="side-footer">Pepper</div>
 </div>
 
 <script>
@@ -152,9 +260,9 @@ function toggleVolumeOverlay() {
     _volOverlayOpen = !_volOverlayOpen;
     var el = document.getElementById('volume-overlay');
     el.style.display = _volOverlayOpen ? 'flex' : 'none';
+    if (_volOverlayOpen) refreshRobotStatus();
 }
 function _sendVol(vol) {
-    /* Methode Image() : compatible 100% des WebViews (Android ancien, Pepper...) */
     var img = new Image();
     img.src = '/setvolume?v=' + vol + '&_=' + Date.now();
 }
@@ -175,153 +283,513 @@ function toggleRecog() {
     var img = new Image();
     img.src = '/setrecog?d=' + (disabled ? '1' : '0') + '&_=' + Date.now();
 }
+function refreshRobotStatus() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/robotstatus?t=' + Date.now(), true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                var battery = document.getElementById('battery-display');
+                var connection = document.getElementById('connection-display');
+                var volume = document.getElementById('vol-display');
+                if (battery) battery.innerText = data.battery;
+                if (connection) {
+                    connection.innerText = data.connected ? 'OK' : 'Hors ligne';
+                    connection.style.color = data.connected ? '#63e6be' : '#ff7f9a';
+                }
+                if (volume && data.volume !== null) volume.innerText = data.volume;
+            } catch(e) {}
+        }
+    };
+    xhr.send();
+}
 </script>
-"""
+""".replace("__THEME_OVERLAY__", THEME_OVERLAY).replace("__CLIENT_LOGO__", CLIENT_LOGO).replace("__THEME_PRIMARY__", THEME_PRIMARY)
 
-COMMON_CSS = """
+COMMON_CSS = (
+"<style>:root{"
+"--primary:" + THEME_PRIMARY + ";"
+"--secondary:" + THEME_SECONDARY + ";"
+"--background:" + THEME_BACKGROUND + ";"
+"--surface:" + THEME_SURFACE + ";"
+"--text-surface:" + THEME_TEXT_SURFACE + ";"
+"--text-background:" + THEME_TEXT_BACKGROUND + ";"
+"--overlay:" + THEME_OVERLAY + ";"
+"}</style>"
+"""
 <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; background: linear-gradient(135deg, #614d98 0%, #5E9bd4 100%); margin: 0; padding: 0; color: white; -webkit-user-select: none; overflow: hidden; width: 100%; height: 100vh; position: fixed; }
-    h1 { color: white; font-size: 40px; margin: 20px 0; text-shadow: none; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; background: """ + THEME_BACKGROUND + """; background: var(--background); margin: 0; padding: 0; color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); -webkit-user-select: none; overflow: hidden; width: 100%; height: 100vh; position: fixed; }
+    h1 { color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: clamp(28px, 4vw, 44px); margin: 16px 0; text-shadow: none; text-transform: uppercase; letter-spacing: 3px; }
     .container { width: 100%; height: 100vh; margin: 0 auto; padding-top: 80px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; background: #ecf0f1; border: none; border-radius: 30px; padding: 15px 30px; margin: 10px; font-size: 20px; color: #333; text-decoration: none; box-shadow: 0 5px 15px rgba(0,0,0,0.2); cursor: pointer; font-weight: bold; transition: transform 0.1s; }
-    .btn:active { transform: scale(0.95); background: #bdc3c7; }
+    .btn { display: inline-block; display: inline-flex; align-items: center; justify-content: center; background: """ + THEME_SURFACE + """; background: var(--surface); border: 2px solid rgba(24,198,217,0.45); border-radius: 26px; padding: 15px 30px; margin: 10px; font-size: 20px; color: """ + THEME_BACKGROUND + """; color: var(--background); text-decoration: none; box-shadow: 0 10px 28px rgba(0,0,0,0.2); cursor: pointer; font-weight: bold; transition: transform 0.1s; }
+    .btn:active { transform: scale(0.95); background: #dcecf2; }
     .btn-green { background: #2ecc71; color: white; }
     .btn-red { background: #e74c3c; color: white; }
-    .btn-menu { width: 280px; height: 80px; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-menu { width: 150px; height: 120px; padding: 12px; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; flex-direction: column; }
+    .btn-menu span { display: block; }
+    .btn-menu .icon { font-size: 38px; line-height: 1; margin-bottom: 10px; }
+    .btn-menu .icon-img { display:block; max-width:42px; max-height:42px; margin:0 auto 10px; object-fit:contain; }
     
-    .chat-container { display: flex; flex-direction: column; gap: 15px; padding: 15px; width: 90%; flex: 1; min-height: 0; overflow-y: auto; background: rgba(255,255,255,0.1); border-radius: 20px; margin-bottom: 10px; }
-    .bubble { padding: 15px; border-radius: 15px; background: #ededed; color: #474747; font-size: 20px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; font-weight: bold; }
-    .user-bubble { align-self: flex-start; margin-right: 20%; border-left: 10px solid #ff4081; }
-    .robot-bubble { align-self: flex-end; margin-left: 20%; text-align: right; border-right: 10px solid #00e676; }
-    .status-bar { padding: 15px; font-size: 24px; font-weight: bold; color: white; background: #95a5a6; border-radius: 10px; margin-top: 10px; margin-bottom: 10px; width: 80%; flex-shrink: 0; }
-    .status-listening { background: #00e676; }
-    .status-speaking { background: #9c27b0; }
-    .status-waiting { background: #bdc3c7; color: #333; }
+    .chat-container { display: flex; flex-direction: column; gap: 15px; padding: 18px; width: 100%; flex: 1; min-height: 0; overflow-y: auto; background: """ + THEME_SURFACE + """; background: var(--surface); border-radius: 0 0 30px 30px; margin-bottom: 10px; box-sizing: border-box; }
+    .bubble { padding: 15px; border-radius: 18px; background: #ffffff; color: """ + THEME_BACKGROUND + """; color: var(--background); font-size: 18px; text-align: left; box-shadow: 0 3px 10px rgba(0,0,0,0.08); position: relative; font-weight: bold; }
+    .user-bubble { align-self: flex-end; margin-left: 20%; border: 1px solid rgba(0,0,0,0.05); }
+    .robot-bubble { align-self: flex-start; margin-right: 20%; text-align: left; background: """ + THEME_SECONDARY + """; background: var(--secondary); color: white; }
+    .status-bar { padding: 12px 16px; font-size: clamp(13px, 1.5vw, 16px); font-weight: bold; color: white; background: """ + THEME_SURFACE + """; margin: 10px 18px 18px; width: auto; flex-shrink: 0; }
+    .status-listening { color: #00b864; }
+    .status-speaking { color: #8e24aa; }
+    .status-waiting { color: #333; }
+    .top-logo { position: fixed; top: 28px; left: 24px; z-index: 1100; height: 52px; max-width: 120px; object-fit: contain; opacity: 0.95; }
+    .hamburger { position: fixed; top: 22px; right: 24px; z-index: 1100; width: 34px; height: 26px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; }
+    .hamburger span { display: block; height: 4px; background: """ + THEME_BACKGROUND + """; border-radius: 99px; margin-bottom: 2px; }
+    .side-overlay { position:fixed; top:0; right:0; width:320px; max-width:88vw; height:100%; max-height:100vh; background:""" + THEME_OVERLAY + """; background:var(--overlay); z-index:2000; color:white; flex-direction:column; padding:24px 20px 14px; box-sizing:border-box; box-shadow:-16px 0 34px rgba(0,0,0,0.28); overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
+    .side-section-title { display:flex; align-items:center; color:""" + THEME_PRIMARY + """; color:var(--primary); letter-spacing:4px; font-size:13px; margin:18px 0 12px; flex-shrink:0; }
+    .side-nav { display:flex; align-items:center; height:48px; padding:0 14px; margin:8px 0; color:#c6d1dc; text-decoration:none; border-radius:14px; font-size:17px; box-sizing:border-box; flex-shrink:0; }
+    .side-nav.active { background:""" + THEME_PRIMARY + """; color:white; box-shadow:0 8px 20px rgba(0,0,0,0.22); }
+    .side-nav span { width:38px; font-size:22px; text-align:left; }
+    .side-nav b { flex:1; text-align:left; }
+    .side-nav i { font-style:normal; font-size:26px; opacity:0.85; }
+    .side-card { background:rgba(236,244,248,0.10); border-radius:16px; padding:14px 16px; color:#dce6ee; text-align:left; flex-shrink:0; }
+    .side-card-compact { padding:12px 14px; }
+    .side-info-row { display:flex; align-items:center; min-height:32px; margin:6px 0; }
+    .side-pill { display:inline-flex; align-items:center; justify-content:center; width:36px; height:24px; margin-right:10px; border-radius:8px; background:rgba(236,244,248,0.14); color:""" + THEME_PRIMARY + """; color:var(--primary); font-size:11px; font-weight:800; letter-spacing:1px; }
+    .side-card b { flex:1; font-size:17px; font-weight:600; }
+    .side-card strong { font-size:17px; }
+    .side-check { display:flex; align-items:center; font-size:15px; line-height:1.2; margin:10px 0; color:#dce6ee; }
+    .side-check input { width:22px; height:22px; margin:0 10px 0 0; flex:0 0 auto; }
+    .side-check span { flex:1; }
+    .vol-btn { width:40px; height:40px; line-height:40px; border-radius:50%; background:#ECF4F8; color:#1F365C; text-align:center; font-size:28px; font-weight:bold; cursor:pointer; flex:0 0 auto; }
+    .side-footer { margin:18px 0 4px; text-align:center; opacity:0.25; flex-shrink:0; }
+    .surface-panel { background: """ + THEME_SURFACE + """; background: var(--surface); color: """ + THEME_TEXT_SURFACE + """; color: var(--text-surface); border-radius: 30px; box-shadow: 0 16px 36px rgba(0,0,0,0.22); }
+    .app-layout { width: 100%; height: 100vh; display: flex; overflow: hidden; }
+    .app-main { flex: 1; min-width: 0; height: 100vh; position: relative; box-sizing: border-box; }
+    .menu-layout { width: 100%; height: 100%; display: block; box-sizing: border-box; padding: 54px 28px 22px; white-space: nowrap; }
+    .robot-zone {
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+        width: 280px;
+        height: 620px;
+        margin-left: 18px;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .robot-zone img {
+        max-width: 230px;
+        max-height: 420px;
+        object-fit: contain;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .welcome-bubble { position: absolute; top: 18px; left: 0; background: #ffffff; color: """ + THEME_BACKGROUND + """; color: var(--background); border-radius: 18px; padding: 14px 18px; max-width: 250px; text-align: left; font-size: 15px; box-shadow: 0 6px 18px rgba(0,0,0,0.16); white-space: normal; }
+    .welcome-bubble:after { content: ''; position: absolute; right: 22px; bottom: -14px; border-width: 14px 12px 0 0; border-style: solid; border-color: #ffffff transparent transparent transparent; }
+    .menu-cards { display: inline-block; vertical-align: middle; width: 170px; margin-left: 46px; font-size: 0; text-align: center; white-space: normal; }
+    .menu-cards .btn-menu { display: block; box-sizing: border-box; margin: 0 auto 20px auto; }
+    .chat-shell {
+        width: 320px;
+        width: clamp(280px, 36vw, 360px);
+        height: 100vh;
+        flex: 0 0 320px;
+        flex: 0 0 clamp(280px, 36vw, 360px);
+        background: """ + THEME_SURFACE + """;
+        background: var(--surface);
+        box-shadow: -18px 0 34px rgba(0,0,0,0.24);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .bubble {
+        padding: 15px; 
+        border-radius: 18px;
+        background: #ffffff; 
+        color: """ + THEME_BACKGROUND + """;
+        color: var(--background);
+        font-size: 18px; 
+        text-align: left;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        position: relative; 
+        font-weight: bold;
+        word-wrap: break-word;
+        max-width: 90%;
+    }
+    .chat-title { min-height: 58px; padding: 0 76px 0 22px; display:flex; align-items:center; justify-content:center; color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: clamp(15px, 1.8vw, 18px); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; box-sizing: border-box; }
+    .chat-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(31,54,92,0.52); font-style: italic; padding: 22px; }
+    .animations-main { padding: clamp(76px, 11vh, 110px) clamp(22px, 4vw, 50px) 28px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; }
+    .animations-panel { width:min(760px, 82%); max-height:86vh; overflow-y:auto; padding: clamp(24px, 5vh, 36px) clamp(24px, 4vw, 34px) clamp(28px, 5vh, 42px); margin:0 auto; box-sizing:border-box; }
+    .animations-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: clamp(14px, 3vh, 22px); margin-top:18px; justify-items:center; }
+    .back-menu { position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px; z-index: 1110; }
+    @media (max-width: 900px) {
+        .menu-layout { padding-left: 18px; padding-right: 18px; }
+        .chat-shell { width: 31vw; flex-basis: 31vw; }
+        .menu-cards { width: 168px; margin-left: 36px; }
+        .robot-zone { width: 252px; margin-left: 0; }
+        .robot-zone img { max-width: 238px; }
+    }
 </style>
-"""
+""")
+
+CHAT_POLL_SCRIPT = """
+<script>
+var lastStatus = '';
+var STATUS_LISTENING_TEXT = "__STATUS_LISTENING__";
+var STATUS_SPEAKING_TEXT = "__STATUS_SPEAKING__";
+var STATUS_WAITING_TEXT = "__STATUS_WAITING__";
+var MAX_CHAT_BUBBLES = 4;
+function trimChatHistory(container) {
+  if (!container) return;
+  var bubbles = [];
+  for (var i = 0; i < container.childNodes.length; i++) {
+    var node = container.childNodes[i];
+    if (node.nodeType === 1 && node.className && node.className.indexOf('bubble') !== -1) {
+      bubbles.push(node);
+    }
+  }
+  while (bubbles.length > MAX_CHAT_BUBBLES) {
+    var old = bubbles.shift();
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+  }
+}
+function appendBubble(className, html) {
+  var container = document.getElementById('chat-container');
+  if (!container) return;
+  var placeholder = document.getElementById('chat-placeholder');
+  if (placeholder) placeholder.style.display = 'none';
+  var div = document.createElement('div');
+  div.className = className;
+  div.innerHTML = html;
+  container.appendChild(div);
+  trimChatHistory(container);
+  container.scrollTop = container.scrollHeight;
+}
+function startPolling() {
+  setInterval(function() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/poll?t=' + new Date().getTime(), true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4 && xhr.status == 200) {
+        try {
+          var data = JSON.parse(xhr.responseText);
+          var container = document.getElementById('chat-container');
+          if (data.user && data.user !== '') appendBubble('bubble user-bubble', data.user);
+          if (data.robot && data.robot !== '') {
+            var lastChild = container ? container.lastChild : null;
+            while (lastChild && lastChild.nodeType !== 1) { lastChild = lastChild.previousSibling; }
+            if (lastChild && lastChild.className && lastChild.className.indexOf('robot-bubble') !== -1) {
+                lastChild.innerHTML = data.robot;
+                trimChatHistory(container);
+                container.scrollTop = container.scrollHeight;
+            } else {
+                appendBubble('bubble robot-bubble', data.robot);
+            }
+          }
+          if (data.status && data.status !== lastStatus) {
+            var bar = document.getElementById('status-bar');
+            if (bar) {
+              if(data.status === 'listening') { bar.className = 'status-bar status-listening'; bar.innerHTML = STATUS_LISTENING_TEXT; }
+              else if(data.status === 'robotspeaking') { bar.className = 'status-bar status-speaking'; bar.innerHTML = STATUS_SPEAKING_TEXT; }
+              else { bar.className = 'status-bar status-waiting'; bar.innerHTML = STATUS_WAITING_TEXT; }
+            }
+            lastStatus = data.status;
+          }
+        } catch(e) {}
+      }
+    };
+    xhr.send();
+  }, 500);
+}
+window.onload = function() {
+  var c=document.getElementById('chat-container');
+  if(c) c.scrollTop=c.scrollHeight;
+  startPolling();
+};
+</script>
+""".replace("__STATUS_LISTENING__", STATUS_LISTENING_TEXT).replace("__STATUS_SPEAKING__", STATUS_SPEAKING_TEXT).replace("__STATUS_WAITING__", STATUS_WAITING_TEXT)
+
+def render_chat_sidebar(show_back=False):
+    parts = [
+        "<aside class='chat-shell'>",
+        "<div class='chat-title'>" + CHAT_TITLE + "</div>",
+        "<div class='chat-container' id='chat-container'>",
+        "<div class='chat-placeholder' id='chat-placeholder'>" + CHAT_PLACEHOLDER + "</div>",
+        "</div>",
+        "<div class='status-bar status-waiting' id='status-bar'>" + STATUS_WAITING_TEXT + "</div>",
+    ]
+    if show_back:
+        parts.append("<a class='btn' href='/menu' style='margin:0 18px 18px;'>Retour Menu</a>")
+    parts.append("</aside>")
+    return "".join(parts)
+
+def _activity_icon_html(icon):
+    icon = html_text(icon)
+    if icon and (icon.startswith("/") or icon.startswith("http://") or icon.startswith("https://")):
+        return "<img class='icon-img' src='" + icon + "' onerror=\"this.style.display='none'\">"
+    return "<span class='icon'>" + (icon or "?") + "</span>"
+
+def get_enabled_activities():
+    configured = cfg_get("activities", None)
+    if configured:
+        activities = []
+        for item in configured:
+            if item.get("enabled", True) == False:
+                continue
+            activity_id = item.get("id", "").upper()
+            href = item.get("href")
+            if not href:
+                if activity_id == "QUIZ":
+                    href = "/quiz/start"
+                elif activity_id in ["INTERACTIONS", "ANIMATIONS"]:
+                    href = "/animations"
+                elif activity_id in ["CATALOG", "CATALOGUE"]:
+                    href = "/catalogue"
+                else:
+                    href = "/menu"
+            activities.append({
+                "label": html_text(item.get("label", activity_id.title())),
+                "icon": html_text(item.get("icon", "?")),
+                "href": html_text(href)
+            })
+        return activities
+    return [
+        {"label": "Quiz", "icon": "?", "href": "/quiz/start"},
+        {"label": "Animations", "icon": "🎭", "href": "/animations"},
+        {"label": "Catalogue", "icon": "📖", "href": "/catalogue"},
+    ]
 
 def render_menu():
     parts = [
-        "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
-        "<div class='container'>",
-        "<h1 style='font-size:36px; margin-top:20px; flex-shrink:0;'>Hello ! Je suis Pepper, que puis-je faire pour toi ?</h1>",
-        "<div style='display:flex; flex-direction:row; align-items:center; justify-content:center; gap:80px; width:100%; flex:1;'>",
-        "<div style='display:flex; flex-direction:column; gap:25px;'>",
-        "<a class='btn btn-menu' href='/quiz/start'>JOUONS AU QUIZ</a>",
-        "<a class='btn btn-menu' href='/veolia/presentation1.html'>VEOLIA</a>",
-        "<a class='btn btn-menu' href='/ai_module'>IA CHAT</a>",
+        "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
+        "<div class='app-layout'>",
+        "<main class='app-main'>",
+        "<div class='menu-layout'>",
+        "<div class='robot-zone'>",
+        "<div class='welcome-bubble'>" + HOME_GREETING.replace("\n", "<br>") + "</div>",
+        "<br>",
+        "<img style='width: 80vh; height: 60vh; object-fit: contain;' src='/images/pepper.png' alt='Pepper'>",
         "</div>",
-        "<img src='/images/pepperwebMenu.webp' style='height:45vh; max-height:350px; object-fit:contain;' onerror=\"this.src='https://techcrunch.com/wp-content/uploads/2015/06/pepper.jpg'; this.style.borderRadius='20px'\">",
-        "</div></div></body></html>"
+        "<div class='menu-cards'>",
     ]
+    for activity in get_enabled_activities():
+        parts.append(
+            "<a class='btn btn-menu' href='" + activity["href"] + "'>"
+            + _activity_icon_html(activity.get("icon"))
+            + "<span>" + activity["label"] + "</span></a>"
+        )
+    parts.extend([
+        "</div>",
+        "</div>",
+        "</main>",
+        render_chat_sidebar(),
+        "</div></body></html>"
+    ])
     return "".join(parts)
 
 def render_chat():
     parts = [
-        "<html><head><meta charset='utf-8'>", COMMON_CSS,
-        "<script>",
-        "var lastStatus = '';",
-        "function startPolling() {",
-        "  setInterval(function() {",
-        "    var xhr = new XMLHttpRequest();",
-        "    xhr.open('GET', '/poll?t=' + new Date().getTime(), true);",
-        "    xhr.onreadystatechange = function() {",
-        "      if (xhr.readyState == 4 && xhr.status == 200) {",
-        "        try {",
-        "          var data = JSON.parse(xhr.responseText);",
-        "          var container = document.getElementById('chat-container');",
-        "          if (data.user && data.user !== '') {",
-        "            var div = document.createElement('div');",
-        "            div.className = 'bubble user-bubble';",
-        "            div.innerHTML = data.user;",
-        "            container.appendChild(div);",
-        "            container.scrollTop = container.scrollHeight;",
-        "          }",
-        "          if (data.robot && data.robot !== '') {",
-        "            var lastChild = container.lastChild;",
-        "            while (lastChild && lastChild.nodeType !== 1) { lastChild = lastChild.previousSibling; }",
-        "            if (lastChild && lastChild.className && lastChild.className.indexOf('robot-bubble') !== -1) {",
-        "                lastChild.innerHTML = data.robot;",
-        "            } else {",
-        "                var divR = document.createElement('div');",
-        "                divR.className = 'bubble robot-bubble';",
-        "                divR.innerHTML = data.robot;",
-        "                container.appendChild(divR);",
-        "            }",
-        "            container.scrollTop = container.scrollHeight;",
-        "          }",
-        "          if (data.status && data.status !== lastStatus) {",
-        "            var bar = document.getElementById('status-bar');",
-        "            if(data.status === 'listening') { bar.className = 'status-bar status-listening'; bar.innerHTML = 'Je vous ecoute / Parlez !'; }",
-        "            else if(data.status === 'robotspeaking') { bar.className = 'status-bar status-speaking'; bar.innerHTML = 'Je parle...'; }",
-        "            else { bar.className = 'status-bar status-waiting'; bar.innerHTML = 'Un instant...'; }",
-        "            lastStatus = data.status;",
-        "          }",
-        "        } catch(e) {}",
-        "      }",
-        "    };",
-        "    xhr.send();",
-        "  }, 500);",
-        "}",
-        "window.onload = function() {",
-        "  var c=document.getElementById('chat-container');",
-        "  if(c) c.scrollTop=c.scrollHeight;",
-        "  startPolling();",
-        "};",
-        "</script></head><body>", HEADER_HTML,
-        "<div class='container'><h1>Discussion avec l'IA Pepper</h1>",
-        "<div class='chat-container' id='chat-container'></div>",
-        "<div class='status-bar status-waiting' id='status-bar'>Initialisation...</div>",
-        "<a class='btn' href='/menu' style='margin-bottom:20px;'>Retour Menu</a>",
+        "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
+        "<div class='app-layout'>",
+        "<main class='app-main' style='display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.68); font-style:italic;'>",
+        "Parlez à Pepper, la discussion s'affiche à droite.",
+        "</main>",
+        render_chat_sidebar(show_back=True),
         "</div></body></html>"
     ]
     return "".join(parts)
 
-def render_quiz():
+def render_animations(feedback=None):
+    parts = [
+        "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
+        "<div class='app-layout'>",
+        "<main class='app-main animations-main'>",
+        "<a class='btn back-menu' href='/menu'>← Retour au menu</a>",
+        "<div class='surface-panel animations-panel'>",
+        "<h1 style='margin-top:0;'>Animations</h1>",
+        "<p style='color:" + THEME_BACKGROUND + "; opacity:0.65; font-style:italic; margin-top:-8px;'>Touchez un bouton ou dites le nom de l'animation à voix haute.</p>",
+    ]
+    if feedback:
+        parts.append("<div style='display:inline-block; background:rgba(24,198,217,0.18); color:#1F365C; padding:10px 18px; border-radius:99px; font-weight:bold; margin:8px 0 18px;'>" + feedback + "</div>")
+    parts.append("<div class='animations-grid'>")
+    for anim in PEPPER_ANIMATIONS:
+        parts.append(
+            "<a class='btn btn-menu' href='/animation/run/" + anim["id"] + "'>"
+            "<span class='icon'>" + anim["icon"] + "</span>"
+            "<span>" + anim["label"] + "</span>"
+            "</a>"
+        )
+    parts.append("</div></main>")
+    parts.append(render_chat_sidebar())
+    parts.append("</div></body></html>")
+    return "".join(parts)
+
+def render_catalogue():
+    parts = [
+        "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
+        "<div class='container' style='padding:110px 50px 40px;'>",
+        "<a class='btn' href='/menu' style='position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px;'>← Retour au menu</a>",
+        "<h1>Catalogue</h1>",
+        "<div style='display:flex; flex:1; align-items:center; justify-content:center; width:100%;'>",
+        "<div style='color:#ECF4F8; opacity:0.72; font-style:italic;'>Aucune fiche dans le catalogue pour le moment.</div>",
+        "</div>",
+        "<div style='position:fixed; right:0; top:0; bottom:0; width:260px; border-left:1px solid rgba(255,255,255,0.08);'>",
+        "<div class='welcome-bubble' style='top:240px; left:20px;'>Je ne peux pas discuter pendant une activité.</div>",
+        "<img src='/images/pepperMuted.png' style='position:absolute; bottom:0; left:8px; width:240px; max-height:70%; object-fit:contain;'>",
+        "</div>",
+        "</div></body></html>"
+    ]
+    return "".join(parts)
+
+def _build_question_say_text(q):
+    """Construit le texte oral : question + toutes les reponses."""
+    say_text = q.get("tts", q["text"]) + ". "
+    for ans in q.get("answers_tts", q["answers"]):
+        say_text += ans + ". "
+    return say_text
+
+def render_quiz(speak_question=True):
     if state.quiz_index < len(QUESTIONS):
         q = QUESTIONS[state.quiz_index]
+        good_msg = q.get("good", "Bonne réponse !")
+        bad_msgs = q.get("bad", [])
+        bad_json = json.dumps(bad_msgs)
         parts = [
             "<html><head><meta charset='utf-8'>", COMMON_CSS,
-            "<style>.btn-answer { width: 45%; font-size: 24px; min-height: 100px; transition: background-color 0.2s; }</style>",
+            "<style>",
+            "  .btn-answer { width: 100%; box-sizing: border-box; font-size: 20px; font-weight: bold; height: 62px; transition: background-color 0.2s, color 0.2s, border-color 0.2s; background: white; color: #1F365C; border: 2px solid #18C6D9 !important; margin: 0 0 14px 0 !important; border-radius: 30px !important; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; box-shadow: none !important; text-decoration: none; }",
+            "  .btn-answer:last-child { margin-bottom: 0 !important; }",
+            "  .btn-answer:active { transform: scale(0.99); background: #f0f8fa; }",
+            "  #feedback-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:5000; flex-direction:column; align-items:center; justify-content:center; }",
+            "  #feedback-text { font-size:36px; font-weight:bold; padding:30px 50px; border-radius:20px; max-width:80%; text-align:center; }",
+            "  .quiz-back-btn { position: fixed; top: 96px; left: 24px; z-index: 1110; padding: 10px 24px; font-size: 15px; font-weight: bold; color: white; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 20px; text-decoration: none; transition: background 0.2s; }",
+            "  .quiz-back-btn:active { background: rgba(255, 255, 255, 0.2); }",
+            "  .hamburger span { background-color: " + THEME_SURFACE + "; !important; }",
+            "</style>",
             "<script>",
+            "var answered = false;",
+            "var goodMsg = " + json.dumps(good_msg) + ";",
+            "var badMsgs = " + bad_json + ";",
             "function clickAns(btn, idx, correctIdx) {",
-            "  if (idx == correctIdx) { btn.style.backgroundColor = '#2ecc71'; btn.style.color = 'white'; }",
-            "  else { btn.style.backgroundColor = '#e74c3c'; btn.style.color = 'white'; }",
-            "  setTimeout(function() { window.location.href = '/quiz/answer/' + idx + '?t=' + new Date().getTime(); }, 1500);",
+            "  if (answered) return;",
+            "  answered = true;",
+            "  var overlay = document.getElementById('feedback-overlay');",
+            "  var fbText = document.getElementById('feedback-text');",
+            "  if (idx == correctIdx) {",
+            "    btn.style.backgroundColor = '#2ecc71'; btn.style.color = 'white'; btn.style.borderColor = '#2ecc71';",
+            "    overlay.style.background = 'rgba(46,204,113,0.92)';",
+            "    fbText.innerText = goodMsg;",
+            "  } else {",
+            "    btn.style.backgroundColor = '#e74c3c'; btn.style.color = 'white'; btn.style.borderColor = '#e74c3c';",
+            "    overlay.style.background = 'rgba(231,76,60,0.92)';",
+            "    var msg = (badMsgs && badMsgs[idx]) ? badMsgs[idx] : 'Mauvaise réponse !';",
+            "    fbText.innerText = msg;",
+            "  }",
+            "  overlay.style.display = 'flex';",
+            "  setTimeout(function() { window.location.href = '/quiz/answer/' + idx + '?t=' + new Date().getTime(); }, 3000);",
             "}",
             "</script></head><body>", HEADER_HTML,
-            "<div class='container'>",
-            "<h1 style='flex-shrink:0; max-height:30%; overflow-y:auto; font-size:40px; margin:20px 0; color:white;'>" + q["text"] + "</h1>",
-            "<div style='flex:1; display:flex; flex-wrap:wrap; align-content:flex-start; justify-content:center; width:100%; overflow-y:auto; padding-bottom:10px; gap:15px;'>"
+            "<div id='feedback-overlay'><div id='feedback-text' style='color:white;'></div></div>",
+            "<a class='quiz-back-btn' href='/menu'>← Retour au menu</a>",            
+            "<div style='position:fixed; top:80px; right:12px; z-index:1200; display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:horizontal; -webkit-box-direction:normal; -webkit-flex-direction:row; flex-direction:column; -webkit-box-align:center; -webkit-align-items:center; align-items:flex-end; margin-bottom:6px;'>",
+            "  <div style='background:white; color:#1F365C; padding:10px 22px; border-radius:24px; font-weight:bold; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.15); border:1px solid rgba(0,0,0,0.05); white-space:nowrap;'>",
+            "    Je ne peux pas t'écouter pendant l'activité.",
+            "  </div>",
+            "  <div>",
+            "  <img src='/images/pepperHeadMuted.png' onerror=\"this.src='/images/pepperMuted.png'\" style='width:90px; height:90px; object-fit:contain;'>",
+            "  </div>",
+            "</div>",            
+            '<div class="container" style="background-color: transparent; padding: 165px 30px 24px 30px; height: 100vh; box-sizing: border-box; justify-content: center;">',            
+            '  <div class="surface-panel" style="width:100%; height:100%; padding:30px 45px 24px; box-sizing:border-box; display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; -webkit-box-align:center; -webkit-align-items:center; align-items:center; border-radius:36px; box-shadow:0 16px 36px rgba(0,0,0,0.22); overflow:hidden;">',
+            '    <h1 style="font-size: 50px; margin: 0 0 14px 0; color: #18C6D9; letter-spacing: 4px; font-weight:800; text-shadow:none;">QUIZ AVEC MIROKA</h1>',
+            '    <h2 style="font-size: 26px; font-weight: normal; margin: 0 0 28px 0; color: #1F365C; line-height:1.2;">' + q['text'] + '</h2>',
+            '    <div style="display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; width: 100%; max-width: 820px; -webkit-box-flex:1; -webkit-flex:1; flex:1; -webkit-box-pack:center; -webkit-justify-content:center; justify-content:center; box-sizing:border-box;">'
         ]
+        
         for i, ans in enumerate(q["answers"]):
             correct_idx = q["correct"]
-            parts.append("<div class='btn btn-answer' style='margin:0; margin-right:5px; margin-bottom:5px; padding:15px; font-size:22px; min-height:80px; width:40%; border-radius:20px;' onclick='clickAns(this, "+str(i)+", "+str(correct_idx)+")'>" + ans + "</div>")
-        parts.append("</div><p style='margin:5px 0; flex-shrink:0; font-size:20px;'>Question " + str(state.quiz_index+1) + "/" + str(len(QUESTIONS)) + "</p>")
-        parts.append("<a class='btn' href='/menu' style='margin-bottom:20px;'>Quitter</a></div></body></html>")
+            parts.append("      <div class='btn btn-answer' onclick='clickAns(this, " + str(i) + ", " + str(correct_idx) + ")'>" + ans + "</div>")
         
-        threading.Thread(target=action_say, args=(q["text"],)).start()
+        parts.append("    </div>")
+        parts.append("    <p style='margin:16px 0 0 0; flex-shrink:0; font-size:18px; color:#1F365C; font-weight:bold;'>Question " + str(state.quiz_index + 1) + "/" + str(len(QUESTIONS)) + "</p>")
+        parts.append("  </div>")
+        parts.append("</div></body></html>")
+
+        if speak_question:
+            threading.Thread(target=action_say, args=(_build_question_say_text(q),)).start()
         return "".join(parts)
     else:
+        score_txt = str(state.quiz_score) + " sur " + str(len(QUESTIONS))
         parts = [
             "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
-            "<div class='container' style='justify-content:center;'>",
-            "<h1 style='font-size:48px;'>Bravo ! Le quiz est termine.</h1>",
-            "<div style='font-size:80px; color:#2ecc71; font-weight:bold; margin:40px 0;'>" + str(state.quiz_score) + " / " + str(len(QUESTIONS)) + " bonnes reponses</div>",
-            "<div style='display:flex; flex-direction:column; gap:20px;'>",
-            "<a class='btn btn-green' href='/quiz/start' style='width:300px;' onclick=\"this.href='/quiz/start?t=' + new Date().getTime()\">Recommencer</a>",
-            "<a class='btn' href='/menu' style='width:300px;'>Menu principal</a>",
-            "</div></div></body></html>"
+            "<div class='container' style='justify-content:center; padding:40px 40px;'>",
+            "  <div class='surface-panel' style='width:100%; max-width:680px; padding:40px; border-radius:36px; box-shadow:0 16px 36px rgba(0,0,0,0.22); display:flex; flex-direction:column; align-items:center;'>",
+            "    <h1 style='font-size:38px; margin-top:0; margin-bottom:15px;'>Quiz terminé !</h1>",
+            "    <div style='font-size:72px; color:#2ecc71; font-weight:bold; margin:15px 0;'>" + score_txt + "</div>",
+            "    <p style='font-size:20px; max-width:90%; line-height:1.5; margin:15px auto; color:#1F365C; font-weight:500;'>" + QUIZ_END_TEXT.replace(". ", ".<br>") + "</p>",
+            "    <div style='display:flex; flex-direction:column; gap:12px; margin-top:20px; width:100%; align-items:center;'>",
+            "      <a class='btn btn-green' href='/quiz/start' style='width:260px; border-radius:22px; font-size:18px;' onclick=\"this.href='/quiz/start?t=' + new Date().getTime()\">Recommencer</a>",
+            "      <a class='btn' href='/menu' style='width:260px; border-radius:22px; font-size:18px; color:var(--background);'>Menu principal</a>",
+            "    </div>",
+            "  </div>",
+            "</div></body></html>"
         ]
-        threading.Thread(target=action_say, args=("Bravo, tu as fini le quiz. Voici ton score.",)).start()
+        threading.Thread(target=action_say, args=(QUIZ_END_TEXT,)).start()
         return "".join(parts)
 
 def action_say(text):
+    """Dit un texte via le robot (bloquant). Appeler dans un thread."""
     if session_global and qi:
         try:
+            tts = session_global.service("ALTextToSpeech")
             print("[ROBOT] Say: " + text)
-            session_global.service("ALTextToSpeech").say(str(text))
+            tts.say(str(text))
         except: pass
+
+def action_say_then(text1, text2):
+    """Dit text1, puis text2 sequentiellement (feedback puis question suivante)."""
+    if session_global and qi:
+        try:
+            tts = session_global.service("ALTextToSpeech")
+            print("[ROBOT] Say feedback: " + text1)
+            tts.say(str(text1))
+            time.sleep(0.5)
+            print("[ROBOT] Say question: " + text2)
+            tts.say(str(text2))
+        except: pass
+
+def action_animation(animation_id):
+    anim = PEPPER_ANIMATION_BY_ID.get(animation_id)
+    if not anim:
+        return
+    if session_global and qi:
+        if animation_id == "dance":
+            try:
+                behavior = session_global.service("ALBehaviorManager")
+                for path in PEPPER_ANIMATION_PATHS.get(animation_id, []):
+                    try:
+                        print("[ROBOT] Behavior: " + path)
+                        behavior.runBehavior(path)
+                        return
+                    except Exception as e_path:
+                        print("[ROBOT] Behavior echec " + path + ": " + str(e_path))
+            except Exception as e_beh:
+                print("[ROBOT] ALBehaviorManager indisponible: " + str(e_beh))
+            action_say(anim.get("say", anim.get("label", "")))
+            return
+
+        try:
+            player = session_global.service("ALAnimationPlayer")
+            for path in PEPPER_ANIMATION_PATHS.get(animation_id, []):
+                try:
+                    print("[ROBOT] Animation: " + path)
+                    player.run(path)
+                    return
+                except Exception as e_path:
+                    print("[ROBOT] Animation echec " + path + ": " + str(e_path))
+        except Exception as e_anim:
+            print("[ROBOT] ALAnimationPlayer indisponible: " + str(e_anim))
+    action_say(anim.get("say", anim.get("label", "")))
 
 class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -358,6 +826,30 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if not done:
             print("[VOLUME] ECHEC total - verifier robot_ip et connexion NaoQI")
         return done
+
+    def _get_robot_status(self):
+        status = {"connected": False, "battery": "N/D", "volume": None}
+        if _ALProxy and ROBOT_IP_GLOBAL:
+            try:
+                status["battery"] = str(_ALProxy("ALBattery", ROBOT_IP_GLOBAL, 9559).getBatteryCharge()) + "%"
+                status["connected"] = True
+            except Exception as e:
+                print("[STATUS] Batterie ALProxy echec: " + str(e))
+            try:
+                status["volume"] = _ALProxy("ALAudioDevice", ROBOT_IP_GLOBAL, 9559).getOutputVolume()
+                status["connected"] = True
+            except Exception as e:
+                print("[STATUS] Volume ALProxy echec: " + str(e))
+        if session_global:
+            try:
+                if status["battery"] == "N/D":
+                    status["battery"] = str(session_global.service("ALBattery").getBatteryCharge()) + "%"
+                if status["volume"] is None:
+                    status["volume"] = session_global.service("ALAudioDevice").getOutputVolume()
+                status["connected"] = True
+            except Exception as e:
+                print("[STATUS] qi.Session echec: " + str(e))
+        return status
 
     def do_GET(self):
         try:
@@ -400,16 +892,27 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.wfile.write(gif1px)
                 return
 
-            # 1. Redirection de la racine vers l'écran d'accueil
+            if self.path.startswith("/robotstatus"):
+                payload = json.dumps(self._get_robot_status())
+                if sys.version_info[0] >= 3:
+                    payload = payload.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-type", "application/json; charset=utf-8")
+                self.send_header("Cache-Control", "no-cache, no-store")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+                return
+
             if self.path == "/" or self.path == "/index.html":
-                set_app_mode("chat") # L'IA ecoute sur l'ecran d'accueil !
+                set_app_mode("chat")
                 self.send_response(302)
-                self.send_header("Location", "/veolia/accueil.html")
+                self.send_header("Location", "/menu")
                 self.end_headers()
                 return
 
             # 2. Fichiers statiques (Images globales)
-            if self.path.startswith("/images/"):
+            if self.path.startswith("/images/") or self.path.startswith("/config-assets/"):
                 fpath = self.path[1:]
                 if ".." in fpath: return
                 if os.path.exists(fpath):
@@ -417,6 +920,7 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     self.send_header("Cache-Control", "public, max-age=86400")
                     if fpath.endswith(".css"): self.send_header("Content-type", "text/css")
                     elif fpath.endswith(".js"): self.send_header("Content-type", "application/javascript")
+                    elif fpath.endswith(".svg"): self.send_header("Content-type", "image/svg+xml")
                     elif fpath.endswith(".png"): self.send_header("Content-type", "image/png")
                     elif fpath.endswith(".jpg") or fpath.endswith(".jpeg"): self.send_header("Content-type", "image/jpeg")
                     elif fpath.endswith(".webp"): self.send_header("Content-type", "image/webp")
@@ -430,15 +934,11 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             # 3. Fichiers statiques du module VEOLIA
             if self.path.startswith("/veolia/"):
-                fpath = self.path[1:] # Retire le premier '/'
+                fpath = self.path[1:]
                 if ".." in fpath: return
                 if os.path.exists(fpath) and os.path.isfile(fpath):
-                    
-                    # --- GESTION DE L'IA DANS LES PRESENTATIONS ---
-                    # Des qu'une page HTML de Veolia est chargee, on force l'IA a s'allumer
                     if fpath.endswith(".html") or "." not in fpath:
                         set_app_mode("chat")
-                    # ----------------------------------------------
 
                     with open(fpath, "rb") as f:
                         content_bytes = f.read()
@@ -459,7 +959,6 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     self.end_headers()
                 return
 
-            # 4. Polling chat IA
             if self.path.startswith('/poll'):
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
@@ -476,36 +975,64 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.wfile.write(out.encode('utf-8') if sys.version_info[0] >= 3 else out)
                 return
             
-            # 5. Pages de l'application Pepper (Menu, Chat, Quiz)
             content = ""
             if self.path == "/menu": 
-                set_app_mode("chat") # IA active sur le menu principal
+                set_app_mode("chat")
                 content = render_menu()
                 
             elif self.path.startswith("/ai_module"): 
                 state.chat_status = "waiting"
-                set_app_mode("chat") # IA active dans la page chat
+                set_app_mode("chat")
                 content = render_chat()
                 
             elif self.path.startswith("/quiz"):
-                set_app_mode("quiz") # SEUL ENDROIT OU L'IA EST COUPEE !
+                set_app_mode("quiz")
                 
+                speak = True
                 if "/start" in self.path: 
                     state.reset_quiz()
                 elif "/answer/" in self.path:
+                    speak = False
                     try:
                         ans_str = self.path.split("/answer/")[1].split("?")[0]
                         ans = int(ans_str)
-                        correct = QUESTIONS[state.quiz_index]["correct"]
+                        q = QUESTIONS[state.quiz_index]
+                        correct = q["correct"]
                         if ans == correct:
                             state.quiz_score += 1
-                            threading.Thread(target=action_say, args=("Bonne reponse !",)).start()
+                            say_txt = q.get("good", "Bonne reponse !")
                         else:
-                            threading.Thread(target=action_say, args=("Mauvaise reponse.",)).start()
+                            bad_msgs = q.get("bad", [])
+                            say_txt = bad_msgs[ans] if ans < len(bad_msgs) and bad_msgs[ans] else "Mauvaise reponse !"
                         state.quiz_index += 1
+                        next_q_text = ""
+                        if state.quiz_index < len(QUESTIONS):
+                            next_q_text = _build_question_say_text(QUESTIONS[state.quiz_index])
+                        if next_q_text:
+                            threading.Thread(target=action_say_then, args=(say_txt, next_q_text)).start()
+                        else:
+                            threading.Thread(target=action_say, args=(say_txt,)).start()
                     except Exception as e: 
                         print("Erreur Answer: " + str(e))
-                content = render_quiz()
+                content = render_quiz(speak_question=speak)
+
+            elif self.path.startswith("/animations"):
+                set_app_mode("animations")
+                content = render_animations()
+
+            elif self.path.startswith("/animation/run/"):
+                set_app_mode("animations")
+                anim_id = self.path.split("/animation/run/")[1].split("?")[0]
+                anim = PEPPER_ANIMATION_BY_ID.get(anim_id)
+                if anim:
+                    threading.Thread(target=action_animation, args=(anim_id,)).start()
+                    content = render_animations(anim["icon"] + " " + anim["label"] + " en cours...")
+                else:
+                    content = render_animations("Animation indisponible.")
+
+            elif self.path.startswith("/catalogue"):
+                set_app_mode("catalogue")
+                content = render_catalogue()
                 
             else:
                 set_app_mode("chat")
@@ -558,7 +1085,6 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.wfile.write(b"OK" if sys.version_info[0] >= 3 else "OK")
 
             elif self.path == "/setvolume":
-                # Compatibilite ancienne version (POST) — redirige vers la logique GET
                 length_str = self.headers.get('Content-Length', '0')
                 length = int(length_str) if length_str else 0
                 if length > 0:
@@ -612,7 +1138,6 @@ def main():
             try:
                 tab = session_global.service("ALTabletService")
                 
-                # Detection IP PC pour l'URL
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 try:
                     s.connect(("8.8.8.8", 80))
