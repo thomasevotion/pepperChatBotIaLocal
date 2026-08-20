@@ -955,6 +955,7 @@ class DialogueModule(naoqi.ALModule):
         update_tablet_interface(None, u"...", status="robotspeaking")
         last_task_id = None
         reactive_triggered = skip_reactive_animation
+        first_speech_logged = False
 
         try:
             for chunk in chatbot.respond_stream(input_text, image_data=image_data):
@@ -998,6 +999,10 @@ class DialogueModule(naoqi.ALModule):
                     
                     if len(mots_seulement) > 1:
                         last_task_id = self.speak_async(clean_sentence)
+                        if not first_speech_logged:
+                            first_speech_logged = True
+                            print("[LATENCE] Fin STT -> 1ere reponse parlee: {:.2f}s".format(
+                                time.time() - self._last_speech_time))
                         if not reactive_triggered:
                             reactive_triggered = True
                             self._trigger_emotion_animation()
@@ -1016,10 +1021,14 @@ class DialogueModule(naoqi.ALModule):
 
                 if len(mots_seulement) > 1:
                     last_task_id = self.speak_async(clean_sentence)
+                    if not first_speech_logged:
+                        first_speech_logged = True
+                        print("[LATENCE] Fin STT -> 1ere reponse parlee: {:.2f}s".format(
+                            time.time() - self._last_speech_time))
                     if not reactive_triggered:
                         reactive_triggered = True
                         self._trigger_emotion_animation()
-                    
+
                 print("") # Retour a la ligne dans la console
                 
             # ENVOI FINAL OBLIGATOIRE POUR L'HISTORIQUE (verrouille le robot_text final)

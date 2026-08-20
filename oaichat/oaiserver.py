@@ -66,9 +66,10 @@ class OaiServer(OaiChat):
                         # Sauvegarder l'input pour l'historique apres le stream
                         self.current_stream_input = i['input']
                         try:
-                            # respond_stream() (pas respond()) : seule methode qui fait le tour
-                            # de dialogue principal avec emotion_tag contraint par schema. Elle
-                            # est deja un generateur de chunks emules, donc pas de kwarg stream=.
+                            # respond_stream() (pas respond()) : tour de dialogue principal.
+                            # Generateur "paresseux" : rien ne s'execute avant le premier
+                            # next_chunk (voir plus bas), qui declenche la classification de
+                            # l'emotion_tag PUIS ouvre le vrai stream reseau Gemini pour "speech".
                             self.stream_generator = self.respond_stream(
                                 i['input'], image_data=image_data
                             )
