@@ -88,41 +88,54 @@ def html_text(value):
     return str(value)
 
 QUESTIONS = [
-    {
-        "text": "Que peux-tu faire à l'atelier parfums ?",
-        "answers": ["Créer un parfum", "Construire un robot", "Faire du sport", "Cuisiner"],
-        "correct": 0,
-        "good": "Bravo ! Tu es un créateur du futur !",
-        "bad": ["", "Pas ici, mais bonne idée !", "Presque, mais non !", "Miam ! Mais ce n'est pas ici"]
-    },
-    {
-        "text": "Pourquoi faut-il protéger sa peau ?",
-        "answers": ["Contre le soleil", "Pour dormir", "Pour courir", "Pour jouer"],
-        "correct": 0,
+     {
+        "text": "Quel est aujourd’hui le cœur de métier principal de Véolia au niveau mondial ?",
+        "answers": [
+            "A Le développement de logiciels informatiques de gestion",
+            "B La fabrication d’équipements industriels lourds",
+            "C Exclusivement le transport urbain de passagers",
+            "D La gestion optimisée de l’eau, des déchets et de l’énergie"
+            ],
+        "correct": 4,
         "good": "Exact ! Tu es un expert !",
-        "bad": ["", "Pas vraiment", "Non plus !", "Pas exactement !"]
+        "bad": ["", "Pas vraiment", "Non plus !", "Pas exactement !"],
     },
     {
-        "text": "Que permet l'intelligence artificielle ?",
-        "answers": ["Créer et inventer", "Dormir", "Manger", "Disparaître"],
-        "correct": 0,
-        "good": "Bravo ! Tu es prêt pour le futur !",
-        "bad": ["", "Non", "Pas encore !", "Impossible !"]
+        "text": "Dans quel objectif principal Véolia développe-t-elle ses solutions pour les territoires et les entreprises ?",
+        "answers": [
+            "A Remplacer les services publics par des services totalement privés",
+            "B Assurer la transition écologique en optimisant l’usage des ressources",
+            "C Se consacrer uniquement à l’innovation technologique sans considération sociale",
+            "D Maximiser exclusivement ses profits financiers à court terme"
+        ],
+        "correct": 2,
+        "good": "Exact ! Tu es un expert !",
+        "bad": ["", "Pas vraiment", "Non plus !", "Pas exactement !"],
     },
     {
-        "text": "Où peux-tu jouer librement ?",
-        "answers": ["Fun Zone", "Zone Zen", "Atelier peau", "Accueil"],
-        "correct": 0,
-        "good": "Oui !! Amuse-toi bien !",
-        "bad": ["", "Là on se détend", "On apprend ici !", "On commence ici !"]
+        "text": "Quel type de contrat lie le plus souvent Véolia aux collectivités locales pour la gestion de l’eau ou des déchets ?",
+        "answers": [
+            "A Une délégation de service public ou un contrat de concession",
+            "B Un contrat de travail individuel à durée indéterminée",
+            "C Un traité international bilatéral",
+            "D Un contrat de location d’équipements"
+        ],
+        "correct": 1,
+        "good": "Bien joué !",
+        "bad": ["", "Pas vraiment", "Non plus !", "Pas exactement !"],
     },
     {
-        "text": "Que fait un scientifique ?",
-        "answers": ["Il expérimente", "Il dort", "Il joue", "Il chante"],
-        "correct": 0,
-        "good": "Exact ! Comme toi aujourd'hui !",
-        "bad": ["", "Non", "Parfois... mais pas tout le temps !", "Pourquoi pas !"]
-    }
+        "text": "Dans le domaine des déchets, quel objectif stratégique Véolia met-elle particulièrement en avant ?",
+        "answers": [
+            "A Développer le recyclage et la valorisation des déchets en nouvelles ressources",
+            "B Limiter le tri pour simplifier la collecte",
+            "C Interrompre toutes les activités liées aux déchets dangereux",
+            "D Augmenter systématiquement les volumes envoyés en centre d’enfouissement"
+        ],
+        "correct": 1,
+        "good": "Bien joué !",
+        "bad": ["", "Pas vraiment", "Non plus !", "Pas exactement !"],
+    },
 ]
 CONFIG_QUIZ = cfg_get("quiz", None)
 if CONFIG_QUIZ:
