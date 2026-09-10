@@ -42,6 +42,12 @@ LANGUAGE_PHRASE_HINTS = [
     "parle en russe", "parle-moi en russe", "russe",
     "parle en suédois", "parle-moi en suédois", "suédois",
     "parle en turc", "parle-moi en turc", "turc",
+    # Anglais par defaut : hints pour les demandes de changement de langue formulees en anglais
+    "speak English", "speak in English", "switch to English",
+    "speak French", "speak in French", "speak German", "speak Spanish",
+    "speak Italian", "speak Japanese", "speak Chinese", "speak Mandarin",
+    "speak Dutch", "speak Korean", "speak Polish", "speak Portuguese",
+    "speak Greek", "speak Finnish", "speak Russian", "speak Arabic",
 ]
 
 class GoogleSTTServer:
@@ -106,8 +112,8 @@ class GoogleSTTServer:
             config = speech.RecognitionConfig(
                 encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
                 sample_rate_hertz=48000, 
-                language_code='fr-FR',
-                alternative_language_codes=['en-US', 'es-ES'],
+                language_code='en-US',
+                alternative_language_codes=['fr-FR', 'es-ES'],
                 enable_automatic_punctuation=True,
                 model='latest_short',
                 use_enhanced=True,
@@ -140,7 +146,7 @@ class GoogleSTTServer:
             responses = self.client.streaming_recognize(config=streaming_config, requests=requests)
             
             last_partial = None
-            last_language_code = 'fr-FR'
+            last_language_code = 'en-US'
 
             for response in responses:
                 if not response.results:
@@ -151,7 +157,7 @@ class GoogleSTTServer:
                     continue
                     
                 transcript = result.alternatives[0].transcript
-                language_code = getattr(result, "language_code", None) or 'fr-FR'
+                language_code = getattr(result, "language_code", None) or 'en-US'
                 last_language_code = language_code
                 
                 # Gestion des résultats

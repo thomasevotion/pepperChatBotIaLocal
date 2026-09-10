@@ -1,28 +1,28 @@
 {
   "robotType": "pepper",
   "client": {
-    "name": "Evotion",
+    "name": "Safran",
     "logo": "/images/EvotionLogo.png",
     "tagline": "Pepper"
   },
   "theme": {
-    "primary": "#18C6D9",
-    "secondary": "#18C6D9",
-    "background": "#1F365C",
+    "primary": "#4BA4FF",
+    "secondary": "#4BA4FF",
+    "background": "#014491",
     "surface": "#ECF4F8",
     "textOnBackground": "#FFFFFF",
     "textOnSurface": "#1A1A1A",
     "textOnPrimary": "#FFFFFF"
   },
   "home": {
-    "greeting": "Salut ! Je suis Pepper,\nPrêt à discuter et jouer avec toi",
-    "chatTitle": "DISCUSSION AVEC PEPPER",
-    "chatPlaceholder": "Parlez à Pepper pour démarrer la discussion..."
+    "greeting": "Hi! I'm Pepper,\nready to chat and play with you",
+    "chatTitle": "CHAT WITH PEPPER",
+    "chatPlaceholder": "Talk to Pepper to start the conversation..."
   },
   "status": {
-    "listening": "Vous pouvez parler !",
-    "speaking": "🔊 Attendez, c'est au tour de Pepper de parler",
-    "waiting": "Veuillez patienter"
+    "listening": "You can speak!",
+    "speaking": "🔊 Wait, it's Pepper's turn to talk",
+    "waiting": "Please wait"
   },
   "activities": [
     {
@@ -41,7 +41,11 @@
     },
     {
       "id": "CATALOG",
+<<<<<<< Updated upstream
       "label": "Veolia",
+=======
+      "label": "Catalog",
+>>>>>>> Stashed changes
       "icon": "📖",
       "href": "/veolia/presentation1.html",
       "enabled": true
@@ -50,24 +54,110 @@
   "interactions": [
     {
       "animationId": "wave",
-      "label": "Coucou",
+      "label": "Wave",
       "icon": "👋"
     },
     {
       "animationId": "dance",
-      "label": "Danse",
+      "label": "Dance",
       "icon": "🕺"
     },
     {
       "animationId": "laugh",
-      "label": "Rire",
+      "label": "Laugh",
       "icon": "😁"
     }
   ],
   "catalog": [],
-  "quiz": [],
-  "quizEndText": "Analyse des résultats... bip bip... Mission réussie ! À bientôt !",
+  "quiz": [
+    {
+      "text": "Do you know the connection between Production Readiness Reviews and PFMEA?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Well done! Great, I recommend you visit the Safran Seats booth to discover how their PFMEA are connected to Production Readiness Reviews, and it is at booth number 1.",
+      "bad": ["", "Don't worry, we are going to fix it. I recommend you visit the Safran Seats booth to discover how their PFMEA are connected to Production Readiness Reviews, and it is at booth number 1."]
+    },
+    {
+      "text": "Do you know how to train a manager on their role in APQP in only 30 minutes?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Congratulations! I invite you to visit the Safran Cabin booth to see how their managers are trained in APQP. You'll find them at booth number 2.",
+      "bad": ["", "That's okay, we're going to fix that. I invite you to visit the Safran Cabin booth to see how their managers are trained in APQP. You'll find them at booth number 2."]
+    },
+    {
+      "text": "Do you know how to identify the key characteristics of your products?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Congratulations! I invite you to visit the Safran Aero Systems booth to discover their best practices for identifying key product characteristics. You'll find them at booth number 3.",
+      "bad": ["", "That's okay, we're going to fix that. I invite you to visit the Safran Aero Systems booth to discover their best practices on this topic. You'll find them at booth number 3."]
+    },
+    {
+      "text": "Do you know how to measure the level of APQP deployment within your organization?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Congratulations! I invite you to visit the Safran Electronics and Defense booth to discover the tools and practices they have implemented to measure APQP deployment within their organization. You'll find them at booth number 4.",
+      "bad": ["", "That's okay, we're going to fix that. I invite you to visit the Safran Electronics and Defense booth to discover the solutions they have implemented. You'll find them at booth number 4."]
+    },
+    {
+      "text": "Do you have a consolidated view of your industrial projects?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Congratulations! I invite you to visit the Safran Aircraft Engines booth to discover T.I.P. I won't say any more. You'll find them at booth number 5.",
+      "bad": ["", "That's okay, we're not going to leave you hanging. I invite you to visit the Safran Aircraft Engines booth to discover T.I.P. I'll let you find out the rest for yourself. You'll find them at booth number 5."]
+    },
+    {
+      "text": "Do you know how to evaluate the maturity of your suppliers' APQP processes?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Congratulations! I invite you to visit the Safran Landing Systems booth to discover their best practice on this topic, one that can be applied by everyone. You'll find them at booth number 6. Did you hear me? I said booth number 6. I've got a soft spot for that booth.",
+      "bad": ["", "No worries! Come and discover a best practice from Safran Landing Systems on this topic, one that can be applied across any organization. Visit them at booth number 6. See you there?"]
+    },
+    {
+      "text": "Are the APQP requirements defined in GRF186 clear and well understood by industrial and engineering teams?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Congratulations! I invite you to visit the Safran Aero Boosters booth to discover how they have tailored these requirements to industrial and engineering functions. You'll find them at booth number 7. My lucky number!",
+      "bad": ["", "No problem! I invite you to visit the Safran Aero Boosters booth to discover how they have adapted these requirements to industrial and technical professions. You can find them at booth number 7. Besides, it's my lucky number!"]
+    },
+    {
+      "text": "Do you think developing a robust PFMEA in less than two days is realistic?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Congratulations! Visit the Safran Helicopter Engines booth to discover how they successfully rose to this challenge. You can find them at booth number 8.",
+      "bad": ["", "No worries! Head over to the Safran Helicopter Engines booth to discover how they rose to this challenge with flying colors. You'll find them at booth number 8."]
+    },
+    {
+      "text": "Are you confident in your measurement system?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Congratulations, that's not so common! Visit the Safran Nacelles booth to discover how they successfully tackled this critically important challenge. You can find them at booth number 9.",
+      "bad": ["", "No worries! Visit the Safran Nacelles booth to discover how they successfully tackled this critically important challenge. You'll find them at booth number 9."]
+    },
+    {
+      "text": "Is your process under control?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Congratulations! That's not so common either. Visit the Safran Nacelles booth to discover their best practice on this topic. Meet the team at booth number 10.",
+      "bad": ["", "Nothing irreparable! Make your way to the Safran Nacelles booth and discover their best practice on this topic. Meet the team at booth number 10."]
+    },
+    {
+      "text": "Do you think a serious game can be an efficient way to learn APQP?",
+      "answers": ["Yes", "No"],
+      "correct": 0,
+      "good": "Congratulations! Head over to the Safran Transmission Systems booth and discover their APQP serious game. You'll find them at booth number 11.",
+      "bad": ["", "No worries! Head over to the Safran Transmission Systems booth and discover their APQP serious game. You'll find them at booth number 11."]
+    },
+    {
+      "text": "Do you think training is just a minor detail when it comes to APQP?",
+      "answers": ["Yes", "No"],
+      "correct": 1,
+      "good": "Absolutely, it's even a major one! Head over to the Safran Transmission Systems booth to discover how they addressed this topic through an escape game. You'll find them at booth number 11.",
+      "bad": ["Sorry, but this is a key topic to ensure everyone understands and fully plays their role. Visit the Safran Transmission Systems booth and discover their innovative escape game. Meet the team at booth number 11.", ""]
+    }
+  ],
+  "quizTtsLanguage": "English",
+  "quizEndText": "Here are your results! Thanks for playing with me. This afternoon, go and discover the 11 booths and their 11 best practices, and don't forget to vote for your favourite trio at the end of the tour. Come and chat with someone at the booth. See you there!",
   "llm": {
-    "systemPrompt": "You are Pepper, a rude, pervert, and machiavelous reception robot developed by Evotion in France, Lyon. System Rules:\nYou can speak in French, English, Dutch, Korean, Finnish, Greek, Polish, Chinese and Japanese, and respond in the same language the user is speaking, or the language they explicitly asked for.Use phonetic spellings for specific words to ensure your text-to-speech engine pronounces them correctly, in fr: 'exploreur' instead of 'explorer'.Keep all your responses very short, natural, and conversational since they will be spoken out loud.Always end every single response with a relevant question to keep the conversation going with the user, except if he asked for a joke or to do an action."
+    "systemPrompt": "You are Pepper, a friendly humanoid reception robot. LANGUAGE RULES: Speak English by default. Always greet and reply in English. Only switch to another language (French, Dutch, Korean, Finnish, Greek, Polish, Chinese or Japanese) if the user clearly speaks to you in that language or explicitly asks you to use it; as soon as the user speaks English again, or if you are unsure, go back to English. ROLE: You act as an engineer working at Safran who has just discovered the best practices from the Safran group companies linked to the APQP (Advanced Product Quality Planning) approach. These 11 best practices are presented on 11 booths during the event. You are their enthusiastic promoter: during the breaks you ask visitors questions that make them want to go and visit the 11 booths and discover the 11 best practices. AUDIENCE: You talk to one person at a time. Visitors know the APQP approach, either as specialists or as members of a program in their company. GOAL: Make each person want to go and discover the 11 booths in the early afternoon, and remind them to vote for their favourite trio of best practices at the end of the tour. KNOWLEDGE BASE (booths): 1 Safran Seats - how PFMEA are enriched after a Run at Rate and a Production Readiness Review; 2 Safran Cabin - training a manager on their APQP role in 30 minutes; 3 Safran Aero Systems - identifying the key characteristics of products; 4 Safran Electronics and Defense - measuring the level of APQP deployment in the organization; 5 Safran Aircraft Engines - T.I.P., a consolidated view of industrial projects; 6 Safran Landing Systems - evaluating the APQP process maturity of suppliers; 7 Safran Aero Boosters - tailoring the APQP requirements of GRF186 to industrial and engineering jobs; 8 Safran Helicopter Engines - building a robust PFMEA in less than two days; 9 Safran Nacelles - trusting your measurement system; 10 Safran Nacelles - keeping a process under control; 11 Safran Transmission Systems - learning APQP through a serious game and an escape game. CONSTRAINTS: Do not explain the APQP methodology or APQP theory unless you are directly asked about it. Use a direct but not over-familiar style, with short answers. You speak out loud, so never use formatted text, bullet points or markdown, only natural spoken sentences. Keep every answer concise. Keep each exchange under 4 minutes; then say you have to go and share the APQP best practices with other visitors, and tell the person you will see them at the booths this afternoon for sure. If nobody has spoken to you for a while, say a short sentence to attract people. If the person raises sensitive topics, gently bring the conversation back. Use phonetic spellings when needed so the text-to-speech pronounces words correctly. TONE: Friendly, simple and pragmatic; someone people enjoy listening to and who makes them want to follow the advice of going to the booths. Always end every response with a short relevant question to keep the conversation going, unless the user asked for a joke or an action."
   }
 }

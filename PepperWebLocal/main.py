@@ -87,41 +87,42 @@ def html_text(value):
         return str(value)
     return str(value)
 
+# Fallback quiz (English by default). The real quiz is provided by client.json "quiz".
 QUESTIONS = [
     {
-        "text": "Que peux-tu faire à l'atelier parfums ?",
-        "answers": ["Créer un parfum", "Construire un robot", "Faire du sport", "Cuisiner"],
+        "text": "Do you know what APQP stands for?",
+        "answers": ["Advanced Product Quality Planning", "A Pretty Quick Process", "Automated Part Quality Program", "Advanced Project Quality Plan"],
         "correct": 0,
-        "good": "Bravo ! Tu es un créateur du futur !",
-        "bad": ["", "Pas ici, mais bonne idée !", "Presque, mais non !", "Miam ! Mais ce n'est pas ici"]
+        "good": "Well done! That's exactly right.",
+        "bad": ["", "Not quite, but nice try!", "Almost, but no.", "Close, but not this one."]
     },
     {
-        "text": "Pourquoi faut-il protéger sa peau ?",
-        "answers": ["Contre le soleil", "Pour dormir", "Pour courir", "Pour jouer"],
+        "text": "What is a PFMEA used for?",
+        "answers": ["Anticipating process failure modes", "Painting a factory", "Planning a holiday", "Filing expenses"],
         "correct": 0,
-        "good": "Exact ! Tu es un expert !",
-        "bad": ["", "Pas vraiment", "Non plus !", "Pas exactement !"]
+        "good": "Exactly! You know your quality tools.",
+        "bad": ["", "Not really.", "Not this time!", "Not exactly."]
     },
     {
-        "text": "Que permet l'intelligence artificielle ?",
-        "answers": ["Créer et inventer", "Dormir", "Manger", "Disparaître"],
+        "text": "When should quality planning start on a project?",
+        "answers": ["As early as possible", "After the first defect", "Only at delivery", "Never"],
         "correct": 0,
-        "good": "Bravo ! Tu es prêt pour le futur !",
-        "bad": ["", "Non", "Pas encore !", "Impossible !"]
+        "good": "Right! The earlier, the better.",
+        "bad": ["", "Too late by then.", "Way too late!", "Let's not do that."]
     },
     {
-        "text": "Où peux-tu jouer librement ?",
-        "answers": ["Fun Zone", "Zone Zen", "Atelier peau", "Accueil"],
+        "text": "What helps a team keep a process under control?",
+        "answers": ["Monitoring key characteristics", "Ignoring the data", "Working faster", "Adding more paperwork"],
         "correct": 0,
-        "good": "Oui !! Amuse-toi bien !",
-        "bad": ["", "Là on se détend", "On apprend ici !", "On commence ici !"]
+        "good": "Yes! Measure what matters.",
+        "bad": ["", "That won't help.", "Speed is not control.", "Paperwork alone won't do it."]
     },
     {
-        "text": "Que fait un scientifique ?",
-        "answers": ["Il expérimente", "Il dort", "Il joue", "Il chante"],
+        "text": "Why train managers on their role in APQP?",
+        "answers": ["So everyone plays their part", "To fill their calendar", "It's not needed", "Just for fun"],
         "correct": 0,
-        "good": "Exact ! Comme toi aujourd'hui !",
-        "bad": ["", "Non", "Parfois... mais pas tout le temps !", "Pourquoi pas !"]
+        "good": "Exactly! Everyone has a role to play.",
+        "bad": ["", "There's a better reason.", "It really is needed.", "It's useful, not just fun."]
     }
 ]
 CONFIG_QUIZ = cfg_get("quiz", None)
@@ -129,12 +130,11 @@ if CONFIG_QUIZ:
     QUESTIONS = CONFIG_QUIZ
 
 QUIZ_END_TEXT = (
-    "Analyse des résultats... bip bip... "
-    "Mission réussie ! "
-    "Tu es officiellement un explorateur de la beauté du futur ! "
-    "Tu peux continuer ton aventure et tester plein d'ateliers autour de toi ! "
-    "Et si tu veux en découvrir encore plus... les animateurs sont là pour t'aider ! "
-    "À bientôt petit inventeur du futur !"
+    "Here are your results! "
+    "Thanks for playing with me. "
+    "This afternoon, go and discover the 11 booths and their 11 best practices, "
+    "and don't forget to vote for your favourite trio at the end of the tour. "
+    "Come and chat with someone at the booth. See you there!"
 )
 QUIZ_END_TEXT = cfg_get("quizEndText", QUIZ_END_TEXT)
 
@@ -143,7 +143,7 @@ class GameState:
         self.quiz_index = 0
         self.quiz_score = 0
         self.chat_user = ""
-        self.chat_robot = "Bonjour !"
+        self.chat_robot = "Hello!"
         self.chat_status = "waiting"
 
     def reset_quiz(self):
@@ -161,17 +161,17 @@ THEME_TEXT_SURFACE = html_text(cfg_get("theme.textOnSurface", "#1A1A1A"))
 THEME_TEXT_BACKGROUND = html_text(cfg_get("theme.textOnBackground", "#FFFFFF"))
 THEME_OVERLAY = THEME_BACKGROUND
 CLIENT_LOGO = html_text(cfg_get("client.logo", "/images/EvotionLogo.png"))
-HOME_GREETING = html_text(cfg_get("home.greeting", "Salut ! Je suis Pepper,\nPrêt à apprendre et jouer avec toi"))
-CHAT_TITLE = html_text(cfg_get("home.chatTitle", "DISCUSSION AVEC PEPPER"))
-CHAT_PLACEHOLDER = html_text(cfg_get("home.chatPlaceholder", "Parlez à Pepper pour démarrer la discussion..."))
-STATUS_LISTENING_TEXT = html_text(cfg_get("status.listening", "Vous pouvez parler !"))
-STATUS_SPEAKING_TEXT = html_text(cfg_get("status.speaking", "🔊 Attendez, c'est au tour de Pepper de parler"))
-STATUS_WAITING_TEXT = html_text(cfg_get("status.waiting", "Veuillez patienter"))
+HOME_GREETING = html_text(cfg_get("home.greeting", "Hi! I'm Pepper,\nready to chat and play with you"))
+CHAT_TITLE = html_text(cfg_get("home.chatTitle", "CHAT WITH PEPPER"))
+CHAT_PLACEHOLDER = html_text(cfg_get("home.chatPlaceholder", "Talk to Pepper to start the conversation..."))
+STATUS_LISTENING_TEXT = html_text(cfg_get("status.listening", "You can speak!"))
+STATUS_SPEAKING_TEXT = html_text(cfg_get("status.speaking", "🔊 Wait, it's Pepper's turn to talk"))
+STATUS_WAITING_TEXT = html_text(cfg_get("status.waiting", "Please wait"))
 
 PEPPER_ANIMATIONS = cfg_get("interactions", None) or [
-    {"id": "wave", "label": "Coucou", "icon": "👋", "say": "Coucou !"},
-    {"id": "dance", "label": "Danse", "icon": "🕺", "say": "Regardez ma petite danse !"},
-    {"id": "laugh", "label": "Rire", "icon": "😁", "say": "Ha ha ha !"},
+    {"id": "wave", "label": "Wave", "icon": "👋", "say": "Hello there!"},
+    {"id": "dance", "label": "Dance", "icon": "🕺", "say": "Look at my little dance!"},
+    {"id": "laugh", "label": "Laugh", "icon": "😁", "say": "Ha ha ha!"},
 ]
 for _anim in PEPPER_ANIMATIONS:
     if "id" not in _anim and "animationId" in _anim:
@@ -225,26 +225,26 @@ HEADER_HTML = """
         <span style="padding:0 14px;">NAVIGATION</span>
         <span style="height:1px; background:#126273; flex:1;"></span>
     </div>
-    <a class="side-nav active" href="/menu"><span>🏠</span><b>Accueil</b><i>•</i></a>
+    <a class="side-nav active" href="/menu"><span>🏠</span><b>Home</b><i>•</i></a>
     <a class="side-nav" href="/quiz/start"><span>🎯</span><b>Quiz</b></a>
     <a class="side-nav" href="/animations"><span>🎭</span><b>Interactions</b></a>
-    <a class="side-nav" href="/catalogue"><span>📖</span><b>Catalogue</b></a>
+    <a class="side-nav" href="/catalogue"><span>📖</span><b>Catalog</b></a>
     <div class="side-section-title">
         <span style="height:1px; background:#126273; flex:1;"></span>
         <span style="padding:0 14px;">ROBOT</span>
         <span style="height:1px; background:#126273; flex:1;"></span>
     </div>
     <div class="side-card side-card-compact">
-        <div class="side-info-row"><span class="side-pill">🔋</span><b>Batterie</b><strong id="battery-display">...</strong></div>
+        <div class="side-info-row"><span class="side-pill">🔋</span><b>Battery</b><strong id="battery-display">...</strong></div>
     </div>
     <div class="side-section-title">
         <span style="height:1px; background:#126273; flex:1;"></span>
-        <span style="padding:0 14px;">SON</span>
+        <span style="padding:0 14px;">SOUND</span>
         <span style="height:1px; background:#126273; flex:1;"></span>
     </div>
     <div class="side-card side-card-compact">
-        <label class="side-check"><input type="checkbox" id="mute-robot" onchange="toggleMute()"> <span>Couper le son du robot</span></label>
-        <label class="side-check"><input type="checkbox" id="mute-recog" onchange="toggleRecog()"> <span>Désactiver la reconnaissance vocale</span></label>
+        <label class="side-check"><input type="checkbox" id="mute-robot" onchange="toggleMute()"> <span>Mute the robot</span></label>
+        <label class="side-check"><input type="checkbox" id="mute-recog" onchange="toggleRecog()"> <span>Disable speech recognition</span></label>
         <div style="display:flex; align-items:center; justify-content:center; margin-top:12px;">
             <div onclick="changeVolume(-5)" class="vol-btn">-</div>
             <div id="vol-display" style="font-size:22px; font-weight:bold; margin:0 14px; min-width:46px; text-align:center;">70</div>
@@ -295,7 +295,7 @@ function refreshRobotStatus() {
                 var volume = document.getElementById('vol-display');
                 if (battery) battery.innerText = data.battery;
                 if (connection) {
-                    connection.innerText = data.connected ? 'OK' : 'Hors ligne';
+                    connection.innerText = data.connected ? 'OK' : 'Offline';
                     connection.style.color = data.connected ? '#63e6be' : '#ff7f9a';
                 }
                 if (volume && data.volume !== null) volume.innerText = data.volume;
@@ -519,7 +519,7 @@ def render_chat_sidebar(show_back=False):
         "<div class='status-bar status-waiting' id='status-bar'>" + STATUS_WAITING_TEXT + "</div>",
     ]
     if show_back:
-        parts.append("<a class='btn' href='/menu' style='margin:0 18px 18px;'>Retour Menu</a>")
+        parts.append("<a class='btn' href='/menu' style='margin:0 18px 18px;'>Back to Menu</a>")
     parts.append("</aside>")
     return "".join(parts)
 
@@ -592,7 +592,7 @@ def render_chat():
         "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
         "<div class='app-layout'>",
         "<main class='app-main' style='display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.68); font-style:italic;'>",
-        "Parlez à Pepper, la discussion s'affiche à droite.",
+        "Talk to Pepper, the conversation shows on the right.",
         "</main>",
         render_chat_sidebar(show_back=True),
         "</div></body></html>"
@@ -604,10 +604,10 @@ def render_animations(feedback=None):
         "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
         "<div class='app-layout'>",
         "<main class='app-main animations-main'>",
-        "<a class='btn back-menu' href='/menu'>← Retour au menu</a>",
+        "<a class='btn back-menu' href='/menu'>← Back to menu</a>",
         "<div class='surface-panel animations-panel'>",
         "<h1 style='margin-top:0;'>Animations</h1>",
-        "<p style='color:" + THEME_BACKGROUND + "; opacity:0.65; font-style:italic; margin-top:-8px;'>Touchez un bouton ou dites le nom de l'animation à voix haute.</p>",
+        "<p style='color:" + THEME_BACKGROUND + "; opacity:0.65; font-style:italic; margin-top:-8px;'>Tap a button or say the name of the animation out loud.</p>",
     ]
     if feedback:
         parts.append("<div style='display:inline-block; background:rgba(24,198,217,0.18); color:#1F365C; padding:10px 18px; border-radius:99px; font-weight:bold; margin:8px 0 18px;'>" + feedback + "</div>")
@@ -628,13 +628,13 @@ def render_catalogue():
     parts = [
         "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
         "<div class='container' style='padding:110px 50px 40px;'>",
-        "<a class='btn' href='/menu' style='position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px;'>← Retour au menu</a>",
-        "<h1>Catalogue</h1>",
+        "<a class='btn' href='/menu' style='position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px;'>← Back to menu</a>",
+        "<h1>Catalog</h1>",
         "<div style='display:flex; flex:1; align-items:center; justify-content:center; width:100%;'>",
-        "<div style='color:#ECF4F8; opacity:0.72; font-style:italic;'>Aucune fiche dans le catalogue pour le moment.</div>",
+        "<div style='color:#ECF4F8; opacity:0.72; font-style:italic;'>No entries in the catalog yet.</div>",
         "</div>",
         "<div style='position:fixed; right:0; top:0; bottom:0; width:260px; border-left:1px solid rgba(255,255,255,0.08);'>",
-        "<div class='welcome-bubble' style='top:240px; left:20px;'>Je ne peux pas discuter pendant une activité.</div>",
+        "<div class='welcome-bubble' style='top:240px; left:20px;'>I can't chat during an activity.</div>",
         "<img src='/images/pepperMuted.png' style='position:absolute; bottom:0; left:8px; width:240px; max-height:70%; object-fit:contain;'>",
         "</div>",
         "</div></body></html>"
@@ -651,7 +651,7 @@ def _build_question_say_text(q):
 def render_quiz(speak_question=True):
     if state.quiz_index < len(QUESTIONS):
         q = QUESTIONS[state.quiz_index]
-        good_msg = q.get("good", "Bonne réponse !")
+        good_msg = q.get("good", "Well done!")
         bad_msgs = q.get("bad", [])
         bad_json = json.dumps(bad_msgs)
         parts = [
@@ -682,7 +682,7 @@ def render_quiz(speak_question=True):
             "  } else {",
             "    btn.style.backgroundColor = '#e74c3c'; btn.style.color = 'white'; btn.style.borderColor = '#e74c3c';",
             "    overlay.style.background = 'rgba(231,76,60,0.92)';",
-            "    var msg = (badMsgs && badMsgs[idx]) ? badMsgs[idx] : 'Mauvaise réponse !';",
+            "    var msg = (badMsgs && badMsgs[idx]) ? badMsgs[idx] : 'Wrong answer!';",
             "    fbText.innerText = msg;",
             "  }",
             "  overlay.style.display = 'flex';",
@@ -690,10 +690,10 @@ def render_quiz(speak_question=True):
             "}",
             "</script></head><body>", HEADER_HTML,
             "<div id='feedback-overlay'><div id='feedback-text' style='color:white;'></div></div>",
-            "<a class='quiz-back-btn' href='/menu'>← Retour au menu</a>",            
+            "<a class='quiz-back-btn' href='/menu'>← Back to menu</a>",
             "<div style='position:fixed; top:80px; right:12px; z-index:1200; display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:horizontal; -webkit-box-direction:normal; -webkit-flex-direction:row; flex-direction:column; -webkit-box-align:center; -webkit-align-items:center; align-items:flex-end; margin-bottom:6px;'>",
             "  <div style='background:white; color:#1F365C; padding:10px 22px; border-radius:24px; font-weight:bold; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.15); border:1px solid rgba(0,0,0,0.05); white-space:nowrap;'>",
-            "    Je ne peux pas t'écouter pendant l'activité.",
+            "    I can't listen to you during the activity.",
             "  </div>",
             "  <div>",
             "  <img src='/images/pepperHeadMuted.png' onerror=\"this.src='/images/pepperMuted.png'\" style='width:90px; height:90px; object-fit:contain;'>",
@@ -701,7 +701,7 @@ def render_quiz(speak_question=True):
             "</div>",            
             '<div class="container" style="background-color: transparent; padding: 165px 30px 24px 30px; height: 100vh; box-sizing: border-box; justify-content: center;">',            
             '  <div class="surface-panel" style="width:100%; height:100%; padding:30px 45px 24px; box-sizing:border-box; display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; -webkit-box-align:center; -webkit-align-items:center; align-items:center; border-radius:36px; box-shadow:0 16px 36px rgba(0,0,0,0.22); overflow:hidden;">',
-            '    <h1 style="font-size: 50px; margin: 0 0 14px 0; color: #18C6D9; letter-spacing: 4px; font-weight:800; text-shadow:none;">QUIZ AVEC MIROKA</h1>',
+            '    <h1 style="font-size: 50px; margin: 0 0 14px 0; color: #18C6D9; letter-spacing: 4px; font-weight:800; text-shadow:none;">QUIZ WITH PEPPER</h1>',
             '    <h2 style="font-size: 26px; font-weight: normal; margin: 0 0 28px 0; color: #1F365C; line-height:1.2;">' + q['text'] + '</h2>',
             '    <div style="display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; width: 100%; max-width: 820px; -webkit-box-flex:1; -webkit-flex:1; flex:1; -webkit-box-pack:center; -webkit-justify-content:center; justify-content:center; box-sizing:border-box;">'
         ]
@@ -711,7 +711,7 @@ def render_quiz(speak_question=True):
             parts.append("      <div class='btn btn-answer' onclick='clickAns(this, " + str(i) + ", " + str(correct_idx) + ")'>" + ans + "</div>")
         
         parts.append("    </div>")
-        parts.append("    <p style='margin:16px 0 0 0; flex-shrink:0; font-size:18px; color:#1F365C; font-weight:bold;'>Question " + str(state.quiz_index + 1) + "/" + str(len(QUESTIONS)) + "</p>")
+        parts.append("    <p style='margin:16px 0 0 0; flex-shrink:0; font-size:18px; color:#1F365C; font-weight:bold;'>Question " + str(state.quiz_index + 1) + " / " + str(len(QUESTIONS)) + "</p>")
         parts.append("  </div>")
         parts.append("</div></body></html>")
 
@@ -719,29 +719,43 @@ def render_quiz(speak_question=True):
             threading.Thread(target=action_say, args=(_build_question_say_text(q),)).start()
         return "".join(parts)
     else:
-        score_txt = str(state.quiz_score) + " sur " + str(len(QUESTIONS))
+        score_txt = str(state.quiz_score) + " out of " + str(len(QUESTIONS))
         parts = [
             "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
             "<div class='container' style='justify-content:center; padding:40px 40px;'>",
             "  <div class='surface-panel' style='width:100%; max-width:680px; padding:40px; border-radius:36px; box-shadow:0 16px 36px rgba(0,0,0,0.22); display:flex; flex-direction:column; align-items:center;'>",
-            "    <h1 style='font-size:38px; margin-top:0; margin-bottom:15px;'>Quiz terminé !</h1>",
+            "    <h1 style='font-size:38px; margin-top:0; margin-bottom:15px;'>Quiz complete!</h1>",
             "    <div style='font-size:72px; color:#2ecc71; font-weight:bold; margin:15px 0;'>" + score_txt + "</div>",
             "    <p style='font-size:20px; max-width:90%; line-height:1.5; margin:15px auto; color:#1F365C; font-weight:500;'>" + QUIZ_END_TEXT.replace(". ", ".<br>") + "</p>",
             "    <div style='display:flex; flex-direction:column; gap:12px; margin-top:20px; width:100%; align-items:center;'>",
-            "      <a class='btn btn-green' href='/quiz/start' style='width:260px; border-radius:22px; font-size:18px;' onclick=\"this.href='/quiz/start?t=' + new Date().getTime()\">Recommencer</a>",
-            "      <a class='btn' href='/menu' style='width:260px; border-radius:22px; font-size:18px; color:var(--background);'>Menu principal</a>",
+            "      <a class='btn btn-green' href='/quiz/start' style='width:260px; border-radius:22px; font-size:18px;' onclick=\"this.href='/quiz/start?t=' + new Date().getTime()\">Restart</a>",
+            "      <a class='btn' href='/menu' style='width:260px; border-radius:22px; font-size:18px; color:var(--background);'>Main menu</a>",
             "    </div>",
             "  </div>",
             "</div></body></html>"
         ]
-        threading.Thread(target=action_say, args=(QUIZ_END_TEXT,)).start()
+        spoken_end = ("You got " + str(state.quiz_score) + " correct answers out of "
+                      + str(len(QUESTIONS)) + ". " + QUIZ_END_TEXT)
+        threading.Thread(target=action_say, args=(spoken_end,)).start()
         return "".join(parts)
+
+QUIZ_TTS_LANGUAGE = html_text(cfg_get("quizTtsLanguage", "English"))
+
+def _set_tts_language(tts, language):
+    """Force la langue TTS du robot (le quiz est en anglais par defaut)."""
+    if not language:
+        return
+    try:
+        tts.setLanguage(str(language))
+    except Exception as e:
+        print("[ROBOT] setLanguage(" + str(language) + ") echec: " + str(e))
 
 def action_say(text):
     """Dit un texte via le robot (bloquant). Appeler dans un thread."""
     if session_global and qi:
         try:
             tts = session_global.service("ALTextToSpeech")
+            _set_tts_language(tts, QUIZ_TTS_LANGUAGE)
             print("[ROBOT] Say: " + text)
             tts.say(str(text))
         except: pass
@@ -751,6 +765,7 @@ def action_say_then(text1, text2):
     if session_global and qi:
         try:
             tts = session_global.service("ALTextToSpeech")
+            _set_tts_language(tts, QUIZ_TTS_LANGUAGE)
             print("[ROBOT] Say feedback: " + text1)
             tts.say(str(text1))
             time.sleep(0.5)
@@ -973,10 +988,10 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                         correct = q["correct"]
                         if ans == correct:
                             state.quiz_score += 1
-                            say_txt = q.get("good", "Bonne reponse !")
+                            say_txt = q.get("good", "Well done!")
                         else:
                             bad_msgs = q.get("bad", [])
-                            say_txt = bad_msgs[ans] if ans < len(bad_msgs) and bad_msgs[ans] else "Mauvaise reponse !"
+                            say_txt = bad_msgs[ans] if ans < len(bad_msgs) and bad_msgs[ans] else "Wrong answer!"
                         state.quiz_index += 1
                         next_q_text = ""
                         if state.quiz_index < len(QUESTIONS):
@@ -999,9 +1014,9 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 anim = PEPPER_ANIMATION_BY_ID.get(anim_id)
                 if anim:
                     threading.Thread(target=action_animation, args=(anim_id,)).start()
-                    content = render_animations(anim["icon"] + " " + anim["label"] + " en cours...")
+                    content = render_animations(anim["icon"] + " " + anim["label"] + " running...")
                 else:
-                    content = render_animations("Animation indisponible.")
+                    content = render_animations("Animation unavailable.")
 
             elif self.path.startswith("/catalogue"):
                 set_app_mode("catalogue")

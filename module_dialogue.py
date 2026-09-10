@@ -48,8 +48,11 @@ ENV_COMMENT_INTERVAL = 180   # Secondes entre deux tentatives de commentaire
 ENV_COMMENT_MIN_IDLE = 60    # Pepper parle seulement s'il est inactif depuis X secondes
 
 # --- Langues TTS NAOqi ---
-DEFAULT_STT_LANGUAGE_CODE = "fr-FR"
-DEFAULT_NAOQI_LANGUAGE = "French"
+# Anglais par defaut : Pepper parle et ecoute en anglais, et ne bascule vers une autre
+# langue que si l'utilisateur la parle explicitement (detection STT) ou la demande
+# explicitement (voir _detect_requested_tts_language / LANGUAGE_NAME_ALIASES).
+DEFAULT_STT_LANGUAGE_CODE = "en-US"
+DEFAULT_NAOQI_LANGUAGE = "English"
 BCP47_TO_NAOQI_LANGUAGE = {
     "fr": "French",
     "fr-fr": "French",
@@ -451,7 +454,7 @@ class DialogueModule(naoqi.ALModule):
             self.speechRecognition.setMaxRecordingDuration(10)
             self.speechRecognition.setLookaheadDuration(0.5)
 
-        self.speechRecognition.setLanguage("fr-fr")
+        self.speechRecognition.setLanguage("en-us")
         self.speechRecognition.calibrate()
         self.speechRecognition.setAutoDetectionThreshold(8)
         self.listen(False)
@@ -541,12 +544,12 @@ class DialogueModule(naoqi.ALModule):
             print(u"[LANG] TTS NAOqi: {} depuis {}".format(naoqi_language, language_code))
             return naoqi_language
         except Exception as e:
-            print(u"[LANG] Avertissement: langue '{}' indisponible ({}). Fallback francais.".format(
-                naoqi_language, str(e)))
+            print(u"[LANG] Avertissement: langue '{}' indisponible ({}). Fallback {}.".format(
+                naoqi_language, str(e), DEFAULT_NAOQI_LANGUAGE))
             try:
                 self.tts.setLanguage(DEFAULT_NAOQI_LANGUAGE)
             except Exception as e_fr:
-                print(u"[LANG] Avertissement: fallback francais impossible: " + str(e_fr))
+                print(u"[LANG] Avertissement: fallback {} impossible: {}".format(DEFAULT_NAOQI_LANGUAGE, str(e_fr)))
             return DEFAULT_NAOQI_LANGUAGE
 
     def speak(self, text):
@@ -773,7 +776,8 @@ class DialogueModule(naoqi.ALModule):
                 u"En tant que Pepper, robot d'accueil chez Veolia, "
                 u"fais UNE seule phrase spontanee et naturelle sur ce que tu observes : "
                 u"presence d'une personne, objet remarquable, ambiance du lieu, lumiere... "
-                u"Reponds en francais. Sois tres bref (1 phrase max, moins de 15 mots). "
+                u"Reply in English by default (or the language the visitor last spoke). "
+                u"Keep it very short (1 sentence max, under 15 words). "
                 u"Si rien de notable n'est visible ou si la scene est banale et vide, "
                 u"reponds uniquement le mot: RIEN"
             )
@@ -1053,7 +1057,7 @@ class DialogueModule(naoqi.ALModule):
             ])
             if not session_dead:
                 try:
-                    self.speak("Désolé, j'ai eu un problème technique.")
+                    self.speak("Sorry, I had a technical problem.")
                 except Exception:
                     pass
             
@@ -1129,11 +1133,11 @@ class DialogueModule(naoqi.ALModule):
             if message_str == u"<error>":
                 self.misunderstandings += 1
                 if self.misunderstandings == 1:
-                    answer = u"Je n'ai pas compris, peux-tu repeter ?"
+                    answer = u"I didn't catch that, could you repeat?"
                 elif self.misunderstandings == 2:
-                    answer = u"Désolé, je n'ai pas compris. Pourrais-tu repèter encore ?"
+                    answer = u"Sorry, I still didn't understand. Could you say it once more?"
                 else:
-                    answer = u"Aujourd'hui j'ai des difficultes a comprendre, désole."
+                    answer = u"I'm having trouble understanding today, sorry."
                 
                 print(u"ERREUR, REPONSE PAR DEFAUT: " + answer)
                 update_tablet_interface(None, answer)
@@ -1143,14 +1147,14 @@ class DialogueModule(naoqi.ALModule):
                 message_lower = message_str.lower()
                 ai_input = message_str
                 if requested_tts_language:
-                    ai_input = message_str + u"\n\nInstruction systeme: reponds uniquement en " + requested_tts_language + u"."
+                    ai_input = message_str + u"\n\nSystem instruction: reply only in " + requested_tts_language + u"."
                 else:
                     # Renforce la langue detectee par le STT au plus pres de la generation (voir
                     # oaichat/openaichat.py:LANGUAGE_PRIORITY_INSTRUCTION) : sans ce hint par tour,
                     # le LLM doit deviner la langue depuis le seul texte utilisateur, ce qui echoue
                     # par intermittence une fois le prompt systeme alourdi par le catalogue
                     # d'animations (voir tests de la PR).
-                    ai_input = message_str + u"\n\n(Langue detectee : {}. Reponds dans cette langue.)".format(
+                    ai_input = message_str + u"\n\n(Detected language: {}. Reply in that language; if unsure, reply in English.)".format(
                         self.current_tts_language)
 
                 # L'image n'est envoyee a Gemini QUE si l'utilisateur demande explicitement
@@ -1187,15 +1191,15 @@ class DialogueModule(naoqi.ALModule):
                 
                 if u"danse" in message_lower or u"dance" in message_lower or u"danser" in message_lower:
                     safe_print(u"[DANCE] Mot-cle detecte dans: " + message_lower)
-                    answer = u"Je danse pour vous !"
+                    answer = u"I'm dancing for you!"
                     update_tablet_interface(None, answer)
                     try:
                         self.speak(answer)
                     except Exception as e_spk:
                         print(u"[DANCE] Erreur speak: " + str(e_spk))
                     self.dance()
-                elif u"serre" in message_lower and u"main" in message_lower:
-                    answer = u"Je ne peux pas serrer la main, mais je peux faire coucou."
+                elif (u"serre" in message_lower and u"main" in message_lower) or (u"shake" in message_lower and u"hand" in message_lower):
+                    answer = u"I can't shake hands, but I can wave at you."
                     update_tablet_interface(None, answer)
                     # Wave en thread pour qu'il demarre en meme temps que la parole
                     t_wave = threading.Thread(target=self.wave)
@@ -1205,10 +1209,10 @@ class DialogueModule(naoqi.ALModule):
                         self.speak(answer)
                     except Exception as e_spk:
                         print(u"[WAVE] Erreur speak: " + str(e_spk))
-                elif u"blague" in message_lower or u"rigole" in message_lower or u"rire" in message_lower:
+                elif u"blague" in message_lower or u"rigole" in message_lower or u"rire" in message_lower or u"joke" in message_lower or u"laugh" in message_lower:
                     self.handle_streaming_response(ai_input, image_data=image_data, skip_reactive_animation=True)
                     self.laugh()
-                elif u"bonjour" in message_lower or u"salut" in message_lower or u"hello" in message_lower:
+                elif u"bonjour" in message_lower or u"salut" in message_lower or u"hello" in message_lower or u"hi " in message_lower or message_lower.strip() in (u"hi", u"hey"):
                     # Geste coucou SIMULTANE a la parole (thread daemon)
                     t_wave = threading.Thread(target=self.wave)
                     t_wave.daemon = True
@@ -1227,7 +1231,7 @@ class DialogueModule(naoqi.ALModule):
             # Capturer toutes les exceptions non gerees pour eviter un crash silencieux
             print(u"[ERREUR processRemote] Exception non geree: " + repr(e_main))
             try:
-                self.speak(u"Désolé, j'ai eu un problème. Répéte ta question.")
+                self.speak(u"Sorry, I had a problem. Could you say that again?")
             except Exception:
                 pass
         finally:

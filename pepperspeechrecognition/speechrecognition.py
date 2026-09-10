@@ -27,7 +27,7 @@ HOLD_TIME = 1.0             # Minimum recording time
 SAMPLE_RATE = 48000         # Pepper native rate
 CALIBRATION_DURATION = 4
 CALIBRATION_THRESHOLD_FACTOR = 1.5
-DEFAULT_LANGUAGE = "fr-fr"
+DEFAULT_LANGUAGE = "en-us"
 # ---------------------
 
 class SpeechRecognitionModule(naoqi.ALModule):

@@ -92,11 +92,12 @@ EMOTION_JSON_INSTRUCTION = (
 # generation, restaure la conformite (voir tests dans la PR).
 LANGUAGE_PRIORITY_INSTRUCTION = (
     u"\n\n---\n"
-    u"RAPPEL PRIORITAIRE SUR LA LANGUE (au-dessus de tout ce qui precede) :\n"
-    u"Ta reponse doit TOUJOURS etre redigee dans la langue que l'utilisateur vient de parler dans "
-    u"son dernier message, sauf s'il a explicitement demande de changer de langue. Ne reponds "
-    u"jamais en francais par defaut simplement parce que cette langue apparait ailleurs dans ces "
-    u"instructions."
+    u"PRIORITY LANGUAGE RULE (overrides everything above, including the animation catalogue):\n"
+    u"Speak English by default. The \"speech\" field must be written in English UNLESS the user's "
+    u"last message is clearly spoken in another language, or the user explicitly asked you to switch "
+    u"language - in that case reply in that same language. As soon as the user speaks English again, "
+    u"or whenever you are unsure, go back to English. Never default to French just because French "
+    u"appears elsewhere in these instructions or in the animation catalogue above."
 )
 
 # Schema structure impose a l'API Gemini (response_schema) pour la classification rapide de
