@@ -71,8 +71,11 @@ class GoogleSTTServer:
             return False
     
     def request_generator(self, clientsocket):
-        # Remplacer 1.0 par 3.0 ou 5.0 secondes pour laisser le temps à l'humain de respirer
-        clientsocket.settimeout(3.0) 
+        # Timeout de silence avant de considerer la phrase terminee. Etait a 3.0s (temps de
+        # respiration genereux mais ajoute jusqu'a 3s de latence fixe avant meme d'appeler le LLM).
+        # 1.5s reste confortable pour une pause naturelle tout en coupant ce delai de moitie.
+        # Remonter vers 3.0 si des utilisateurs se font couper la parole en testant.
+        clientsocket.settimeout(1.5)
         print("Debut du streaming audio...")
         try:
             while True:

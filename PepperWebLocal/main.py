@@ -228,7 +228,7 @@ HEADER_HTML = """
     <a class="side-nav active" href="/menu"><span>🏠</span><b>Accueil</b><i>•</i></a>
     <a class="side-nav" href="/quiz/start"><span>🎯</span><b>Quiz</b></a>
     <a class="side-nav" href="/animations"><span>🎭</span><b>Interactions</b></a>
-    <a class="side-nav" href="/catalogue"><span>📖</span><b>Catalogue</b></a>
+    <a class="side-nav" href="/veolia/presentation1.html"><span>📖</span><b>Veolia</b></a>
     <div class="side-section-title">
         <span style="height:1px; background:#126273; flex:1;"></span>
         <span style="padding:0 14px;">ROBOT</span>
@@ -544,7 +544,7 @@ def get_enabled_activities():
                 elif activity_id in ["INTERACTIONS", "ANIMATIONS"]:
                     href = "/animations"
                 elif activity_id in ["CATALOG", "CATALOGUE"]:
-                    href = "/catalogue"
+                    href = "/veolia/presentation1.html"
                 else:
                     href = "/menu"
             activities.append({
@@ -556,7 +556,7 @@ def get_enabled_activities():
     return [
         {"label": "Quiz", "icon": "?", "href": "/quiz/start"},
         {"label": "Animations", "icon": "🎭", "href": "/animations"},
-        {"label": "Catalogue", "icon": "📖", "href": "/catalogue"},
+        {"label": "Veolia", "icon": "📖", "href": "/veolia/presentation1.html"},
     ]
 
 def render_menu():
@@ -629,7 +629,7 @@ def render_catalogue():
         "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
         "<div class='container' style='padding:110px 50px 40px;'>",
         "<a class='btn' href='/menu' style='position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px;'>← Retour au menu</a>",
-        "<h1>Catalogue</h1>",
+        "<h1>Veolia</h1>",
         "<div style='display:flex; flex:1; align-items:center; justify-content:center; width:100%;'>",
         "<div style='color:#ECF4F8; opacity:0.72; font-style:italic;'>Aucune fiche dans le catalogue pour le moment.</div>",
         "</div>",
