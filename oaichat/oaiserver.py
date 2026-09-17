@@ -66,8 +66,12 @@ class OaiServer(OaiChat):
                         # Sauvegarder l'input pour l'historique apres le stream
                         self.current_stream_input = i['input']
                         try:
-                            self.stream_generator = self.respond(
-                                i['input'], image_data=image_data, stream=True
+                            # respond_stream() (pas respond()) : tour de dialogue principal.
+                            # Generateur "paresseux" : rien ne s'execute avant le premier
+                            # next_chunk (voir plus bas), qui declenche la classification de
+                            # l'emotion_tag PUIS ouvre le vrai stream reseau Gemini pour "speech".
+                            self.stream_generator = self.respond_stream(
+                                i['input'], image_data=image_data
                             )
                             self.full_stream_response = ""
                             response['stream'] = 'started'
@@ -77,6 +81,9 @@ class OaiServer(OaiChat):
                             self.stream_generator = None
                     else:
                         try:
+                            # respond() (pas respond_stream()) : appel non-streaming classique
+                            # (accueil, commentaire environnement...), retourne un OaiResponse
+                            # avec .json, pas un generateur.
                             r = self.respond(i['input'], image_data=image_data)
                             for k, v in r.json.items():
                                 response[k] = v
@@ -84,7 +91,7 @@ class OaiServer(OaiChat):
                             # 503 UNAVAILABLE, 429 quota, etc. → ne pas planter le serveur
                             print("Erreur respond Gemini (non-stream):", e_respond)
                             response['error'] = str(e_respond)
-                            response['response'] = "Desole, Gemini est temporairement indisponible."
+                            response['response'] = "Désole, Gemini est temporairement indisponible."
 
                 elif 'next_chunk' in i:
                     if self.stream_generator:
@@ -118,6 +125,11 @@ class OaiServer(OaiChat):
                     else:
                         response['error'] = "No active stream"
                         response['stream_finished'] = True
+
+                # emotion_tag choisi par le LLM (voir OaiChat.respond_stream) : deja connu
+                # avant meme le premier chunk, donc toujours present des la 1ere reponse
+                # au client pour qu'il puisse lancer l'animation en parallele du TTS.
+                response['emotion_tag'] = getattr(self, 'last_emotion_tag', None)
 
                 response['time'] = datetime.datetime.now().isoformat()
                 print('Sending response:', {k: v for k, v in response.items() if k not in ('chunk',)})
