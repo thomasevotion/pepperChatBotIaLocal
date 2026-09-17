@@ -735,6 +735,10 @@ def action_say(text):
     if session_global and qi:
         try:
             tts = session_global.service("ALTextToSpeech")
+            try:
+                tts.setLanguage("French")
+            except Exception as e_lang:
+                print("[ROBOT] Avertissement langue: " + str(e_lang))
             print("[ROBOT] Say: " + text)
             tts.say(str(text))
         except: pass
@@ -744,6 +748,10 @@ def action_say_then(text1, text2):
     if session_global and qi:
         try:
             tts = session_global.service("ALTextToSpeech")
+            try:
+                tts.setLanguage("French")
+            except Exception as e_lang:
+                print("[ROBOT] Avertissement langue: " + str(e_lang))
             print("[ROBOT] Say feedback: " + text1)
             tts.say(str(text1))
             time.sleep(0.5)
