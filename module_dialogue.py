@@ -386,7 +386,17 @@ class DialogueModule(naoqi.ALModule):
     def onAppModeChanged(self, signalName, mode):
         print("[MODE] Changement mode recu depuis tablette : " + str(mode))
         self.app_mode = str(mode)
-        
+
+        # Reinitialise la langue TTS/STT en francais a chaque changement de mode
+        # (quiz, retour menu/chat, animations...) pour eviter que Pepper reste
+        # bloque dans la derniere langue parlee lors d'une conversation precedente.
+        self.current_input_language_code = DEFAULT_STT_LANGUAGE_CODE
+        self.current_tts_language = DEFAULT_NAOQI_LANGUAGE
+        try:
+            self.tts.setLanguage(DEFAULT_NAOQI_LANGUAGE)
+        except Exception as e_lang:
+            print(u"[LANG] Avertissement: reset langue impossible: " + str(e_lang))
+
         if self.app_mode not in ["quiz", "quizz"]:
             # Tous les modes SAUF quiz → Pepper ecoute et repond
             #if self.app_mode == "chat":

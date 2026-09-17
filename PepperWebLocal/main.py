@@ -89,39 +89,33 @@ def html_text(value):
 
 QUESTIONS = [
     {
-        "text": "Que peux-tu faire à l'atelier parfums ?",
-        "answers": ["Créer un parfum", "Construire un robot", "Faire du sport", "Cuisiner"],
+        "text": "Quel est le nom de l’entreprise de papa et maman ?",
+        "answers": ["L’Oréal", "Sanofi", "Auchan", "Disney"],
         "correct": 0,
-        "good": "Bravo ! Tu es un créateur du futur !",
-        "bad": ["", "Pas ici, mais bonne idée !", "Presque, mais non !", "Miam ! Mais ce n'est pas ici"]
+        "good": "Bravo ! Tu connais bien l’entreprise de tes parents !",
+        "bad": ["", "Pas tout à fait !", "Non, essaie encore !", "Presque, mais non !"]
     },
     {
-        "text": "Pourquoi faut-il protéger sa peau ?",
-        "answers": ["Contre le soleil", "Pour dormir", "Pour courir", "Pour jouer"],
+        "text": "Comment je m’appelle ?",
+        "answers": ["Inno", "Nathan", "Nao", "Alexa"],
         "correct": 0,
-        "good": "Exact ! Tu es un expert !",
-        "bad": ["", "Pas vraiment", "Non plus !", "Pas exactement !"]
+        "good": "Exact ! Je suis Inno, ton robot préféré !",
+        "bad": ["", "Non, c’est pas mon nom !", "Pas du tout !", "Hé non, cherche encore !"]
     },
     {
-        "text": "Que permet l'intelligence artificielle ?",
-        "answers": ["Créer et inventer", "Dormir", "Manger", "Disparaître"],
+        "text": "Quelle beauté va-t-on explorer aujourd’hui ?",
+        "tts": "Quelle beauté va-t-on èxploré aujourd’hui ?",
+        "answers": ["Celle du futur", "Celle du passé", "Celle de l’espace", "Celle des océans"],
         "correct": 0,
-        "good": "Bravo ! Tu es prêt pour le futur !",
-        "bad": ["", "Non", "Pas encore !", "Impossible !"]
+        "good": "Oui ! La beauté du futur, c’est notre aventure !",
+        "bad": ["", "Non, on regarde vers l’avenir !", "Pas encore !", "Bonne idée, mais pas aujourd’hui !"]
     },
     {
-        "text": "Où peux-tu jouer librement ?",
-        "answers": ["Fun Zone", "Zone Zen", "Atelier peau", "Accueil"],
+        "text": "Que célèbre-t-on aujourd’hui ?",
+        "answers": ["Le Family Day", "Noël", "Halloween", "La rentrée"],
         "correct": 0,
-        "good": "Oui !! Amuse-toi bien !",
-        "bad": ["", "Là on se détend", "On apprend ici !", "On commence ici !"]
-    },
-    {
-        "text": "Que fait un scientifique ?",
-        "answers": ["Il expérimente", "Il dort", "Il joue", "Il chante"],
-        "correct": 0,
-        "good": "Exact ! Comme toi aujourd'hui !",
-        "bad": ["", "Non", "Parfois... mais pas tout le temps !", "Pourquoi pas !"]
+        "good": "Bravo ! Aujourd’hui c’est le Family Day !",
+        "bad": ["", "C’est pas Noël aujourd’hui !", "Pas de citrouilles ici !", "Les vacances ne sont pas finies !"]
     }
 ]
 CONFIG_QUIZ = cfg_get("quiz", None)
@@ -131,10 +125,8 @@ if CONFIG_QUIZ:
 QUIZ_END_TEXT = (
     "Analyse des résultats... bip bip... "
     "Mission réussie ! "
-    "Tu es officiellement un explorateur de la beauté du futur ! "
-    "Tu peux continuer ton aventure et tester plein d'ateliers autour de toi ! "
-    "Et si tu veux en découvrir encore plus... les animateurs sont là pour t'aider ! "
-    "À bientôt petit inventeur du futur !"
+    "Bravo, tu es prêt pour inventer la beauté du futur ! "
+    "À bientôt petit inventeur !"
 )
 QUIZ_END_TEXT = cfg_get("quizEndText", QUIZ_END_TEXT)
 
@@ -734,7 +726,8 @@ def render_quiz(speak_question=True):
             "  </div>",
             "</div></body></html>"
         ]
-        threading.Thread(target=action_say, args=(QUIZ_END_TEXT,)).start()
+        if speak_question:
+            threading.Thread(target=action_say, args=(QUIZ_END_TEXT,)).start()
         return "".join(parts)
 
 def action_say(text):
@@ -742,6 +735,10 @@ def action_say(text):
     if session_global and qi:
         try:
             tts = session_global.service("ALTextToSpeech")
+            try:
+                tts.setLanguage("French")
+            except Exception as e_lang:
+                print("[ROBOT] Avertissement langue: " + str(e_lang))
             print("[ROBOT] Say: " + text)
             tts.say(str(text))
         except: pass
@@ -751,6 +748,10 @@ def action_say_then(text1, text2):
     if session_global and qi:
         try:
             tts = session_global.service("ALTextToSpeech")
+            try:
+                tts.setLanguage("French")
+            except Exception as e_lang:
+                print("[ROBOT] Avertissement langue: " + str(e_lang))
             print("[ROBOT] Say feedback: " + text1)
             tts.say(str(text1))
             time.sleep(0.5)
@@ -1005,13 +1006,11 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                             bad_msgs = q.get("bad", [])
                             say_txt = bad_msgs[ans] if ans < len(bad_msgs) and bad_msgs[ans] else "Mauvaise reponse !"
                         state.quiz_index += 1
-                        next_q_text = ""
                         if state.quiz_index < len(QUESTIONS):
                             next_q_text = _build_question_say_text(QUESTIONS[state.quiz_index])
-                        if next_q_text:
                             threading.Thread(target=action_say_then, args=(say_txt, next_q_text)).start()
                         else:
-                            threading.Thread(target=action_say, args=(say_txt,)).start()
+                            threading.Thread(target=action_say_then, args=(say_txt, QUIZ_END_TEXT)).start()
                     except Exception as e: 
                         print("Erreur Answer: " + str(e))
                 content = render_quiz(speak_question=speak)
