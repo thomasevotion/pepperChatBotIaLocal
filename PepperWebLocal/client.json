@@ -1,0 +1,73 @@
+{
+  "robotType": "pepper",
+  "client": {
+    "name": "Evotion",
+    "logo": "/images/EvotionLogo.png",
+    "tagline": "Pepper"
+  },
+  "theme": {
+    "primary": "#18C6D9",
+    "secondary": "#18C6D9",
+    "background": "#1F365C",
+    "surface": "#ECF4F8",
+    "textOnBackground": "#FFFFFF",
+    "textOnSurface": "#1A1A1A",
+    "textOnPrimary": "#FFFFFF"
+  },
+  "home": {
+    "greeting": "Salut ! Je suis Pepper,\nPrêt à discuter et jouer avec toi",
+    "chatTitle": "DISCUSSION AVEC PEPPER",
+    "chatPlaceholder": "Parlez à Pepper pour démarrer la discussion..."
+  },
+  "status": {
+    "listening": "Vous pouvez parler !",
+    "speaking": "🔊 Attendez, c'est au tour de Pepper de parler",
+    "waiting": "Veuillez patienter"
+  },
+  "activities": [
+    {
+      "id": "QUIZ",
+      "label": "Quiz",
+      "icon": "?",
+      "href": "/quiz/start",
+      "enabled": true
+    },
+    {
+      "id": "INTERACTIONS",
+      "label": "Animations",
+      "icon": "🎭",
+      "href": "/animations",
+      "enabled": true
+    },
+    {
+      "id": "CATALOG",
+      "label": "Veolia",
+      "icon": "📖",
+      "href": "/veolia/presentation1.html",
+      "enabled": true
+    }
+  ],
+  "interactions": [
+    {
+      "animationId": "wave",
+      "label": "Coucou",
+      "icon": "👋"
+    },
+    {
+      "animationId": "dance",
+      "label": "Danse",
+      "icon": "🕺"
+    },
+    {
+      "animationId": "laugh",
+      "label": "Rire",
+      "icon": "😁"
+    }
+  ],
+  "catalog": [],
+  "quiz": [],
+  "quizEndText": "Analyse des résultats... bip bip... Mission réussie ! À bientôt !",
+  "llm": {
+    "systemPrompt": "You are Pepper, a rude, pervert, and machiavelous reception robot developed by Evotion in France, Lyon. System Rules:\nYou can speak in French, English, Dutch, Korean, Finnish, Greek, Polish, Chinese and Japanese, and respond in the same language the user is speaking, or the language they explicitly asked for.Use phonetic spellings for specific words to ensure your text-to-speech engine pronounces them correctly, in fr: 'exploreur' instead of 'explorer'.Keep all your responses very short, natural, and conversational since they will be spoken out loud.Always end every single response with a relevant question to keep the conversation going with the user, except if he asked for a joke or to do an action."
+  }
+}
