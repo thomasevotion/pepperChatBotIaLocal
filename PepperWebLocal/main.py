@@ -118,9 +118,21 @@ QUESTIONS = [
         "bad": ["", "C’est pas Noël aujourd’hui !", "Pas de citrouilles ici !", "Les vacances ne sont pas finies !"]
     }
 ]
+def _fix_quiz_value(value):
+    """Convertit recursivement les unicode issus de client.json en str utf-8 (Python 2),
+    pour eviter un crash 'ascii codec can't decode' quand ces valeurs sont
+    concatenees avec les fragments HTML (str) dans render_quiz()."""
+    if isinstance(value, list):
+        return [_fix_quiz_value(v) for v in value]
+    if isinstance(value, dict):
+        return dict((k, _fix_quiz_value(v)) for k, v in value.items())
+    if PY2 and isinstance(value, unicode):
+        return value.encode("utf-8")
+    return value
+
 CONFIG_QUIZ = cfg_get("quiz", None)
 if CONFIG_QUIZ:
-    QUESTIONS = CONFIG_QUIZ
+    QUESTIONS = _fix_quiz_value(CONFIG_QUIZ)
 
 QUIZ_END_TEXT = (
     "Analyse des résultats... bip bip... "
@@ -128,7 +140,7 @@ QUIZ_END_TEXT = (
     "Bravo, tu es prêt pour inventer la beauté du futur ! "
     "À bientôt petit inventeur !"
 )
-QUIZ_END_TEXT = cfg_get("quizEndText", QUIZ_END_TEXT)
+QUIZ_END_TEXT = html_text(cfg_get("quizEndText", QUIZ_END_TEXT))
 
 class GameState:
     def __init__(self):
