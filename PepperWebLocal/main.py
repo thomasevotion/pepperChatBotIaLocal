@@ -129,6 +129,30 @@ CONFIG_QUIZ = cfg_get("quiz", None)
 if CONFIG_QUIZ:
     QUESTIONS = CONFIG_QUIZ
 
+# client.json est charge en unicode (Python 2). Sans normalisation, la concatenation
+# de ces chaines avec les gabarits HTML encodes en octets utf-8 (HEADER_HTML contient
+# des emojis) leve un UnicodeDecodeError et renvoie une page blanche.
+def _norm_list(values):
+    return [html_text(v) for v in (values or [])]
+
+_NORMALIZED_QUESTIONS = []
+for _q in QUESTIONS:
+    _nq = dict(_q)
+    _nq["text"] = html_text(_q.get("text", ""))
+    _nq["answers"] = _norm_list(_q.get("answers"))
+    _nq["good"] = html_text(_q.get("good", ""))
+    _nq["bad"] = _norm_list(_q.get("bad"))
+    try:
+        _nq["correct"] = int(_q.get("correct", 0))
+    except (TypeError, ValueError):
+        _nq["correct"] = 0
+    if "tts" in _q:
+        _nq["tts"] = html_text(_q["tts"])
+    if "answers_tts" in _q:
+        _nq["answers_tts"] = _norm_list(_q.get("answers_tts"))
+    _NORMALIZED_QUESTIONS.append(_nq)
+QUESTIONS = _NORMALIZED_QUESTIONS
+
 QUIZ_END_TEXT = (
     "Here are your results! "
     "Thanks for playing with me. "
@@ -136,7 +160,14 @@ QUIZ_END_TEXT = (
     "and don't forget to vote for your favourite trio at the end of the tour. "
     "Come and chat with someone at the booth. See you there!"
 )
-QUIZ_END_TEXT = cfg_get("quizEndText", QUIZ_END_TEXT)
+QUIZ_END_TEXT = html_text(cfg_get("quizEndText", QUIZ_END_TEXT))
+
+# Delai (ms) pendant lequel l'ecran de reponse (bonne / mauvaise) reste affiche avant de
+# passer a la question suivante, pour laisser au robot le temps de tout dire a l'oral.
+try:
+    QUIZ_FEEDBACK_DELAY_MS = int(cfg_get("quizFeedbackDelayMs", 6000))
+except (TypeError, ValueError):
+    QUIZ_FEEDBACK_DELAY_MS = 6000
 
 class GameState:
     def __init__(self):
@@ -159,7 +190,9 @@ THEME_BACKGROUND = html_text(cfg_get("theme.background", "#1F365C"))
 THEME_SURFACE = html_text(cfg_get("theme.surface", "#ECF4F8"))
 THEME_TEXT_SURFACE = html_text(cfg_get("theme.textOnSurface", "#1A1A1A"))
 THEME_TEXT_BACKGROUND = html_text(cfg_get("theme.textOnBackground", "#FFFFFF"))
-THEME_OVERLAY = THEME_BACKGROUND
+# Le menu lateral (drawer) garde un fond bleu fonce lisible meme si le fond de l'app
+# est clair. Surchargeable via "theme.overlay" dans client.json.
+THEME_OVERLAY = html_text(cfg_get("theme.overlay", "#014491"))
 CLIENT_LOGO = html_text(cfg_get("client.logo", "/images/EvotionLogo.png"))
 HOME_GREETING = html_text(cfg_get("home.greeting", "Hi! I'm Pepper,\nready to chat and play with you"))
 CHAT_TITLE = html_text(cfg_get("home.chatTitle", "CHAT WITH PEPPER"))
@@ -320,9 +353,9 @@ COMMON_CSS = (
 """
 <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; background: """ + THEME_BACKGROUND + """; background: var(--background); margin: 0; padding: 0; color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); -webkit-user-select: none; overflow: hidden; width: 100%; height: 100vh; position: fixed; }
-    h1 { color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: clamp(28px, 4vw, 44px); margin: 16px 0; text-shadow: none; text-transform: uppercase; letter-spacing: 3px; }
+    h1 { color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); font-size: clamp(28px, 4vw, 44px); margin: 16px 0; text-shadow: none; text-transform: uppercase; letter-spacing: 3px; }
     .container { width: 100%; height: 100vh; margin: 0 auto; padding-top: 80px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
-    .btn { display: inline-block; display: inline-flex; align-items: center; justify-content: center; background: """ + THEME_SURFACE + """; background: var(--surface); border: 2px solid rgba(24,198,217,0.45); border-radius: 26px; padding: 15px 30px; margin: 10px; font-size: 20px; color: """ + THEME_BACKGROUND + """; color: var(--background); text-decoration: none; box-shadow: 0 10px 28px rgba(0,0,0,0.2); cursor: pointer; font-weight: bold; transition: transform 0.1s; }
+    .btn { display: inline-block; display: inline-flex; align-items: center; justify-content: center; background: """ + THEME_SURFACE + """; background: var(--surface); border: 2px solid rgba(24,198,217,0.45); border-radius: 26px; padding: 15px 30px; margin: 10px; font-size: 20px; color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); text-decoration: none; box-shadow: 0 10px 28px rgba(0,0,0,0.2); cursor: pointer; font-weight: bold; transition: transform 0.1s; }
     .btn:active { transform: scale(0.95); background: #dcecf2; }
     .btn-green { background: #2ecc71; color: white; }
     .btn-red { background: #e74c3c; color: white; }
@@ -332,16 +365,16 @@ COMMON_CSS = (
     .btn-menu .icon-img { display:block; max-width:42px; max-height:42px; margin:0 auto 10px; object-fit:contain; }
     
     .chat-container { display: flex; flex-direction: column; gap: 15px; padding: 18px; width: 100%; flex: 1; min-height: 0; overflow-y: auto; background: """ + THEME_SURFACE + """; background: var(--surface); border-radius: 0 0 30px 30px; margin-bottom: 10px; box-sizing: border-box; }
-    .bubble { padding: 15px; border-radius: 18px; background: #ffffff; color: """ + THEME_BACKGROUND + """; color: var(--background); font-size: 18px; text-align: left; box-shadow: 0 3px 10px rgba(0,0,0,0.08); position: relative; font-weight: bold; }
+    .bubble { padding: 15px; border-radius: 18px; background: #ffffff; color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); font-size: 18px; text-align: left; box-shadow: 0 3px 10px rgba(0,0,0,0.08); position: relative; font-weight: bold; }
     .user-bubble { align-self: flex-end; margin-left: 20%; border: 1px solid rgba(0,0,0,0.05); }
     .robot-bubble { align-self: flex-start; margin-right: 20%; text-align: left; background: """ + THEME_SECONDARY + """; background: var(--secondary); color: white; }
-    .status-bar { padding: 12px 16px; font-size: clamp(13px, 1.5vw, 16px); font-weight: bold; color: white; background: """ + THEME_SURFACE + """; margin: 10px 18px 18px; width: auto; flex-shrink: 0; }
+    .status-bar { padding: 12px 16px; font-size: clamp(13px, 1.5vw, 16px); font-weight: bold; color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); background: """ + THEME_SURFACE + """; margin: 10px 18px 18px; width: auto; flex-shrink: 0; }
     .status-listening { color: #00b864; }
     .status-speaking { color: #8e24aa; }
     .status-waiting { color: #333; }
     .top-logo { position: fixed; top: 28px; left: 24px; z-index: 1100; height: 52px; max-width: 120px; object-fit: contain; opacity: 0.95; }
     .hamburger { position: fixed; top: 22px; right: 24px; z-index: 1100; width: 34px; height: 26px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; }
-    .hamburger span { display: block; height: 4px; background: """ + THEME_BACKGROUND + """; border-radius: 99px; margin-bottom: 2px; }
+    .hamburger span { display: block; height: 4px; background: """ + THEME_TEXT_BACKGROUND + """; background: var(--text-background); border-radius: 99px; margin-bottom: 2px; }
     .side-overlay { position:fixed; top:0; right:0; width:320px; max-width:88vw; height:100%; max-height:100vh; background:""" + THEME_OVERLAY + """; background:var(--overlay); z-index:2000; color:white; flex-direction:column; padding:24px 20px 14px; box-sizing:border-box; box-shadow:-16px 0 34px rgba(0,0,0,0.28); overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
     .side-section-title { display:flex; align-items:center; color:""" + THEME_PRIMARY + """; color:var(--primary); letter-spacing:4px; font-size:13px; margin:18px 0 12px; flex-shrink:0; }
     .side-nav { display:flex; align-items:center; height:48px; padding:0 14px; margin:8px 0; color:#c6d1dc; text-decoration:none; border-radius:14px; font-size:17px; box-sizing:border-box; flex-shrink:0; }
@@ -384,7 +417,7 @@ COMMON_CSS = (
         left: 50%;
         transform: translate(-50%, -50%);
     }
-    .welcome-bubble { position: absolute; top: 18px; left: 0; background: #ffffff; color: """ + THEME_BACKGROUND + """; color: var(--background); border-radius: 18px; padding: 14px 18px; max-width: 250px; text-align: left; font-size: 15px; box-shadow: 0 6px 18px rgba(0,0,0,0.16); white-space: normal; }
+    .welcome-bubble { position: absolute; top: 18px; left: 0; background: #ffffff; color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); border-radius: 18px; padding: 14px 18px; max-width: 250px; text-align: left; font-size: 15px; box-shadow: 0 6px 18px rgba(0,0,0,0.16); white-space: normal; }
     .welcome-bubble:after { content: ''; position: absolute; right: 22px; bottom: -14px; border-width: 14px 12px 0 0; border-style: solid; border-color: #ffffff transparent transparent transparent; }
     .menu-cards { display: inline-block; vertical-align: middle; width: 170px; margin-left: 46px; font-size: 0; text-align: center; white-space: normal; }
     .menu-cards .btn-menu { display: block; box-sizing: border-box; margin: 0 auto 20px auto; }
@@ -403,12 +436,12 @@ COMMON_CSS = (
     }
 
     .bubble {
-        padding: 15px; 
+        padding: 15px;
         border-radius: 18px;
-        background: #ffffff; 
-        color: """ + THEME_BACKGROUND + """;
-        color: var(--background);
-        font-size: 18px; 
+        background: #ffffff;
+        color: """ + THEME_TEXT_BACKGROUND + """;
+        color: var(--text-background);
+        font-size: 18px;
         text-align: left;
         box-shadow: 0 3px 10px rgba(0,0,0,0.08);
         position: relative; 
@@ -416,7 +449,7 @@ COMMON_CSS = (
         word-wrap: break-word;
         max-width: 90%;
     }
-    .chat-title { min-height: 58px; padding: 0 76px 0 22px; display:flex; align-items:center; justify-content:center; color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: clamp(15px, 1.8vw, 18px); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; box-sizing: border-box; }
+    .chat-title { min-height: 58px; padding: 0 76px 0 22px; display:flex; align-items:center; justify-content:center; color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); font-size: clamp(15px, 1.8vw, 18px); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; box-sizing: border-box; }
     .chat-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(31,54,92,0.52); font-style: italic; padding: 22px; }
     .animations-main { padding: clamp(76px, 11vh, 110px) clamp(22px, 4vw, 50px) 28px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; }
     .animations-panel { width:min(760px, 82%); max-height:86vh; overflow-y:auto; padding: clamp(24px, 5vh, 36px) clamp(24px, 4vw, 34px) clamp(28px, 5vh, 42px); margin:0 auto; box-sizing:border-box; }
@@ -591,7 +624,7 @@ def render_chat():
     parts = [
         "<html><head><meta charset='utf-8'>", COMMON_CSS, CHAT_POLL_SCRIPT, "</head><body>", HEADER_HTML,
         "<div class='app-layout'>",
-        "<main class='app-main' style='display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.68); font-style:italic;'>",
+        "<main class='app-main' style='display:flex; align-items:center; justify-content:center; color:" + THEME_TEXT_BACKGROUND + "; opacity:0.7; font-style:italic;'>",
         "Talk to Pepper, the conversation shows on the right.",
         "</main>",
         render_chat_sidebar(show_back=True),
@@ -607,7 +640,7 @@ def render_animations(feedback=None):
         "<a class='btn back-menu' href='/menu'>← Back to menu</a>",
         "<div class='surface-panel animations-panel'>",
         "<h1 style='margin-top:0;'>Animations</h1>",
-        "<p style='color:" + THEME_BACKGROUND + "; opacity:0.65; font-style:italic; margin-top:-8px;'>Tap a button or say the name of the animation out loud.</p>",
+        "<p style='color:" + THEME_TEXT_SURFACE + "; opacity:0.75; font-style:italic; margin-top:-8px;'>Tap a button or say the name of the animation out loud.</p>",
     ]
     if feedback:
         parts.append("<div style='display:inline-block; background:rgba(24,198,217,0.18); color:#1F365C; padding:10px 18px; border-radius:99px; font-weight:bold; margin:8px 0 18px;'>" + feedback + "</div>")
@@ -631,7 +664,7 @@ def render_catalogue():
         "<a class='btn' href='/menu' style='position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px;'>← Back to menu</a>",
         "<h1>Catalog</h1>",
         "<div style='display:flex; flex:1; align-items:center; justify-content:center; width:100%;'>",
-        "<div style='color:#ECF4F8; opacity:0.72; font-style:italic;'>No entries in the catalog yet.</div>",
+        "<div style='color:" + THEME_TEXT_BACKGROUND + "; opacity:0.72; font-style:italic;'>No entries in the catalog yet.</div>",
         "</div>",
         "<div style='position:fixed; right:0; top:0; bottom:0; width:260px; border-left:1px solid rgba(255,255,255,0.08);'>",
         "<div class='welcome-bubble' style='top:240px; left:20px;'>I can't chat during an activity.</div>",
@@ -662,8 +695,8 @@ def render_quiz(speak_question=True):
             "  .btn-answer:active { transform: scale(0.99); background: #f0f8fa; }",
             "  #feedback-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:5000; flex-direction:column; align-items:center; justify-content:center; }",
             "  #feedback-text { font-size:36px; font-weight:bold; padding:30px 50px; border-radius:20px; max-width:80%; text-align:center; }",
-            "  .quiz-back-btn { position: fixed; top: 96px; left: 24px; z-index: 1110; padding: 10px 24px; font-size: 15px; font-weight: bold; color: white; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 20px; text-decoration: none; transition: background 0.2s; }",
-            "  .quiz-back-btn:active { background: rgba(255, 255, 255, 0.2); }",
+            "  .quiz-back-btn { position: fixed; top: 96px; left: 24px; z-index: 1110; padding: 10px 24px; font-size: 15px; font-weight: bold; color: " + THEME_TEXT_BACKGROUND + "; color: var(--text-background); background: rgba(1, 68, 145, 0.08); border: 1px solid rgba(1, 68, 145, 0.30); border-radius: 20px; text-decoration: none; transition: background 0.2s; }",
+            "  .quiz-back-btn:active { background: rgba(1, 68, 145, 0.18); }",
             "  .hamburger span { background-color: " + THEME_SURFACE + "; !important; }",
             "</style>",
             "<script>",
@@ -686,7 +719,8 @@ def render_quiz(speak_question=True):
             "    fbText.innerText = msg;",
             "  }",
             "  overlay.style.display = 'flex';",
-            "  setTimeout(function() { window.location.href = '/quiz/answer/' + idx + '?t=' + new Date().getTime(); }, 3000);",
+            "  var _fb = new Image(); _fb.src = '/quiz/speak_feedback/' + idx + '?t=' + new Date().getTime();",
+            "  setTimeout(function() { window.location.href = '/quiz/answer/' + idx + '?t=' + new Date().getTime(); }, " + str(QUIZ_FEEDBACK_DELAY_MS) + ");",
             "}",
             "</script></head><body>", HEADER_HTML,
             "<div id='feedback-overlay'><div id='feedback-text' style='color:white;'></div></div>",
@@ -701,7 +735,7 @@ def render_quiz(speak_question=True):
             "</div>",            
             '<div class="container" style="background-color: transparent; padding: 165px 30px 24px 30px; height: 100vh; box-sizing: border-box; justify-content: center;">',            
             '  <div class="surface-panel" style="width:100%; height:100%; padding:30px 45px 24px; box-sizing:border-box; display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; -webkit-box-align:center; -webkit-align-items:center; align-items:center; border-radius:36px; box-shadow:0 16px 36px rgba(0,0,0,0.22); overflow:hidden;">',
-            '    <h1 style="font-size: 50px; margin: 0 0 14px 0; color: #18C6D9; letter-spacing: 4px; font-weight:800; text-shadow:none;">QUIZ WITH PEPPER</h1>',
+            '    <h1 style="font-size: 50px; margin: 0 0 14px 0; color: ' + THEME_TEXT_BACKGROUND + '; letter-spacing: 4px; font-weight:800; text-shadow:none;">QUIZ WITH PEPPER</h1>',
             '    <h2 style="font-size: 26px; font-weight: normal; margin: 0 0 28px 0; color: #1F365C; line-height:1.2;">' + q['text'] + '</h2>',
             '    <div style="display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; width: 100%; max-width: 820px; -webkit-box-flex:1; -webkit-flex:1; flex:1; -webkit-box-pack:center; -webkit-justify-content:center; justify-content:center; box-sizing:border-box;">'
         ]
@@ -729,7 +763,7 @@ def render_quiz(speak_question=True):
             "    <p style='font-size:20px; max-width:90%; line-height:1.5; margin:15px auto; color:#1F365C; font-weight:500;'>" + QUIZ_END_TEXT.replace(". ", ".<br>") + "</p>",
             "    <div style='display:flex; flex-direction:column; gap:12px; margin-top:20px; width:100%; align-items:center;'>",
             "      <a class='btn btn-green' href='/quiz/start' style='width:260px; border-radius:22px; font-size:18px;' onclick=\"this.href='/quiz/start?t=' + new Date().getTime()\">Restart</a>",
-            "      <a class='btn' href='/menu' style='width:260px; border-radius:22px; font-size:18px; color:var(--background);'>Main menu</a>",
+            "      <a class='btn' href='/menu' style='width:260px; border-radius:22px; font-size:18px; color:var(--text-background);'>Main menu</a>",
             "    </div>",
             "  </div>",
             "</div></body></html>"
@@ -979,6 +1013,28 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 speak = True
                 if "/start" in self.path: 
                     state.reset_quiz()
+                elif "/speak_feedback/" in self.path:
+                    # Declenche des le clic (pendant l'ecran de reponse) : le robot dit la
+                    # bonne/mauvaise reponse. Ne touche NI au score NI a l'index (fait par /answer/).
+                    try:
+                        ans = int(self.path.split("/speak_feedback/")[1].split("?")[0])
+                        q = QUESTIONS[state.quiz_index]
+                        if ans == q["correct"]:
+                            say_txt = q.get("good", "Well done!")
+                        else:
+                            bad_msgs = q.get("bad", [])
+                            say_txt = bad_msgs[ans] if ans < len(bad_msgs) and bad_msgs[ans] else "Wrong answer!"
+                        threading.Thread(target=action_say, args=(say_txt,)).start()
+                    except Exception as e:
+                        print("Erreur speak_feedback: " + str(e))
+                    gif1px = b"\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\xff\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00\x3b"
+                    self.send_response(200)
+                    self.send_header("Content-type", "image/gif")
+                    self.send_header("Cache-Control", "no-cache, no-store")
+                    self.send_header("Content-Length", str(len(gif1px)))
+                    self.end_headers()
+                    self.wfile.write(gif1px)
+                    return
                 elif "/answer/" in self.path:
                     speak = False
                     try:
@@ -988,19 +1044,14 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                         correct = q["correct"]
                         if ans == correct:
                             state.quiz_score += 1
-                            say_txt = q.get("good", "Well done!")
-                        else:
-                            bad_msgs = q.get("bad", [])
-                            say_txt = bad_msgs[ans] if ans < len(bad_msgs) and bad_msgs[ans] else "Wrong answer!"
                         state.quiz_index += 1
-                        next_q_text = ""
+                        # Le feedback a deja ete dit par /quiz/speak_feedback/ au moment du clic.
+                        # Ici on n'enonce que la question suivante (si elle existe). NAOqi met les
+                        # phrases en file d'attente : la question attend la fin du feedback.
                         if state.quiz_index < len(QUESTIONS):
                             next_q_text = _build_question_say_text(QUESTIONS[state.quiz_index])
-                        if next_q_text:
-                            threading.Thread(target=action_say_then, args=(say_txt, next_q_text)).start()
-                        else:
-                            threading.Thread(target=action_say, args=(say_txt,)).start()
-                    except Exception as e: 
+                            threading.Thread(target=action_say, args=(next_q_text,)).start()
+                    except Exception as e:
                         print("Erreur Answer: " + str(e))
                 content = render_quiz(speak_question=speak)
 
@@ -1028,7 +1079,10 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             if content:
                 try:
-                    content_encoded = content.encode('ascii', 'ignore') if sys.version_info[0] < 3 else content.encode('utf-8')
+                    if isinstance(content, bytes):
+                        content_encoded = content
+                    else:
+                        content_encoded = content.encode('utf-8')
                 except:
                     content_encoded = content
                     
