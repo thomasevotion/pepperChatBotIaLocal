@@ -9,12 +9,21 @@
 """Zmq server interface for the Gemini chatbot"""
 
 import zmq, os
+import dotenv
+dotenv.load_dotenv()
 import datetime
 from threading import Thread
-from oaichat.openaichat import OaiChat
+
+# LLM_BACKEND=ollama (defaut, 100% local) ou gemini (en ligne).
+LLM_BACKEND = os.getenv('LLM_BACKEND', 'ollama').strip().lower()
+if LLM_BACKEND == 'gemini':
+    from oaichat.openaichat import OaiChat as ChatBackend
+else:
+    from oaichat.localchat import LocalChat as ChatBackend
+print('Backend LLM :', LLM_BACKEND)
 
 
-class OaiServer(OaiChat):
+class OaiServer(ChatBackend):
 
     def __init__(self, user, prompt=None):
         super().__init__(user, prompt)
@@ -31,7 +40,7 @@ class OaiServer(OaiChat):
         self.thread.start()
 
     def _run(self):
-        print('Starting Gemini chat server...')
+        print('Starting chat server (backend: ' + LLM_BACKEND + ')...')
         try:
             while self.thread:
                 response = {}
@@ -91,7 +100,7 @@ class OaiServer(OaiChat):
                             # 503 UNAVAILABLE, 429 quota, etc. → ne pas planter le serveur
                             print("Erreur respond Gemini (non-stream):", e_respond)
                             response['error'] = str(e_respond)
-                            response['response'] = "Désole, Gemini est temporairement indisponible."
+                            response['response'] = "Désolé, mon cerveau est temporairement indisponible."
 
                 elif 'next_chunk' in i:
                     if self.stream_generator:

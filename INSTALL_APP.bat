@@ -14,6 +14,7 @@ echo   - Python 2.7.18 32-bit dans C:\Python27
 echo   - Python 3.10.11
 echo   - Le SDK NAOqi pour Python 2.7
 echo   - Les dependances Python 2 et Python 3
+echo   - Ollama + modele IA local, modele Whisper (mode 100%% local)
 echo.
 echo   Lance ce script en tant qu'administrateur.
 echo.
@@ -42,6 +43,9 @@ call :step_deps
 if errorlevel 1 goto :fail
 
 call :step_env
+if errorlevel 1 goto :fail
+
+call :step_local_ai
 if errorlevel 1 goto :fail
 
 call :cleanup
@@ -91,7 +95,7 @@ exit /b 0
 
 :step_py2
 echo.
-echo [1/5] ====== PYTHON 2.7.18 32-bit ======
+echo [1/6] ====== PYTHON 2.7.18 32-bit ======
 echo.
 
 if exist "%PY2_EXE%" (
@@ -189,7 +193,7 @@ exit /b 0
 
 :step_py3
 echo.
-echo [2/5] ====== PYTHON 3.10 ======
+echo [2/6] ====== PYTHON 3.10 ======
 echo.
 
 call :detect_py3
@@ -231,7 +235,7 @@ exit /b 0
 
 :step_naoqi
 echo.
-echo [3/5] ====== SDK NAOQI ======
+echo [3/6] ====== SDK NAOQI ======
 echo.
 
 if not exist "%PY2_EXE%" (
@@ -267,7 +271,7 @@ exit /b 0
 
 :step_deps
 echo.
-echo [4/5] ====== DEPENDANCES ======
+echo [4/6] ====== DEPENDANCES ======
 echo.
 
 if exist "%~dp0requirements_py2.txt" (
@@ -316,7 +320,7 @@ exit /b 0
 
 :step_env
 echo.
-echo [5/5] ====== FICHIER .ENV ======
+echo [5/6] ====== FICHIER .ENV ======
 echo.
 
 if exist "%~dp0.env" (
@@ -330,15 +334,15 @@ set "GEMINI_KEY_INPUT="
 set /p "ROBOT_IP_INPUT=Entrez l'IP du robot Pepper [192.168.1.76] : "
 if "%ROBOT_IP_INPUT%"=="" set "ROBOT_IP_INPUT=192.168.1.76"
 
-set /p "GEMINI_KEY_INPUT=Entrez votre cle API Gemini : "
-
 (
     echo LOGDIR=logs
     echo OPENAI_PROMPTFILE=openai.prompt
     echo CHATBOT_SERVER_ADDRESS=tcp://localhost:5556
     echo ROBOT_IP=%ROBOT_IP_INPUT%
-    echo GEMINI_API_KEY=%GEMINI_KEY_INPUT%
-    echo GEMINI_MODEL=gemini-2.5-flash
+    echo LLM_BACKEND=ollama
+    echo OLLAMA_MODEL=qwen3.5:9b
+    echo WHISPER_MODEL=large-v3-turbo
+    echo WHISPER_LANGUAGES=fr,en,es
 ) > "%~dp0.env"
 
 if not exist "%~dp0logs" mkdir "%~dp0logs"
@@ -349,6 +353,59 @@ if not exist "%~dp0.env" (
 )
 
 echo Fichier .env cree.
+exit /b 0
+
+:step_local_ai
+echo.
+echo [6/6] ====== IA LOCALE (Ollama + Whisper) ======
+echo.
+
+set "OLLAMA_MODEL=qwen3.5:9b"
+set "WHISPER_MODEL=large-v3-turbo"
+for /f "usebackq tokens=1,* delims==" %%A in ("%~dp0.env") do (
+    if "%%A"=="OLLAMA_MODEL" set "OLLAMA_MODEL=%%B"
+    if "%%A"=="WHISPER_MODEL" set "WHISPER_MODEL=%%B"
+)
+
+where ollama >nul 2>&1
+if errorlevel 1 (
+    if exist "%LOCALAPPDATA%\Programs\Ollama\ollama.exe" (
+        set "PATH=%LOCALAPPDATA%\Programs\Ollama;%PATH%"
+    ) else (
+        echo Installation d'Ollama via winget...
+        winget install -e --id Ollama.Ollama --accept-source-agreements --accept-package-agreements
+        if errorlevel 1 (
+            echo ERREUR : installation d'Ollama echouee. Installe-le depuis https://ollama.com/download
+            exit /b 1
+        )
+        set "PATH=%LOCALAPPDATA%\Programs\Ollama;%PATH%"
+    )
+)
+echo Ollama present.
+
+curl -s -o nul http://127.0.0.1:11434/api/tags
+if errorlevel 1 (
+    start "Ollama" /min ollama serve
+    timeout /t 5 /nobreak >nul
+)
+
+echo Telechargement du modele IA %OLLAMA_MODEL% (plusieurs Go, une seule fois)...
+ollama pull %OLLAMA_MODEL%
+if errorlevel 1 (
+    echo ERREUR : telechargement du modele %OLLAMA_MODEL% echoue.
+    exit /b 1
+)
+
+if not "%PY3%"=="" (
+    echo Telechargement du modele Whisper %WHISPER_MODEL% ^(une seule fois^)...
+    %PY3% -c "import os; from faster_whisper.utils import download_model; download_model(os.environ['WHISPER_MODEL'], cache_dir=r'%~dp0whisper_models')"
+    if errorlevel 1 (
+        echo ERREUR : telechargement du modele Whisper echoue.
+        exit /b 1
+    )
+)
+
+echo IA locale prete : plus aucune connexion Internet necessaire pour le dialogue.
 exit /b 0
 
 :cleanup

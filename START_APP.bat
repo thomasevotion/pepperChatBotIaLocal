@@ -50,15 +50,22 @@ start "PepperChat Web" cmd /k "title PepperChat Web && %PY2% main.py --ip %ROBOT
 cd ..
 timeout /t 3 /nobreak >nul
 
-:: ETAPE 2 : Serveur STT Google
-echo [2/5] Serveur STT Google (port 8889)...
-start "PepperChat STT" cmd /k "title PepperChat STT && %PY3% google_stt_server.py"
+:: ETAPE 2 : Serveur STT local (Whisper, aucun envoi en ligne)
+echo [2/5] Serveur STT local Whisper (port 8889)...
+start "PepperChat STT" cmd /k "title PepperChat STT && %PY3% local_stt_server.py"
 timeout /t 3 /nobreak >nul
 
-:: ETAPE 3 : Serveur IA Gemini
-echo [3/5] Serveur IA Gemini (port 5556)...
-start "PepperChat Gemini" cmd /k "title PepperChat Gemini && %PY3% startDialogueServer_background.py --prompt pepper"
-timeout /t 3 /nobreak >nul
+:: ETAPE 3 : Serveur IA local (Ollama)
+echo [3/5] Serveur IA local Ollama (port 5556)...
+curl -s -o nul http://127.0.0.1:11434/api/tags
+if errorlevel 1 (
+    echo        Ollama n'est pas lance, demarrage de "ollama serve"...
+    start "PepperChat Ollama" /min cmd /k "title PepperChat Ollama && ollama serve"
+    timeout /t 5 /nobreak >nul
+)
+start "PepperChat IA" cmd /k "title PepperChat IA && %PY3% startDialogueServer_background.py --prompt pepper"
+:: Laisser le temps a Whisper et au LLM de se charger en VRAM
+timeout /t 10 /nobreak >nul
 
 
 :: ETAPE 4 : Module reconnaissance vocale
@@ -75,8 +82,8 @@ echo ============================================================
 echo  PepperChat demarre !
 echo.
 echo  Services :
-echo    - STT Google        : fenetre PepperChat STT
-echo    - Serveur Gemini    : fenetre PepperChat Gemini
+echo    - STT Whisper local : fenetre PepperChat STT
+echo    - IA locale Ollama  : fenetre PepperChat IA
 echo    - Web Tablette      : fenetre PepperChat Web
 echo    - Speech Recognition: fenetre PepperChat SpeechRecog
 echo    - Dialogue NaoQI    : fenetre PepperChat Dialogue

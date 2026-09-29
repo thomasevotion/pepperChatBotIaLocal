@@ -1,5 +1,12 @@
 # PepperChat — Guide d'utilisation
 
+> **Branche `Local` : tout tourne sur le PC, aucune donnée ne part sur Internet.**
+> - Reconnaissance vocale : **Whisper** (faster-whisper, GPU) au lieu de Google Speech
+> - IA de dialogue : **Ollama** (`qwen3.5`, multilingue + vision caméra) au lieu de Gemini
+> - Synthèse vocale : voix NAOqi du robot (déjà locale)
+>
+> Voir la section [Mode 100 % local](#mode-100--local) plus bas.
+
 ## Installation (nouveau PC)
 
 **Double-cliquez sur `INSTALL_APP.bat` (en tant qu'Administrateur)**
@@ -21,8 +28,8 @@ Le script lance 4 fenêtres (une par service) :
 
 | Fenêtre | Rôle | Python |
 |---------|------|--------|
-| STT Google | Reconnaissance vocale Google Cloud | Python 3 |
-| Gemini Server | Serveur IA Gemini (ZMQ) | Python 3 |
+| STT | Reconnaissance vocale locale Whisper | Python 3 |
+| IA | Serveur IA local Ollama (ZMQ) | Python 3 |
 | Speech Recognition | Module audio Pepper → STT | Python 2.7 |
 | Dialogue NaoQI | Module dialogue principal | Python 2.7 |
 
@@ -46,7 +53,7 @@ Le script lance 4 fenêtres (une par service) :
 
 ### 3. Fichier `.env`
 - Créé automatiquement par `INSTALL_APP.bat`
-- Contient : `ROBOT_IP`, `GEMINI_API_KEY`, `CHATBOT_SERVER_ADDRESS`, etc.
+- Contient : `ROBOT_IP`, `LLM_BACKEND`, `OLLAMA_MODEL`, `WHISPER_MODEL`, `CHATBOT_SERVER_ADDRESS`, etc.
 
 ### 4. Connexion réseau
 - Le PC et le robot Pepper doivent être sur le même réseau
@@ -76,11 +83,12 @@ pepperchat-master\
 ├── .env                    ← Configuration (IP robot, clés API)
 ├── requirements_py2.txt    ← Dépendances Python 2.7
 ├── requirements_py3.txt    ← Dépendances Python 3.10
-├── google_stt_server.py    ← Serveur STT Google (Python 3)
-├── startDialogueServer_background.py  ← Serveur Gemini (Python 3)
+├── local_stt_server.py     ← Serveur STT local Whisper (Python 3)
+├── google_stt_server.py    ← Ancien serveur STT Google (en ligne, non utilisé)
+├── startDialogueServer_background.py  ← Serveur IA (Ollama local ou Gemini) (Python 3)
 ├── module_speechrecognition.py  ← Module audio Pepper (Python 2)
 ├── module_dialogue.py      ← Module dialogue Pepper (Python 2)
-├── oaichat\                ← Client/Serveur Gemini (ZMQ)
+├── oaichat\                ← Client/Serveur IA (ZMQ) : localchat.py (Ollama), openaichat.py (Gemini)
 ├── pepperspeechrecognition\  ← Module reconnaissance vocale
 └── pynaoqi-python2.7-2.5.7.1-win32-vs2013\  ← SDK NAOqi Windows
 ```
@@ -103,7 +111,58 @@ pepperchat-master\
    └──────┬───────┘  └──────┬───────┘          │
           │ TCP:8889         │ ZMQ:5556         │
    ┌──────▼───────┐  ┌──────▼───────┐          │
-   │  STT Google  │  │ Gemini Server│          │
-   │ (Python 3)   │  │ (Python 3)   │          │
-   └──────────────┘  └──────────────┘          │
+   │ STT Whisper  │  │  Serveur IA  │          │
+   │ (Python 3)   │  │  (Python 3)  │          │
+   └──────────────┘  └──────┬───────┘          │
+                            │ HTTP:11434        │
+                     ┌──────▼───────┐          │
+                     │    Ollama    │          │
+                     │ (qwen3.5 GPU)│          │
+                     └──────────────┘          │
 ```
+
+---
+
+## Mode 100 % local
+
+### Matériel conseillé
+- GPU NVIDIA avec **8 Go de VRAM** minimum (testé sur RTX 4070 Laptop 8 Go)
+- ~15 Go d'espace disque libre pour les modèles
+
+Sans GPU, tout fonctionne sur CPU mais la latence devient trop élevée pour une conversation
+fluide (utiliser alors `WHISPER_MODEL=small` et `OLLAMA_MODEL=qwen3.5:4b`).
+
+### Installation
+`INSTALL_APP.bat` s'occupe de tout : installation d'Ollama (winget), téléchargement du modèle
+IA et du modèle Whisper. Ensuite plus aucune connexion Internet n'est nécessaire.
+
+Les modèles occupent ~8 Go (qwen3.5:9b 6,6 Go + Whisper 1,5 Go). Si le disque `C:` manque de
+place, changer le dossier des modèles **avant** l'installation : icône Ollama (barre des tâches)
+→ *Settings* → *Model location* (ex. `E:\ollama_models`). L'application Ollama impose ce réglage
+et ignore la variable d'environnement `OLLAMA_MODELS`.
+
+### Performances mesurées (RTX 4070 Laptop 8 Go)
+
+| Étape | Temps |
+|-------|-------|
+| Transcription Whisper (fin de parole → texte) | ~0,5-0,8 s |
+| Premier mot de l'IA (qwen3.5:9b) | ~0,25-0,6 s |
+| Tour avec image caméra | ~4 s |
+
+Point d'attention : toujours utiliser `127.0.0.1` et non `localhost` pour joindre Ollama sous
+Windows (sinon +2 s par requête, tentative IPv6).
+
+### Réglages `.env`
+
+| Variable | Défaut | Rôle |
+|----------|--------|------|
+| `LLM_BACKEND` | `ollama` | `ollama` (local) ou `gemini` (en ligne, nécessite `GEMINI_API_KEY`) |
+| `OLLAMA_MODEL` | `qwen3.5:9b` | Modèle de dialogue (multilingue, lit aussi les images caméra) |
+| `OLLAMA_VISION_MODEL` | = `OLLAMA_MODEL` | Modèle pour les tours avec image, si le modèle principal ne voit pas |
+| `OLLAMA_THINK` | `false` | Réflexion des modèles Qwen (plus intelligent mais +plusieurs secondes) |
+| `WHISPER_MODEL` | `large-v3-turbo` | Modèle STT (`small`/`medium` si pas de GPU) |
+| `WHISPER_LANGUAGES` | `fr,en,es` | Langues reconnues automatiquement (codes ISO, ex. `fr,en,es,de,it,ja`) |
+| `WHISPER_BEAM_SIZE` | `1` | 1 = plus rapide, 5 = un peu plus précis en milieu bruyant |
+
+Tester l'IA seule, sans le robot : `py -3 -m oaichat.localchat`
+

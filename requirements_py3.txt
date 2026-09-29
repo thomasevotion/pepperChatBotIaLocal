@@ -1,5 +1,5 @@
 # PepperChat — Python 3.10 dependencies
-# Services: google_stt_server.py, startDialogueServer_background.py, oaichat/
+# Services: local_stt_server.py / google_stt_server.py, startDialogueServer_background.py, oaichat/
 python-dotenv
 pyzmq
 google-genai
@@ -8,3 +8,11 @@ numpy
 google-cloud-speech
 grpcio
 google-api-core
+
+# --- Mode 100% local (branche Local) ---
+# STT Whisper local + DLL CUDA (GPU NVIDIA, sans installer le CUDA Toolkit)
+faster-whisper>=1.1
+nvidia-cublas-cu12
+nvidia-cudnn-cu12>=9,<10
+# Client HTTP pour Ollama (LLM local)
+requests
