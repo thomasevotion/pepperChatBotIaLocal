@@ -56,6 +56,7 @@ WHISPER_MODEL = os.getenv("WHISPER_MODEL", "large-v3-turbo")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "auto")
 WHISPER_COMPUTE = os.getenv("WHISPER_COMPUTE", "")
 DEFAULT_LANGUAGE = os.getenv("WHISPER_DEFAULT_LANGUAGE", "fr")
+LANGUAGE_MIN_CONFIDENCE = float(os.getenv("WHISPER_LANGUAGE_MIN_CONFIDENCE", "0.5"))
 # 1 = decodage glouton, le plus rapide ; 5 = un peu plus precis sur audio bruite, ~2x plus lent.
 WHISPER_BEAM_SIZE = int(os.getenv("WHISPER_BEAM_SIZE", "1"))
 ALLOWED_LANGUAGES = [l.strip() for l in os.getenv("WHISPER_LANGUAGES", "fr,en,es").split(",") if l.strip()]
@@ -152,10 +153,14 @@ class LocalSTTServer:
             return ALLOWED_LANGUAGES[0]
         try:
             _, _, probs = self.model.detect_language(audio)
-            best = max(
-                ((lang, p) for lang, p in probs if lang in ALLOWED_LANGUAGES),
-                key=lambda lp: lp[1], default=(DEFAULT_LANGUAGE, 0.0),
-            )
+            allowed = [(lang, p) for lang, p in probs if lang in ALLOWED_LANGUAGES]
+            print("Langues detectees: " + ", ".join(f"{l}={p:.2f}" for l, p in allowed))
+            best = max(allowed, key=lambda lp: lp[1], default=(DEFAULT_LANGUAGE, 0.0))
+            # Sur l'audio reel du robot, les fragments courts/bruites donnent une detection
+            # aleatoire (ex: en=0.31, fr=0.04) alors qu'une vraie phrase francaise sort a fr=0.99 :
+            # on ne quitte la langue par defaut que si la detection est franche.
+            if best[1] < LANGUAGE_MIN_CONFIDENCE:
+                return DEFAULT_LANGUAGE
             return best[0]
         except Exception as e:
             print(f"Detection de langue impossible ({e}), fallback {DEFAULT_LANGUAGE}")
@@ -167,6 +172,9 @@ class LocalSTTServer:
         if len(pcm48) < MIN_AUDIO_SECONDS * PEPPER_SAMPLE_RATE:
             return None, None
         audio = _resample_48k_to_16k(pcm48)
+        peak = int(np.abs(pcm48).max())
+        rms = float(np.sqrt(np.mean(pcm48.astype(np.float32) ** 2)))
+        print(f"Audio recu: {len(pcm48) / PEPPER_SAMPLE_RATE:.1f}s, pic={peak}, rms={rms:.0f}")
 
         with self.model_lock:
             start = time.time()
