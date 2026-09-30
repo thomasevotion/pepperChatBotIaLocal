@@ -1,0 +1,4 @@
+# PepperChat - uniquement sur un PC avec GPU NVIDIA (installe par INSTALL_APP.bat si nvidia-smi repond)
+# DLL CUDA pour faster-whisper, sans installer le CUDA Toolkit
+nvidia-cublas-cu12
+nvidia-cudnn-cu12>=9,<10

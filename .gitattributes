@@ -1,1 +1,5 @@
 *.opn filter=lfs diff=lfs merge=lfs -text
+# Scripts Windows stockes TELS QUELS en CRLF dans le depot (aucune conversion) : en LF,
+# cmd.exe ne retrouve plus ses labels ("ne trouve pas le nom de fichier de commandes").
+# -text garantit le CRLF quel que soit le mode de recuperation (clone, ZIP GitHub...).
+*.bat -text

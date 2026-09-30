@@ -10,9 +10,7 @@ grpcio
 google-api-core
 
 # --- Mode 100% local (branche Local) ---
-# STT Whisper local + DLL CUDA (GPU NVIDIA, sans installer le CUDA Toolkit)
+# STT Whisper local (les DLL CUDA pour GPU NVIDIA sont dans requirements_py3_gpu.txt)
 faster-whisper>=1.1
-nvidia-cublas-cu12
-nvidia-cudnn-cu12>=9,<10
 # Client HTTP pour Ollama (LLM local)
 requests

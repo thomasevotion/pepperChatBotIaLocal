@@ -27,6 +27,7 @@ except ImportError:
 
 import base64
 import threading
+import random
 import naoqi
 from naoqi import ALProxy
 from oaichat.oaiclient import OaiClient
@@ -188,6 +189,33 @@ def normalize_lang_text(text):
     text = re.sub(ur"[^\w\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\u0600-\u06ff]+", u" ", text, flags=re.UNICODE)
     return re.sub(ur"\s+", u" ", text).strip()
 
+# --- Mode mobile (pepper_navigation.py) -------------------------------------------------------
+# Bonjour dit quand la navigation voit un visage (evenement ALMemory "PepperChat/Greet").
+MOBILE_GREETINGS = [
+    u"Bonjour ! Je suis Pepper. Vous voulez discuter avec moi ?",
+    u"Bonjour ! Je peux vous aider ?",
+    u"Coucou ! Je m'appelle Pepper, on discute un peu ?",
+]
+MOBILE_GOODBYE = u"D'accord, à bientôt !"
+# Phrases (sans accents ni ponctuation, voir normalize_lang_text) qui demandent a Pepper de
+# repartir. Seulement en mode mobile, et seulement sur une phrase courte : "au revoir" au milieu
+# d'une vraie question ("comment on dit au revoir en anglais ?") ne fait pas partir Pepper.
+DISMISS_PHRASES = [
+    u"pars", u"tu peux partir", u"tu peux y aller", u"va t en", u"vas y", u"allez va",
+    u"continue", u"continue ta route", u"au revoir", u"a plus", u"a bientot", u"bonne journee",
+    u"non merci", u"laisse moi", u"degage", u"bye", u"goodbye", u"good bye", u"go away",
+    u"you can go", u"leave me", u"adios", u"hasta luego",
+]
+DISMISS_MAX_WORDS = 6
+
+
+def is_dismissal(text):
+    normalized = normalize_lang_text(text)
+    if not normalized or len(normalized.split()) > DISMISS_MAX_WORDS:
+        return False
+    padded = u" " + normalized + u" "
+    return any(u" " + p + u" " in padded for p in DISMISS_PHRASES)
+
 STARTPROMPT_PATH = os.getenv('DIALOGUE_STARTPROMPT_FILE')
 if STARTPROMPT_PATH and os.path.isfile(STARTPROMPT_PATH):
     with codecs.open(STARTPROMPT_PATH, encoding='utf-8') as f:
@@ -301,6 +329,8 @@ class DialogueModule(naoqi.ALModule):
         self.memory.subscribeToEvent("PepperAppMode", self.getName(), "onAppModeChanged")
         self.memory.subscribeToEvent("PepperRecogDisabled", self.getName(), "onRecogDisabled")
         self.memory.subscribeToEvent("PepperVolumeSet", self.getName(), "onVolumeSet")
+        # Mode mobile : pepper_navigation.py demande un bonjour quand il voit un visage
+        self.memory.subscribeToEvent("PepperChat/Greet", self.getName(), "onGreet")
         
         # Demarrer la capture camera en arriere-plan
         if CAMERA_ENABLED:
@@ -382,6 +412,41 @@ class DialogueModule(naoqi.ALModule):
 
     def versions(self):
         return "2.0"
+
+    def _navigation_active(self):
+        try:
+            return self.memory.getData("PepperChat/NavigationActive") == 1
+        except Exception:
+            return False
+
+    def onGreet(self, signalName, value):
+        """Mode mobile : un nouveau visiteur -> langue par defaut, conversation neuve, bonjour."""
+        if self.processing or self.app_mode in ["quiz", "quizz"]:
+            print(u"[MOBILE] Bonjour ignore (traitement en cours ou quiz).")
+            return
+        self.processing = True
+        try:
+            # Nouveau visiteur : repartir en francais (sinon il serait salue dans la derniere
+            # langue parlee, ex: chinois) et avec un historique IA vide.
+            self.current_input_language_code = DEFAULT_STT_LANGUAGE_CODE
+            self.current_tts_language = DEFAULT_NAOQI_LANGUAGE
+            try:
+                chatbot.reset()
+                self._ai_user_message_count = 0
+            except Exception as e:
+                print(u"[MOBILE] Reset historique impossible: " + str(e))
+            greeting = random.choice(MOBILE_GREETINGS)
+            safe_print(u"[MOBILE] Bonjour : " + greeting)
+            self.listen(False)  # ne pas s'entendre soi-meme
+            update_tablet_interface(None, greeting)
+            self.speak(greeting)
+            time.sleep(0.5)
+        except Exception as e:
+            print(u"[MOBILE] Erreur bonjour: " + str(e))
+        finally:
+            self.processing = False
+            if self.app_mode not in ["quiz", "quizz"] and not self.force_recog_disabled:
+                self.listen(True)
 
     def onAppModeChanged(self, signalName, mode):
         print("[MODE] Changement mode recu depuis tablette : " + str(mode))
@@ -1128,6 +1193,15 @@ class DialogueModule(naoqi.ALModule):
             self.listen(False)
             safe_print(u"USER: " + message_str)
             self._last_speech_time = time.time()  # L'user parle → reset timer de silence
+            # Lu par pepper_navigation.py (mode mobile) : Pepper ne repart pas en patrouille tant
+            # qu'une conversation est en cours.
+            # Horodatage stocke en TEXTE : ALMemory range les nombres a virgule en float32, ce qui
+            # arrondit un time.time() a +-64 s pres (mesure : 9 s d'ecart) et faussait les
+            # comparaisons de pepper_navigation.py (Pepper croyait qu'on lui parlait en boucle).
+            try:
+                self.memory.insertData("PepperChat/LastUserSpeech", repr(time.time()))
+            except Exception:
+                pass
 
             self._ai_user_message_count += 1
             
@@ -1135,6 +1209,14 @@ class DialogueModule(naoqi.ALModule):
             self.history.append({'role': 'user', 'text': message_str})
             
             update_tablet_interface(message_str, None, status="waiting")
+
+            # Mode mobile : "pars / continue / au revoir..." -> Pepper salue et repart, sans IA.
+            if self._navigation_active() and is_dismissal(message_str):
+                safe_print(u"[MOBILE] Demande de depart : " + message_str)
+                update_tablet_interface(None, MOBILE_GOODBYE)
+                self.speak(MOBILE_GOODBYE)
+                self.memory.insertData("PepperChat/Dismissed", repr(time.time()))
+                return  # le finally remet processing a False et rouvre le micro
             
             if message_str == u"<error>":
                 self.misunderstandings += 1

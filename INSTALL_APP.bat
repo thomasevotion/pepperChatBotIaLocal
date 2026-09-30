@@ -1,4 +1,16 @@
 @echo off
+set "PEPPER_SELF=%~f0"
+:: --- Auto-reparation des fins de ligne -------------------------------------------------
+:: En LF (format Unix : ZIP GitHub, git sans conversion...), cmd.exe ne retrouve pas ses
+:: labels ("Le systeme ne trouve pas le nom de fichier de commandes"). Ce bloc n'utilise aucun
+:: label : il convertit le script en CRLF si besoin, puis le relance.
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=$env:PEPPER_SELF; $t=[IO.File]::ReadAllText($p); if ($t -match '[^\r]\n') { [IO.File]::WriteAllText($p, ($t -replace '\r?\n', ([string][char]13+[char]10))); exit 1 }"
+if errorlevel 1 (
+    echo [INFO] Script converti au format Windows, relance...
+    "%~f0" %*
+    exit /b
+)
+:: ----------------------------------------------------------------------------------------
 setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 title PepperChat - Installation complete
@@ -29,6 +41,21 @@ set "NAOQI_DST=%PY2_DIR%\Lib\site-packages"
 set "PY3="
 
 if not exist "%TEMP_DIR%" mkdir "%TEMP_DIR%"
+
+:: GPU NVIDIA present ? Sinon : pas de librairies CUDA, et modeles plus legers (CPU).
+set "HAS_GPU=0"
+nvidia-smi >nul 2>&1
+if not errorlevel 1 set "HAS_GPU=1"
+if "%HAS_GPU%"=="1" (
+    echo [CONFIG] GPU NVIDIA detecte : modeles complets.
+    set "DEFAULT_OLLAMA_MODEL=qwen3.5:9b"
+    set "DEFAULT_WHISPER_MODEL=large-v3-turbo"
+) else (
+    echo [CONFIG] Pas de GPU NVIDIA : modeles legers pour CPU, reponses plus lentes.
+    set "DEFAULT_OLLAMA_MODEL=qwen3.5:4b"
+    set "DEFAULT_WHISPER_MODEL=small"
+)
+echo.
 
 call :step_py2
 if errorlevel 1 goto :fail
@@ -308,6 +335,11 @@ if not "%PY3%"=="" (
             echo ERREUR : installation requirements_py3.txt echouee.
             exit /b 1
         )
+        if "%HAS_GPU%"=="1" if exist "%~dp0requirements_py3_gpu.txt" (
+            echo Installation des librairies CUDA pour Whisper sur GPU...
+            %PY3% -m pip install -r "%~dp0requirements_py3_gpu.txt"
+            if errorlevel 1 echo ATTENTION : librairies CUDA non installees, Whisper tournera sur CPU.
+        )
     ) else (
         echo requirements_py3.txt absent, etape Python 3 ignoree.
     )
@@ -340,9 +372,12 @@ if "%ROBOT_IP_INPUT%"=="" set "ROBOT_IP_INPUT=192.168.1.76"
     echo CHATBOT_SERVER_ADDRESS=tcp://localhost:5556
     echo ROBOT_IP=%ROBOT_IP_INPUT%
     echo LLM_BACKEND=ollama
-    echo OLLAMA_MODEL=qwen3.5:9b
-    echo WHISPER_MODEL=large-v3-turbo
+    echo OLLAMA_MODEL=%DEFAULT_OLLAMA_MODEL%
+    echo WHISPER_MODEL=%DEFAULT_WHISPER_MODEL%
     echo WHISPER_LANGUAGES=fr,en,es
+    echo PEPPER_MOBILE=0
+    echo MAP=
+    echo NAV_RADIUS=3
 ) > "%~dp0.env"
 
 if not exist "%~dp0logs" mkdir "%~dp0logs"
@@ -360,8 +395,8 @@ echo.
 echo [6/6] ====== IA LOCALE (Ollama + Whisper) ======
 echo.
 
-set "OLLAMA_MODEL=qwen3.5:9b"
-set "WHISPER_MODEL=large-v3-turbo"
+set "OLLAMA_MODEL=%DEFAULT_OLLAMA_MODEL%"
+set "WHISPER_MODEL=%DEFAULT_WHISPER_MODEL%"
 for /f "usebackq tokens=1,* delims==" %%A in ("%~dp0.env") do (
     if "%%A"=="OLLAMA_MODEL" set "OLLAMA_MODEL=%%B"
     if "%%A"=="WHISPER_MODEL" set "WHISPER_MODEL=%%B"

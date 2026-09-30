@@ -1,4 +1,16 @@
 @echo off
+set "PEPPER_SELF=%~f0"
+:: --- Auto-reparation des fins de ligne -------------------------------------------------
+:: En LF (format Unix : ZIP GitHub, git sans conversion...), cmd.exe ne retrouve pas ses
+:: labels ("Le systeme ne trouve pas le nom de fichier de commandes"). Ce bloc n'utilise aucun
+:: label : il convertit le script en CRLF si besoin, puis le relance.
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=$env:PEPPER_SELF; $t=[IO.File]::ReadAllText($p); if ($t -match '[^\r]\n') { [IO.File]::WriteAllText($p, ($t -replace '\r?\n', ([string][char]13+[char]10))); exit 1 }"
+if errorlevel 1 (
+    echo [INFO] Script converti au format Windows, relance...
+    "%~f0" %*
+    exit /b
+)
+:: ----------------------------------------------------------------------------------------
 chcp 65001 >nul
 title PepperChat - Demarrage
 
@@ -44,6 +56,35 @@ if exist ".env" (
 echo [CONFIG] IP robot : %ROBOT_IP%
 echo.
 
+:: Mode et carte : PEPPER_MOBILE (1/0), MAP et NAV_RADIUS du fichier .env
+::   MAP vide        -> Pepper cree une nouvelle carte (exploration)
+::   MAP=chemin.explo -> Pepper reprend directement cette carte
+set "PEPPER_MOBILE=0"
+set "MAP="
+set "NAV_RADIUS=3"
+if exist ".env" (
+    for /f "usebackq tokens=1,* delims==" %%A in (".env") do (
+        if "%%A"=="PEPPER_MOBILE" set "PEPPER_MOBILE=%%~B"
+        if "%%A"=="MAP" set "MAP=%%~B"
+        if "%%A"=="NAV_RADIUS" set "NAV_RADIUS=%%~B"
+    )
+)
+if not "%PEPPER_MOBILE%"=="1" (
+    echo [CONFIG] Pepper immobile
+    goto :config_done
+)
+if defined MAP (
+    set "NAV_ARGS=--map %MAP% --radius %NAV_RADIUS%"
+    echo [CONFIG] Pepper mobile - carte : %MAP%
+    echo          Pepper doit etre a l'endroit ou la carte a ete creee.
+) else (
+    set "NAV_ARGS=--radius %NAV_RADIUS%"
+    echo [CONFIG] Pepper mobile - NOUVELLE CARTE : exploration seul dans un rayon de %NAV_RADIUS% m.
+    echo          Degagez la zone.
+)
+:config_done
+echo.
+
 echo [1/5] Interface Web tablette (port 9091)...
 cd "PepperWebLocal"
 start "PepperChat Web" cmd /k "title PepperChat Web && %PY2% main.py --ip %ROBOT_IP%"
@@ -77,6 +118,13 @@ timeout /t 3 /nobreak >nul
 echo [5/5] Module dialogue principal...
 start "PepperChat Dialogue" cmd /k "title PepperChat Dialogue && echo 2 | %PY2% module_dialogue.py --pip %ROBOT_IP%"
 
+:: ETAPE 6 (mode mobile) : navigation, apres que le dialogue a mis Pepper debout
+if "%PEPPER_MOBILE%"=="1" (
+    echo [6/6] Navigation autonome...
+    timeout /t 15 /nobreak >nul
+    start "PepperChat Navigation" cmd /k "title PepperChat Navigation && %PY2% pepper_navigation.py --pip %ROBOT_IP% %NAV_ARGS%"
+)
+
 echo.
 echo ============================================================
 echo  PepperChat demarre !
@@ -87,6 +135,7 @@ echo    - IA locale Ollama  : fenetre PepperChat IA
 echo    - Web Tablette      : fenetre PepperChat Web
 echo    - Speech Recognition: fenetre PepperChat SpeechRecog
 echo    - Dialogue NaoQI    : fenetre PepperChat Dialogue
+if "%PEPPER_MOBILE%"=="1" echo    - Navigation        : fenetre PepperChat Navigation
 echo.
 echo  Pour tout arreter : STOP_APP.bat
 echo ============================================================

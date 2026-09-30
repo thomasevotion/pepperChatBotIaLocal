@@ -33,6 +33,36 @@ Le script lance 4 fenêtres (une par service) :
 | Speech Recognition | Module audio Pepper → STT | Python 2.7 |
 | Dialogue NaoQI | Module dialogue principal | Python 2.7 |
 
+### Mode Immobile ou Mobile
+Réglé dans `.env` (lu par `START_APP.bat`, aucune question au lancement) :
+
+| Variable | Valeurs | Rôle |
+|----------|---------|------|
+| `PEPPER_MOBILE` | `0` (défaut) / `1` | 1 : Pepper se déplace (6ᵉ fenêtre *PepperChat Navigation*) |
+| `MAP` | vide / chemin `.explo` sur le robot | Vide : Pepper crée une nouvelle carte ; sinon il reprend cette carte |
+| `NAV_RADIUS` | `3` | Rayon d'exploration (m) quand `MAP` est vide |
+
+Avec `MAP` vide, Pepper explore seul au lancement (dégager la zone), puis la fenêtre Navigation
+affiche le chemin de la carte créée : le copier dans `MAP=` pour la reprendre ensuite. Pour
+reprendre une carte, placer Pepper à l'endroit où elle a été créée avant de lancer
+`START_APP.bat`.
+
+En mode mobile, Pepper se promène en continu (marche avant uniquement) dans un rayon de
+`NAV_RADIUS` autour de son point de départ. **L'évitement d'obstacles est prioritaire** : il choisit
+en permanence la direction la plus dégagée (lasers + sonar), ralentit à l'approche d'un obstacle
+et tourne sur place s'il est bloqué ; la protection anti-collision de NAOqi reste active en
+dernier recours.
+
+- **Il voit un visage** (< 2,5 m) : il s'arrête, se tourne vers la personne, dit bonjour et attend
+  30 s une réponse.
+- **Pas de réponse**, ou « pars », « continue », « au revoir », « non merci »… : il répond
+  « D'accord, à bientôt ! », se détourne et reprend sa promenade.
+- **On lui parle pendant qu'il roule** : il s'arrête et discute ; il repart après 30 s sans
+  parole.
+
+Réglages fins (vitesses, distances, délais) en haut de `pepper_navigation.py`. `STOP_APP.bat`
+arrête d'abord tous les déplacements du robot.
+
 ---
 
 ## Arrêter l'application
