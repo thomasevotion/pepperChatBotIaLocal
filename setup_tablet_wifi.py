@@ -8,7 +8,7 @@ sys.path.insert(0, r"C:\Users\thoma\pynaoqi-python2.7-2.5.7.1-win32-vs2013\lib")
 import naoqi
 from naoqi import ALProxy
 
-ROBOT_IP = "172.20.10.3"
+ROBOT_IP = "192.168.1.76"
 PORT = 9559
 
 def main():
