@@ -27,8 +27,9 @@
     },
     {
       "id": "INTERACTIONS",
-      "label": "Interactions",
-      "icon": "/images/activities/interactions.png",
+      "label": "Animations",
+      "icon": "🎭",
+      "href": "/animations",
       "enabled": true
     },
     {
