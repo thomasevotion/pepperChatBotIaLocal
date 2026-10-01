@@ -138,6 +138,7 @@ TTS_PHONETIC_MAP = {
     u"photocall" : u"Photo kaulle",
     u"Encore plus" : u"Encore plusse",
     u"IATECH" : u"Iatech",
+    u"ARAMYS" : u"ARAMISSE",
 }
 
 # --- Robust UTF-8 decoder ---
