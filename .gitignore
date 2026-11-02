@@ -18,3 +18,4 @@ env/*
 env\*
 env\Scripts\*
 stt_env*
+vosk-model-fr-0.22

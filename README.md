@@ -103,6 +103,11 @@ Erik Billing, Julia Rosén, and Maurice Lamb. 2023. [Language Models for Human-R
 $env:DIALOGUE_START_PROMPTFILE = "default_start.prompt"
 
 $env:DIALOGUE_LOG_DIR = "logs"
+PS C:\Users\thoma\Travail\pepperchat-master> $env:GOOGLE_APPLICATION_CREDENTIALS="C:\divine-data-472416-c3-01c66611aa97"
+
+$env:OPENAI_API_KEY="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"
+
+$env:CHATBOT_SERVER_ADDRESS = "localhost:5555"
 
 $env:CHATBOT_SERVER_ADDRESS = "tcp://127.0.0.1:5555"
 
