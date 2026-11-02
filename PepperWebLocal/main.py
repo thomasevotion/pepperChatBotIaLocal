@@ -169,7 +169,7 @@ THEME_BACKGROUND = html_text(cfg_get("theme.background", "#1F365C"))
 THEME_SURFACE = html_text(cfg_get("theme.surface", "#ECF4F8"))
 THEME_TEXT_SURFACE = html_text(cfg_get("theme.textOnSurface", "#1A1A1A"))
 THEME_TEXT_BACKGROUND = html_text(cfg_get("theme.textOnBackground", "#FFFFFF"))
-THEME_OVERLAY = THEME_BACKGROUND
+THEME_OVERLAY = html_text(cfg_get("theme.overlay", THEME_BACKGROUND))
 CLIENT_LOGO = html_text(cfg_get("client.logo", "/images/EvotionLogo.png"))
 HOME_GREETING = html_text(cfg_get("home.greeting", "Salut ! Je suis Pepper,\nPrêt à apprendre et jouer avec toi"))
 CHAT_TITLE = html_text(cfg_get("home.chatTitle", "DISCUSSION AVEC PEPPER"))
@@ -227,7 +227,7 @@ HEADER_HTML = """
 
 <div id="volume-overlay" class="side-overlay" style="display:none;">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
-        <div style="font-size:34px; letter-spacing:8px; color:__THEME_PRIMARY__;">MENU</div>
+        <div style="font-size:34px; letter-spacing:8px; color:#FFFFFF;">MENU</div>
         <div onclick="toggleVolumeOverlay()" style="font-size:42px; line-height:42px; color:#9aa8b8; cursor:pointer;">×</div>
     </div>
     <div class="side-section-title">
@@ -332,11 +332,14 @@ COMMON_CSS = (
     body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; background: """ + THEME_BACKGROUND + """; background: var(--background); margin: 0; padding: 0; color: """ + THEME_TEXT_BACKGROUND + """; color: var(--text-background); -webkit-user-select: none; overflow: hidden; width: 100%; height: 100vh; position: fixed; }
     h1 { color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: clamp(28px, 4vw, 44px); margin: 16px 0; text-shadow: none; text-transform: uppercase; letter-spacing: 3px; }
     .container { width: 100%; height: 100vh; margin: 0 auto; padding-top: 80px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
-    .btn { display: inline-block; display: inline-flex; align-items: center; justify-content: center; background: """ + THEME_SURFACE + """; background: var(--surface); border: 2px solid rgba(24,198,217,0.45); border-radius: 26px; padding: 15px 30px; margin: 10px; font-size: 20px; color: """ + THEME_BACKGROUND + """; color: var(--background); text-decoration: none; box-shadow: 0 10px 28px rgba(0,0,0,0.2); cursor: pointer; font-weight: bold; transition: transform 0.1s; }
+    .btn { display: inline-block; display: inline-flex; align-items: center; justify-content: center; background: """ + THEME_SURFACE + """; background: var(--surface); border: 2px solid """ + THEME_PRIMARY + """; border-radius: 26px; padding: 15px 30px; margin: 10px; font-size: 20px; color: """ + THEME_BACKGROUND + """; color: var(--background); text-decoration: none; box-shadow: 0 10px 28px rgba(0,0,0,0.2); cursor: pointer; font-weight: bold; transition: transform 0.1s; }
     .btn:active { transform: scale(0.95); background: #dcecf2; }
     .btn-green { background: #2ecc71; color: white; }
     .btn-red { background: #e74c3c; color: white; }
     .btn-menu { width: 150px; height: 120px; padding: 12px; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; flex-direction: column; }
+    .menu-cards .btn-menu { width: 24vh; height: 24vh; padding: 1.5vh; font-size: 2.3vh; letter-spacing: 0.3vh; border-radius: 3.2vh; }
+    .menu-cards .btn-menu .icon { font-size: 38px; -webkit-transform: scale(1.6); transform: scale(1.6); margin: 1.5vh 0 3.2vh; }
+    .menu-cards .btn-menu .icon-img { max-width: 8vh; max-height: 8vh; margin-bottom: 2.2vh; }
     .btn-menu span { display: block; }
     .btn-menu .icon { font-size: 38px; line-height: 1; margin-bottom: 10px; }
     .btn-menu .icon-img { display:block; max-width:42px; max-height:42px; margin:0 auto 10px; object-fit:contain; }
@@ -349,11 +352,11 @@ COMMON_CSS = (
     .status-listening { color: #00b864; }
     .status-speaking { color: #8e24aa; }
     .status-waiting { color: #333; }
-    .top-logo { position: fixed; top: 28px; left: 24px; z-index: 1100; height: 52px; max-width: 120px; object-fit: contain; opacity: 0.95; }
+    .top-logo { position: fixed; top: 28px; left: 24px; z-index: 1100; height: 9vh; max-width: 200px; object-fit: contain; opacity: 0.95; }
     .hamburger { position: fixed; top: 22px; right: 24px; z-index: 1100; width: 34px; height: 26px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; }
     .hamburger span { display: block; height: 4px; background: """ + THEME_BACKGROUND + """; border-radius: 99px; margin-bottom: 2px; }
     .side-overlay { position:fixed; top:0; right:0; width:320px; max-width:88vw; height:100%; max-height:100vh; background:""" + THEME_OVERLAY + """; background:var(--overlay); z-index:2000; color:white; flex-direction:column; padding:24px 20px 14px; box-sizing:border-box; box-shadow:-16px 0 34px rgba(0,0,0,0.28); overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
-    .side-section-title { display:flex; align-items:center; color:""" + THEME_PRIMARY + """; color:var(--primary); letter-spacing:4px; font-size:13px; margin:18px 0 12px; flex-shrink:0; }
+    .side-section-title { display:flex; align-items:center; color:#FFFFFF; letter-spacing:4px; font-size:13px; margin:18px 0 12px; flex-shrink:0; }
     .side-nav { display:flex; align-items:center; height:48px; padding:0 14px; margin:8px 0; color:#c6d1dc; text-decoration:none; border-radius:14px; font-size:17px; box-sizing:border-box; flex-shrink:0; }
     .side-nav.active { background:""" + THEME_PRIMARY + """; color:white; box-shadow:0 8px 20px rgba(0,0,0,0.22); }
     .side-nav span { width:38px; font-size:22px; text-align:left; }
@@ -368,42 +371,25 @@ COMMON_CSS = (
     .side-check { display:flex; align-items:center; font-size:15px; line-height:1.2; margin:10px 0; color:#dce6ee; }
     .side-check input { width:22px; height:22px; margin:0 10px 0 0; flex:0 0 auto; }
     .side-check span { flex:1; }
-    .vol-btn { width:40px; height:40px; line-height:40px; border-radius:50%; background:#ECF4F8; color:#1F365C; text-align:center; font-size:28px; font-weight:bold; cursor:pointer; flex:0 0 auto; }
+    .vol-btn { width:40px; height:40px; line-height:40px; border-radius:50%; background:""" + THEME_SURFACE + """; color:""" + THEME_BACKGROUND + """; text-align:center; font-size:28px; font-weight:bold; cursor:pointer; flex:0 0 auto; }
     .side-footer { margin:18px 0 4px; text-align:center; opacity:0.25; flex-shrink:0; }
     .surface-panel { background: """ + THEME_SURFACE + """; background: var(--surface); color: """ + THEME_TEXT_SURFACE + """; color: var(--text-surface); border-radius: 30px; box-shadow: 0 16px 36px rgba(0,0,0,0.22); }
     .app-layout { width: 100%; height: 100vh; display: flex; overflow: hidden; }
     .app-main { flex: 1; min-width: 0; height: 100vh; position: relative; box-sizing: border-box; }
-    .menu-layout { width: 100%; height: 100%; display: block; box-sizing: border-box; padding: 54px 28px 22px; white-space: nowrap; }
-    .robot-zone {
-        position: relative;
-        display: inline-block;
-        vertical-align: middle;
-        width: 280px;
-        height: 620px;
-        margin-left: 18px;
-        text-align: center;
-        white-space: normal;
-    }
-
-    .robot-zone img {
-        max-width: 230px;
-        max-height: 420px;
-        object-fit: contain;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
+    .menu-layout { width: 100%; height: 100%; box-sizing: border-box; padding: 14vh 3vw 4vh; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-around; justify-content: space-around; }
+    .robot-zone { position: relative; height: 100%; -webkit-flex: 0 1 auto; flex: 0 1 auto; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: vertical; -webkit-flex-direction: column; flex-direction: column; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+    .robot-zone img { height: 64vh; max-width: 42vw; object-fit: contain; display: block; }
     .welcome-bubble { position: absolute; top: 18px; left: 0; background: #ffffff; color: """ + THEME_BACKGROUND + """; color: var(--background); border-radius: 18px; padding: 14px 18px; max-width: 250px; text-align: left; font-size: 15px; box-shadow: 0 6px 18px rgba(0,0,0,0.16); white-space: normal; }
     .welcome-bubble:after { content: ''; position: absolute; right: 22px; bottom: -14px; border-width: 14px 12px 0 0; border-style: solid; border-color: #ffffff transparent transparent transparent; }
-    .menu-cards { display: inline-block; vertical-align: middle; width: 170px; margin-left: 46px; font-size: 0; text-align: center; white-space: normal; }
-    .menu-cards .btn-menu { display: block; box-sizing: border-box; margin: 0 auto 20px auto; }
+    .robot-zone .welcome-bubble { position: relative; top: auto; left: auto; -webkit-align-self: flex-start; align-self: flex-start; max-width: 36vw; font-size: 2.4vh; padding: 1.8vh 2.4vh; border-radius: 2.6vh; margin-bottom: 3vh; }
+    .menu-cards { width: 52vh; -webkit-flex: 0 0 auto; flex: 0 0 auto; font-size: 0; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-justify-content: space-between; justify-content: space-between; }
+    .menu-cards .btn-menu { box-sizing: border-box; margin: 0 0 4vh 0; }
     .chat-shell {
-        width: 320px;
-        width: clamp(280px, 36vw, 360px);
+        width: 30vw;
+        width: clamp(280px, 30vw, 560px);
         height: 100vh;
-        flex: 0 0 320px;
-        flex: 0 0 clamp(280px, 36vw, 360px);
+        flex: 0 0 30vw;
+        flex: 0 0 clamp(280px, 30vw, 560px);
         background: """ + THEME_SURFACE + """;
         background: var(--surface);
         box-shadow: -18px 0 34px rgba(0,0,0,0.24);
@@ -426,18 +412,18 @@ COMMON_CSS = (
         word-wrap: break-word;
         max-width: 90%;
     }
-    .chat-title { min-height: 58px; padding: 0 76px 0 22px; display:flex; align-items:center; justify-content:center; color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: clamp(15px, 1.8vw, 18px); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; box-sizing: border-box; }
-    .chat-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(31,54,92,0.52); font-style: italic; padding: 22px; }
+    .chat-title { min-height: 58px; min-height: 9vh; padding: 0 76px 0 22px; display:flex; align-items:center; justify-content:center; color: """ + THEME_PRIMARY + """; color: var(--primary); font-size: 18px; font-size: clamp(15px, 1.3vw, 26px); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; box-sizing: border-box; }
+    .chat-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(75,75,75,0.6); font-style: italic; padding: 22px; }
     .animations-main { padding: clamp(76px, 11vh, 110px) clamp(22px, 4vw, 50px) 28px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; }
     .animations-panel { width:min(760px, 82%); max-height:86vh; overflow-y:auto; padding: clamp(24px, 5vh, 36px) clamp(24px, 4vw, 34px) clamp(28px, 5vh, 42px); margin:0 auto; box-sizing:border-box; }
     .animations-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: clamp(14px, 3vh, 22px); margin-top:18px; justify-items:center; }
-    .back-menu { position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px; z-index: 1110; }
+    .back-menu { position:fixed; top:82px; top:calc(38px + 9vh); left:24px; margin:0; padding:10px 20px; font-size:14px; z-index: 1110; }
     @media (max-width: 900px) {
         .menu-layout { padding-left: 18px; padding-right: 18px; }
         .chat-shell { width: 31vw; flex-basis: 31vw; }
-        .menu-cards { width: 168px; margin-left: 36px; }
-        .robot-zone { width: 252px; margin-left: 0; }
-        .robot-zone img { max-width: 238px; }
+        .menu-cards { width: 26vw; }
+        .menu-cards .btn-menu { width: 12.5vw; height: 12.5vw; font-size: 1.5vw; }
+        .robot-zone img { max-width: 34vw; }
     }
 </style>
 """)
@@ -577,8 +563,7 @@ def render_menu():
         "<div class='menu-layout'>",
         "<div class='robot-zone'>",
         "<div class='welcome-bubble'>" + HOME_GREETING.replace("\n", "<br>") + "</div>",
-        "<br>",
-        "<img style='width: 80vh; height: 60vh; object-fit: contain;' src='/images/pepper.png' alt='Pepper'>",
+        "<img src='/images/pepper.png' alt='Pepper'>",
         "</div>",
         "<div class='menu-cards'>",
     ]
@@ -620,12 +605,12 @@ def render_animations(feedback=None):
         "<p style='color:" + THEME_BACKGROUND + "; opacity:0.65; font-style:italic; margin-top:-8px;'>Touchez un bouton ou dites le nom de l'animation à voix haute.</p>",
     ]
     if feedback:
-        parts.append("<div style='display:inline-block; background:rgba(24,198,217,0.18); color:#1F365C; padding:10px 18px; border-radius:99px; font-weight:bold; margin:8px 0 18px;'>" + feedback + "</div>")
+        parts.append("<div style='display:inline-block; background:rgba(10,110,70,0.12); color:" + THEME_BACKGROUND + "; padding:10px 18px; border-radius:99px; font-weight:bold; margin:8px 0 18px;'>" + feedback + "</div>")
     parts.append("<div class='animations-grid'>")
     for anim in PEPPER_ANIMATIONS:
         parts.append(
             "<a class='btn btn-menu' href='/animation/run/" + anim["id"] + "'>"
-            "<span class='icon'>" + anim["icon"] + "</span>"
+            + _activity_icon_html(anim["icon"]) +
             "<span>" + anim["label"] + "</span>"
             "</a>"
         )
@@ -634,21 +619,33 @@ def render_animations(feedback=None):
     parts.append("</div></body></html>")
     return "".join(parts)
 
+CATALOG_ITEMS = cfg_get("catalog", None) or []
+
 def render_catalogue():
     parts = [
         "<html><head><meta charset='utf-8'>", COMMON_CSS, "</head><body>", HEADER_HTML,
-        "<div class='container' style='padding:110px 50px 40px;'>",
-        "<a class='btn' href='/menu' style='position:fixed; top:82px; left:24px; margin:0; padding:10px 20px; font-size:14px;'>← Retour au menu</a>",
-        "<h1>Veolia</h1>",
-        "<div style='display:flex; flex:1; align-items:center; justify-content:center; width:100%;'>",
-        "<div style='color:#ECF4F8; opacity:0.72; font-style:italic;'>Aucune fiche dans le catalogue pour le moment.</div>",
-        "</div>",
+        "<div class='container' style='padding:110px 280px 40px 50px; box-sizing:border-box; display:block; overflow-y:auto; -webkit-overflow-scrolling:touch;'>",
+        "<a class='btn' href='/menu' style='position:fixed; top:82px; top:calc(38px + 9vh); left:24px; margin:0; padding:10px 20px; font-size:14px;'>← Retour au menu</a>",
+    ]
+    if CATALOG_ITEMS:
+        # Pas de lecteur PDF dans la WebView de la tablette : on affiche le rendu PNG de chaque fiche
+        for item in CATALOG_ITEMS:
+            parts.append("<h1 style='color:" + THEME_TEXT_BACKGROUND + ";'>" + html_text(item.get("title", "")) + "</h1>")
+            if item.get("image"):
+                parts.append("<img src='" + html_text(item["image"]) + "' style='width:100%; height:auto; background:white; border-radius:18px; margin-bottom:30px;'>")
+    else:
+        parts.extend([
+            "<div style='display:flex; flex:1; align-items:center; justify-content:center; width:100%;'>",
+            "<div style='color:" + THEME_TEXT_BACKGROUND + "; opacity:0.72; font-style:italic;'>Aucune fiche dans le catalogue pour le moment.</div>",
+            "</div>",
+        ])
+    parts.extend([
         "<div style='position:fixed; right:0; top:0; bottom:0; width:260px; border-left:1px solid rgba(255,255,255,0.08);'>",
         "<div class='welcome-bubble' style='top:240px; left:20px;'>Je ne peux pas discuter pendant une activité.</div>",
         "<img src='/images/pepperMuted.png' style='position:absolute; bottom:0; left:8px; width:240px; max-height:70%; object-fit:contain;'>",
         "</div>",
         "</div></body></html>"
-    ]
+    ])
     return "".join(parts)
 
 def _build_question_say_text(q):
@@ -667,12 +664,12 @@ def render_quiz(speak_question=True):
         parts = [
             "<html><head><meta charset='utf-8'>", COMMON_CSS,
             "<style>",
-            "  .btn-answer { width: 100%; box-sizing: border-box; font-size: 20px; font-weight: bold; height: 62px; transition: background-color 0.2s, color 0.2s, border-color 0.2s; background: white; color: #1F365C; border: 2px solid #18C6D9 !important; margin: 0 0 14px 0 !important; border-radius: 30px !important; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; box-shadow: none !important; text-decoration: none; }",
+            "  .btn-answer { width: 100%; box-sizing: border-box; font-size: 28px; font-size: 3.6vh; font-weight: bold; height: 88px; height: 11vh; transition: background-color 0.2s, color 0.2s, border-color 0.2s; background: white; color: " + THEME_TEXT_SURFACE + "; border: 2px solid " + THEME_PRIMARY + " !important; margin: 0 0 1.8vh 0 !important; border-radius: 5.5vh !important; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; box-shadow: none !important; text-decoration: none; }",
             "  .btn-answer:last-child { margin-bottom: 0 !important; }",
             "  .btn-answer:active { transform: scale(0.99); background: #f0f8fa; }",
             "  #feedback-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:5000; flex-direction:column; align-items:center; justify-content:center; }",
             "  #feedback-text { font-size:36px; font-weight:bold; padding:30px 50px; border-radius:20px; max-width:80%; text-align:center; }",
-            "  .quiz-back-btn { position: fixed; top: 96px; left: 24px; z-index: 1110; padding: 10px 24px; font-size: 15px; font-weight: bold; color: white; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 20px; text-decoration: none; transition: background 0.2s; }",
+            "  .quiz-back-btn { position: fixed; top: 96px; top: calc(38px + 9vh); left: 24px; z-index: 1110; padding: 10px 24px; font-size: 15px; font-weight: bold; color: white; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 20px; text-decoration: none; transition: background 0.2s; }",
             "  .quiz-back-btn:active { background: rgba(255, 255, 255, 0.2); }",
             "  .hamburger span { background-color: " + THEME_SURFACE + "; !important; }",
             "</style>",
@@ -702,7 +699,7 @@ def render_quiz(speak_question=True):
             "<div id='feedback-overlay'><div id='feedback-text' style='color:white;'></div></div>",
             "<a class='quiz-back-btn' href='/menu'>← Retour au menu</a>",            
             "<div style='position:fixed; top:80px; right:12px; z-index:1200; display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:horizontal; -webkit-box-direction:normal; -webkit-flex-direction:row; flex-direction:column; -webkit-box-align:center; -webkit-align-items:center; align-items:flex-end; margin-bottom:6px;'>",
-            "  <div style='background:white; color:#1F365C; padding:10px 22px; border-radius:24px; font-weight:bold; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.15); border:1px solid rgba(0,0,0,0.05); white-space:nowrap;'>",
+            "  <div style='background:white; color:" + THEME_TEXT_SURFACE + "; padding:10px 22px; border-radius:24px; font-weight:bold; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.15); border:1px solid rgba(0,0,0,0.05); white-space:nowrap;'>",
             "    Je ne peux pas t'écouter pendant l'activité.",
             "  </div>",
             "  <div>",
@@ -711,9 +708,9 @@ def render_quiz(speak_question=True):
             "</div>",            
             '<div class="container" style="background-color: transparent; padding: 165px 30px 24px 30px; height: 100vh; box-sizing: border-box; justify-content: center;">',            
             '  <div class="surface-panel" style="width:100%; height:100%; padding:30px 45px 24px; box-sizing:border-box; display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; -webkit-box-align:center; -webkit-align-items:center; align-items:center; border-radius:36px; box-shadow:0 16px 36px rgba(0,0,0,0.22); overflow:hidden;">',
-            '    <h1 style="font-size: 50px; margin: 0 0 14px 0; color: #18C6D9; letter-spacing: 4px; font-weight:800; text-shadow:none;">QUIZ AVEC MIROKA</h1>',
-            '    <h2 style="font-size: 26px; font-weight: normal; margin: 0 0 28px 0; color: #1F365C; line-height:1.2;">' + q['text'] + '</h2>',
-            '    <div style="display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; width: 100%; max-width: 820px; -webkit-box-flex:1; -webkit-flex:1; flex:1; -webkit-box-pack:center; -webkit-justify-content:center; justify-content:center; box-sizing:border-box;">'
+            '    <h1 style="font-size: 50px; font-size: 6vh; margin: 0 0 1.5vh 0; color: ' + THEME_PRIMARY + '; letter-spacing: 4px; font-weight:800; text-shadow:none;">QUIZ AVEC PEPPER</h1>',
+            '    <h2 style="font-size: 26px; font-size: 3.8vh; font-weight: bold; margin: 0 0 3vh 0; color: ' + THEME_TEXT_SURFACE + '; line-height:1.2;">' + q['text'] + '</h2>',
+            '    <div style="display:-webkit-box; display:-webkit-flex; display:flex; -webkit-box-orient:vertical; -webkit-box-direction:normal; -webkit-flex-direction:column; flex-direction:column; width: 100%; max-width: 92%; -webkit-box-flex:1; -webkit-flex:1; flex:1; -webkit-box-pack:center; -webkit-justify-content:center; justify-content:center; box-sizing:border-box;">'
         ]
         
         for i, ans in enumerate(q["answers"]):
@@ -721,7 +718,7 @@ def render_quiz(speak_question=True):
             parts.append("      <div class='btn btn-answer' onclick='clickAns(this, " + str(i) + ", " + str(correct_idx) + ")'>" + ans + "</div>")
         
         parts.append("    </div>")
-        parts.append("    <p style='margin:16px 0 0 0; flex-shrink:0; font-size:18px; color:#1F365C; font-weight:bold;'>Question " + str(state.quiz_index + 1) + "/" + str(len(QUESTIONS)) + "</p>")
+        parts.append("    <p style='margin:16px 0 0 0; flex-shrink:0; font-size:18px; font-size:2.6vh; color:" + THEME_TEXT_SURFACE + "; font-weight:bold;'>Question " + str(state.quiz_index + 1) + "/" + str(len(QUESTIONS)) + "</p>")
         parts.append("  </div>")
         parts.append("</div></body></html>")
 
@@ -736,7 +733,7 @@ def render_quiz(speak_question=True):
             "  <div class='surface-panel' style='width:100%; max-width:680px; padding:40px; border-radius:36px; box-shadow:0 16px 36px rgba(0,0,0,0.22); display:flex; flex-direction:column; align-items:center;'>",
             "    <h1 style='font-size:38px; margin-top:0; margin-bottom:15px;'>Quiz terminé !</h1>",
             "    <div style='font-size:72px; color:#2ecc71; font-weight:bold; margin:15px 0;'>" + score_txt + "</div>",
-            "    <p style='font-size:20px; max-width:90%; line-height:1.5; margin:15px auto; color:#1F365C; font-weight:500;'>" + QUIZ_END_TEXT.replace(". ", ".<br>") + "</p>",
+            "    <p style='font-size:20px; max-width:90%; line-height:1.5; margin:15px auto; color:" + THEME_TEXT_SURFACE + "; font-weight:500;'>" + QUIZ_END_TEXT.replace(". ", ".<br>") + "</p>",
             "    <div style='display:flex; flex-direction:column; gap:12px; margin-top:20px; width:100%; align-items:center;'>",
             "      <a class='btn btn-green' href='/quiz/start' style='width:260px; border-radius:22px; font-size:18px;' onclick=\"this.href='/quiz/start?t=' + new Date().getTime()\">Recommencer</a>",
             "      <a class='btn' href='/menu' style='width:260px; border-radius:22px; font-size:18px; color:var(--background);'>Menu principal</a>",
@@ -748,6 +745,15 @@ def render_quiz(speak_question=True):
             threading.Thread(target=action_say, args=(QUIZ_END_TEXT,)).start()
         return "".join(parts)
 
+# Corrections de prononciation (texte dit seulement, pas affiche) : {"mot": "phonetique"} dans client.json
+TTS_PHONETIC = _fix_quiz_value(cfg_get("ttsPhonetic", None) or {})
+
+def tts_fix(text):
+    text = str(text)
+    for wrong, correct in TTS_PHONETIC.items():
+        text = text.replace(html_text(wrong), html_text(correct))
+    return text
+
 def action_say(text):
     """Dit un texte via le robot (bloquant). Appeler dans un thread."""
     if session_global and qi:
@@ -758,7 +764,7 @@ def action_say(text):
             except Exception as e_lang:
                 print("[ROBOT] Avertissement langue: " + str(e_lang))
             print("[ROBOT] Say: " + text)
-            tts.say(str(text))
+            tts.say(tts_fix(text))
         except: pass
 
 def action_say_then(text1, text2):
@@ -771,10 +777,10 @@ def action_say_then(text1, text2):
             except Exception as e_lang:
                 print("[ROBOT] Avertissement langue: " + str(e_lang))
             print("[ROBOT] Say feedback: " + text1)
-            tts.say(str(text1))
+            tts.say(tts_fix(text1))
             time.sleep(0.5)
             print("[ROBOT] Say question: " + text2)
-            tts.say(str(text2))
+            tts.say(tts_fix(text2))
         except: pass
 
 def action_animation(animation_id):
@@ -943,6 +949,7 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     elif fpath.endswith(".png"): self.send_header("Content-type", "image/png")
                     elif fpath.endswith(".jpg") or fpath.endswith(".jpeg"): self.send_header("Content-type", "image/jpeg")
                     elif fpath.endswith(".webp"): self.send_header("Content-type", "image/webp")
+                    elif fpath.endswith(".pdf"): self.send_header("Content-type", "application/pdf")
                     self.end_headers()
                     with open(fpath, 'rb') as f:
                         self.wfile.write(f.read())
@@ -1043,7 +1050,7 @@ class AppHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 anim = PEPPER_ANIMATION_BY_ID.get(anim_id)
                 if anim:
                     threading.Thread(target=action_animation, args=(anim_id,)).start()
-                    content = render_animations(anim["icon"] + " " + anim["label"] + " en cours...")
+                    content = render_animations(anim["label"] + " en cours...")
                 else:
                     content = render_animations("Animation indisponible.")
 

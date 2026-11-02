@@ -140,6 +140,9 @@ TTS_PHONETIC_MAP = {
     u"IATECH" : u"Iatech",
     u"ARAMYS" : u"ARAMISSE",
     u"hmm" : u"heum",
+    u"Bibendum" : u"Bibindome",
+    u"bibendum" : u"bibindome",
+    u"Sister Act" : u"Sisteur Akte",
 }
 
 # --- Robust UTF-8 decoder ---
