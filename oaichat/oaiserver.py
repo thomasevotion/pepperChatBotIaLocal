@@ -1,21 +1,18 @@
 # -*- coding: utf-8 -*-
 
 ###########################################################
-# This is the server interface for the GPT-3 OpenAI chatbot.  
+# Serveur ZMQ pour le chatbot Gemini (remplace OpenAI).
+# Gere les requetes texte et multimodales (texte + image).
 #
-# Syntax:
-#    python3 oaiserver.py
-#
-# Author: Erik Billing, University of Skovde
-# Created: June 2022. 
-# License: Copyright reserved to the author. 
+# Author: adapte depuis Erik Billing, University of Skovde
 ###########################################################
-"""Zmq server interface for the OpenAI chatbot"""
+"""Zmq server interface for the Gemini chatbot"""
 
 import zmq, os
 import datetime
 from threading import Thread
 from oaichat.openaichat import OaiChat
+
 
 class OaiServer(OaiChat):
 
@@ -23,34 +20,43 @@ class OaiServer(OaiChat):
         super().__init__(user, prompt)
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.bind('tcp://*:'+os.getenv('CHATBOT_SERVER_ADDRESS').split(':')[-1])
+        self.socket.bind('tcp://*:' + os.getenv('CHATBOT_SERVER_ADDRESS').split(':')[-1])
         self.thread = None
+        self.stream_generator = None
+        self.full_stream_response = ""
+        self.current_stream_input = ""  # Pour l'historique apres streaming
 
     def start(self):
         self.thread = Thread(target=self._run)
         self.thread.start()
 
-    def _run(self): 
-        print('Starting OpenAI chat server...')
+    def _run(self):
+        print('Starting Gemini chat server...')
         try:
             while self.thread:
                 response = {}
                 print('Listening for msg...')
                 i = self.listen()
-                print('Input received:',i)
-                if 'handshake' in i: 
-                    print('New client connected:',i['handshake'])
+                # On affiche le message recu sans l'image (trop long)
+                debug_i = {k: v for k, v in i.items() if k != 'image_data'}
+                print('Input received:', debug_i)
+
+                if 'handshake' in i:
+                    print('New client connected:', i['handshake'])
                     response['handshake'] = 'ok'
+
                 if 'reset' in i and i['reset']:
                     print('Resetting history.')
                     self.reset(i['user'])
-                    response['reset']='ok'
+                    response['reset'] = 'ok'
+
                 if 'history' in i:
                     print('Extending history:')
-                    for row in i['history']: 
-                        print('\t'+row.strip())
+                    for row in i['history']:
+                        print('\t' + row.strip())
                         self.history.append(row.strip())
-                    response['history']='ok'
+                    response['history'] = 'ok'
+
                 if 'input' in i:
                     # Recuperer l'image si presente (envoyee par module_dialogue.py)
                     image_data = i.get('image_data', None)
@@ -126,30 +132,30 @@ class OaiServer(OaiChat):
                 response['emotion_tag'] = getattr(self, 'last_emotion_tag', None)
 
                 response['time'] = datetime.datetime.now().isoformat()
-                print('Sending response:',response)        
+                print('Sending response:', {k: v for k, v in response.items() if k not in ('chunk',)})
                 self.send(response)
-        except zmq.error.ContextTerminated as e:
+
+        except zmq.error.ContextTerminated:
             pass
-                
+
     def stop(self):
-        #self.socket.close()
         self.thread = None
-        #self.log.close()
         self.context.destroy()
 
     def listen(self):
-        #  Wait for next request from client
         return self.socket.recv_json()
 
-    def send(self,s):
+    def send(self, s):
         return self.socket.send_json(s)
 
+
 def main():
-    server = OaiServer()
+    server = OaiServer('pepper')
     server.start()
-    try: 
+    try:
         while True:
             i = input('Enter q to quit. > ')
-            if i == 'q': break
+            if i == 'q':
+                break
     finally:
         server.stop()

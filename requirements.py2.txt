@@ -1,4 +1,4 @@
-# PepperChat Python2 Requirements
+# PepperChat Python 2.7 — voir requirements_py2.txt
 numpy
 python-dotenv
-zmq
+pyzmq

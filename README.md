@@ -1,114 +1,109 @@
-# Pepper Chat
+# PepperChat — Guide d'utilisation
 
-The code interfaces [OpenAI ChatGPT](https://openai.com/) with the [Aldebaran](https://www.aldebaran.com/en) Pepper and Nao robots, allowing open verbal conversation with these robots on a wide range of subjects.
+## Installation (nouveau PC)
 
-## Video of the Result
+**Double-cliquez sur `INSTALL_APP.bat` (en tant qu'Administrateur)**
 
-### April 2024 update
-[![Pepper Dialogue](img/Pepper-prompt-2024-04.png)](https://youtu.be/1T3SLaut6wI?si=lggZ70EGl287Ke1G)
+Ce script installe automatiquement :
+- Python 2.7.18 dans `C:\Python27\`
+- Python 3.10 (ajouté au PATH)
+- Le SDK NAOqi dans Python 2.7
+- Toutes les dépendances pip (Python 2 et 3)
+- Le fichier `.env` de configuration
 
-### Original rlease, June 2022
-[![Pepper Dialogue](img/Pepper-prompt.png)](https://youtu.be/zip90jyv1i4)
+---
 
-## Installation
+## Démarrer l'application
 
-[PepperChat](https://github.com/ilabsweden/pepperchat) depends on the NaoQi software to interface with the Pepper and Nao robots, and the OpenAI API to interface with ChatGPT. Please refer to the detailed setup instructions below for your preferred operating system. 
+**Double-cliquez sur `START_APP.bat`**
 
-### Setup for Windows
+Le script lance 4 fenêtres (une par service) :
 
-Set-Alias python2 C:\Python27\python.exe
+| Fenêtre | Rôle | Python |
+|---------|------|--------|
+| STT Google | Reconnaissance vocale Google Cloud | Python 3 |
+| Gemini Server | Serveur IA Gemini (ZMQ) | Python 3 |
+| Speech Recognition | Module audio Pepper → STT | Python 2.7 |
+| Dialogue NaoQI | Module dialogue principal | Python 2.7 |
 
-NaoQi is old and runs on Python 2.7 while OpenAI requires Python 3. We therefore need both Python versions installed. Here's a step by step guide for setup on Windows 11.
+---
 
-1. Make sure Python 3.x is installed on the system. 
-1. Install [Python 2.7](https://www.python.org/downloads/release/python-2718/). Select the 32 bit msi installer.
-1. Add ```C:\Python27``` to the environment PATH.
-1. Open a terminal and verify that ```python``` refers to Python2.7 and ```python3``` refers to your Python 3.x distribution. 
+## Arrêter l'application
 
-Now we need a few of dependencies:
+**Double-cliquez sur `STOP_APP.bat`**
 
-* Install all dependencies for Python 2: ```python2 -m pip install -r .\requirements.py2.txt```
-* Install all dependencies for Python 3: ```python3 -m pip install -r .\requirements.py3.txt```
+---
 
-We will use VS Code to run things, you may also use another environment if you prefer. 
+## Prérequis
 
-Now we need the Python NaoQi API for communicating with the Pepper robot. 
+### 1. Python 2.7 + SDK NaoQI
+- Installé automatiquement par `INSTALL_APP.bat`
+- Ou manuellement : Python 2.7 dans `C:\Python27\`, SDK NAOqi dans `C:\Python27\Lib\site-packages\`
 
-* Download and extract NaoQi Python SDK for [Nao](https://support.unitedrobotics.group/en/support/solutions/articles/80001018812-nao-6-downloads) or [Pepper](https://support.unitedrobotics.group/en/support/solutions/articles/80001024221-pepper-2-5-downloads) 
-* Add the pynaoqi folder (e.g. *pynaoqi-python2.7-2.5.7.1-win32-vs2013/lib*) to the PYTHONPATH environment variable in Windows. 
-* You may also want to install *Choreographe* for [Nao](https://support.unitedrobotics.group/en/support/solutions/articles/80001018812-nao-6-downloads) or [Pepper](https://support.unitedrobotics.group/en/support/solutions/articles/80001024221-pepper-2-5-downloads). It is however not strictly needed to run *Pepper Chat*.
+### 2. Python 3.10+
+- Installé automatiquement par `INSTALL_APP.bat`
+- Ou manuellement : https://www.python.org/downloads/ (cocher **Add to PATH**)
 
-Finally, we are ready to check out the repository. 
+### 3. Fichier `.env`
+- Créé automatiquement par `INSTALL_APP.bat`
+- Contient : `ROBOT_IP`, `GEMINI_API_KEY`, `CHATBOT_SERVER_ADDRESS`, etc.
 
-* Check out this repository and open the folder in VS Code
-* Open a terminal and run ```python init.py``` to set up a default environment. Have your OpenAI account key available so that this can be stored with your configuration. 
+### 4. Connexion réseau
+- Le PC et le robot Pepper doivent être sur le même réseau
 
-### Setup for OSX and Linux
+---
 
-NaoQi is old and runs on Python 2.7 while OpenAI requires Python 3. 
+## En cas de problème
 
-1. Open a terminal and verify that ```python2``` refers to Python2.7 and ```python3``` refers to your Python 3.x distribution. If any of them are missing, please install through your preferred package manager.  
+| Symptôme | Solution |
+|----------|----------|
+| « Python 3 introuvable » | Relancer `INSTALL_APP.bat`, ou redémarrer le PC si Python 3 vient d'être installé |
+| « Python 2.7 introuvable » | Relancer `INSTALL_APP.bat` en tant qu'Administrateur |
+| Le robot ne répond pas | Vérifier `ROBOT_IP` dans `.env` ; tester `ping <ip_robot>` |
+| Une fenêtre s'ouvre et se ferme | Ouvrir un terminal, lancer la commande manuellement pour voir l'erreur |
+| Erreur pip / dépendance | Relancer `INSTALL_APP.bat` |
 
-Now we need a few of dependencies:
+---
 
-* Install all dependencies for Python 2: ```python2 -m pip install -r .\requirements.py2.txt```
-* Install all dependencies for Python 3: ```python3 -m pip install -r .\requirements.py3.txt```
+## Structure des fichiers
 
-We are now ready to check out the repository:
+```
+pepperchat-master\
+├── INSTALL_APP.bat         ← Installation complète (nouveau PC)
+├── START_APP.bat           ← Démarrer l'application
+├── STOP_APP.bat            ← Arrêter l'application
+├── kill_python.bat         ← Tuer tous les processus Python
+├── .env                    ← Configuration (IP robot, clés API)
+├── requirements_py2.txt    ← Dépendances Python 2.7
+├── requirements_py3.txt    ← Dépendances Python 3.10
+├── google_stt_server.py    ← Serveur STT Google (Python 3)
+├── startDialogueServer_background.py  ← Serveur Gemini (Python 3)
+├── module_speechrecognition.py  ← Module audio Pepper (Python 2)
+├── module_dialogue.py      ← Module dialogue Pepper (Python 2)
+├── oaichat\                ← Client/Serveur Gemini (ZMQ)
+├── pepperspeechrecognition\  ← Module reconnaissance vocale
+└── pynaoqi-python2.7-2.5.7.1-win32-vs2013\  ← SDK NAOqi Windows
+```
 
-* Check out this repository and open the folder in VS Code
-* Open a terminal and run ```python init.py``` to set up a default environment. Have your OpenAI account key available so that this can be stored with your configuration. 
+---
 
-We will use [VS Code](https://code.visualstudio.com/) to run things, you may also use another environment if you prefer. 
+## Architecture technique
 
-Now we need the Python NaoQi API for communicating with the Pepper robot. 
-
-* Download and extract NaoQi Python SDK for [Nao](https://support.unitedrobotics.group/en/support/solutions/articles/80001018812-nao-6-downloads) or [Pepper](https://support.unitedrobotics.group/en/support/solutions/articles/80001024221-pepper-2-5-downloads) matching the version of your robot's software. Tested with NAOqi 2.5.10.7.
-* Update your terminal profile (e.g. *.zshrc*) with the following:
-    * export PYTHONPATH=${PYTHONPATH}:/path/to/python-sdk/lib/python2.7/site-packages
-    * export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/path/to/python-sdk/lib
-    * export QI_SDK_PREFIX=/path/to/python-sdk
-* Start ```python2``` and make sure you can import ```naoqi```. OSX may throw a lot of warnings the first time NaoQi is imported. Google for the exact way to approve these. 
-
-I haven't been able to make Choreographe to run on recent versions of OSX, but it's not needed for running this app. 
-
-## Run
-Make sure you've gone through all steps in the Setup guide above before you start. 
-
-Note that the Speech recognition module uses a NaoQi (*Autonomous Life Proxy*) to switch focus to *nao_focus*. You may not have this script on your own robot and the the code will throw an exception as a result. This call is made solely to prevent the default dialogue system of the robot to interfere with PepperChat. You may safely comment this away or upload your own preferred focus script to the robot, e.g. using Choreograph. 
-
-* Start the OpenAI ChatGPT chatbot service by opening a terminal and execute ```python3 startDialogueServer.py```. If everything goes well, the server should respond with _Starting OpenAI chat server...
-Type an input message to test your chatbot..._
-* Next, start Google's text to speech recognition service for Pepper by opening a new terminal and execute ```python module_speechrecognition.py --pip pepper.local``` (where _pepper.local_ refers to your robot's ip).
-* We are now ready to start the dialogue service by opening another terminal and executing ```python module_dialogue.py --pip pepper.local```. This script will ask for a participant id and then connect to the OpenAI chatbot server we started earlier. If everything goes well it will continue and register another NaoQi module that runs the dialogue. _Pepper should now be ready to chat!_
-
-## License
-
-This project is released under the MIT license. Please refer to [LICENSE.md](LICENSE.md) for license details.
-
-Parts of the source code have specific license formulations. Please see the file headers for details. 
-
-## Publications
-
-Erik Billing, Julia Rosén, and Maurice Lamb. 2023. [Language Models for Human-Robot Interaction](doc/Billing_etal_2023-Language_models_for_HRI.pdf). In Companion of the 2023 ACM/IEEE International Conference on Human-Robot Interaction (HRI ’23 Companion), March 13–16, 2023, Stockholm, Sweden. ACM, New York, NY, USA, 2 pages. https://doi.org/10.1145/3568294.3580040.
-
-## Acknowledgments
-
-* Erik Billing @ University of Skövde, Sweden - for implementing the OpenAI GPT-3 dialogue system. 
-* Igor Lirussi @ Cognitive Learning and Robotics Laboratory at Boğaziçi University, Istanbul - for providing an [AIML-based dialogue system](https://github.com/igor-lirussi/Dialogue-Pepper-Robot) on which this project is built. 
-* Johannes Bramauer @ Vienna University of Technology - for the [PepperSpeechRecognition](https://github.com/JBramauer/pepperspeechrecognition)
-* Anthony Zang (Uberi) and his [SpeechRecognition](https://github.com/Uberi/speech_recognition)
-
-
-$env:DIALOGUE_START_PROMPTFILE = "default_start.prompt"
-
-$env:DIALOGUE_LOG_DIR = "logs"
-PS C:\Users\thoma\Travail\pepperchat-master> $env:GOOGLE_APPLICATION_CREDENTIALS="C:\divine-data-472416-c3-01c66611aa97"
-
-$env:OPENAI_API_KEY="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"
-
-$env:CHATBOT_SERVER_ADDRESS = "localhost:5555"
-
-$env:CHATBOT_SERVER_ADDRESS = "tcp://127.0.0.1:5555"
-
-$env:DIALOGUE_LOG_DIR = ".\\logs"
+```
+                    ┌─────────────────────────┐
+                    │     Robot Pepper         │
+                    │  (NAOqi port 9559)       │
+                    └────────┬────────────────┘
+                             │
+          ┌──────────────────┼──────────────────┐
+          │                  │                   │
+   ┌──────▼───────┐  ┌──────▼───────┐          │
+   │ Speech Recog │  │  Dialogue    │          │
+   │ (Python 2.7) │  │  (Python 2.7)│          │
+   └──────┬───────┘  └──────┬───────┘          │
+          │ TCP:8889         │ ZMQ:5556         │
+   ┌──────▼───────┐  ┌──────▼───────┐          │
+   │  STT Google  │  │ Gemini Server│          │
+   │ (Python 3)   │  │ (Python 3)   │          │
+   └──────────────┘  └──────────────┘          │
+```

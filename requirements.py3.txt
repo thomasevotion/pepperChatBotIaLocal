@@ -1,4 +1,9 @@
-# PepperChat Python2 Requirements
+# PepperChat Python 3.10 — voir requirements_py3.txt
 python-dotenv
-zmq
-openai
+pyzmq
+google-genai
+Pillow
+numpy
+google-cloud-speech
+grpcio
+google-api-core

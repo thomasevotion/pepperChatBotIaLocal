@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <meta name="viewport" content="initial-scale = 1.333, minimum-scale = 1.333, maximum-scale = 1.333" />
+    <meta name="viewport" content="width=980, height=613, user-scalable=no" />
+    <title>Presentation</title>
+    <style type="text/css">
+        body {
+            border: 1px solid black;
+            margin: 0px 0px;
+            width: 1000px;
+            height: 800px;
+            overflow-y: auto;
+            position: relative;
+        }
+        #page {
+            font-family: 'NewHelveticaRoman', Arial, sans-serif;
+            margin-top: 90px;
+            width: 1000px;
+            height: 710px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .general {
+            width: 100%;
+            height: calc(100% - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            background: #2ed0ee;
+            overflow-y: auto;
+            margin: 0 auto;
+            position: relative;
+            padding-bottom: 80px;
+        }
+        .contacts-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 40px;
+            padding-bottom: 0;
+        }
+        .contacts-title {
+            background: #d32d2f;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 6px 24px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            text-align: center;
+            display: inline-block;
+        }
+        .contacts-columns {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        .contacts-col {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 220px;
+            font-size: 18px;
+            color: #222;
+            font-weight: normal;
+        }
+        .contacts-col b {
+            font-weight: bold;
+            color: #222;
+        }
+        .contacts-col .important {
+            color: #d32d2f;
+            font-weight: bold;
+        }
+        .contacts-col .highlight {
+            color: #2ed0ee;
+            font-weight: bold;
+        }
+        .contacts-col .email {
+            color: #222;
+            font-size: 16px;
+            font-weight: normal;
+        }
+        .contacts-col .email-red {
+            color: #d32d2f;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .contacts-bottom {
+            width: 100%;
+            background: #fff;
+            margin-top: 30px;
+            padding: 30px 0 40px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .contacts-bottom-title {
+            background: #d32d2f;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 6px 24px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            text-align: center;
+            display: inline-block;
+        }
+        .contacts-bottom-content {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+        }
+        .contacts-bottom-arrow {
+            font-size: 54px;
+            color: #2ed0ee;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        .contacts-bottom-text {
+            color: #222;
+            font-size: 18px;
+            text-align: center;
+            font-weight: normal;
+        }
+        .contacts-bottom-text b {
+            font-weight: bold;
+            color: #222;
+        }
+        .contacts-bottom-text .highlight {
+            color: #0a3148;
+            font-weight: bold;
+        }
+        @media (max-width: 900px) {
+            .contacts-columns {
+                flex-direction: column;
+                gap: 20px;
+                align-items: center;
+            }
+            .contacts-col {
+                min-width: 0;
+                width: 100%;
+                align-items: center;
+                text-align: center;
+            }
+            .contacts-bottom-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+        nav {
+            font-family: 'NewHelveticaRoman';
+            font-weight: bold;
+            background-color: #0a3148;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            z-index: 1000;
+        }
+        nav ul,
+        .navbar2 ul {
+            display: flex;
+            justify-content: space-between;
+            list-style: none;
+            margin: 0;
+            padding: 20px 40px;
+        }
+        nav li,
+        .navbar2 ul {
+            margin: 0;
+        }
+        .navbar2 {
+            font-family: 'NewHelveticaRoman';
+            font-weight: bold;
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 210px;
+            height: 100%;
+            background-color: #FFA500;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: right 0.5s ease-in-out;
+            z-index: 1100;
+        }
+        .navbar2.show {
+            right: 0;
+        }
+        .setting_sound {
+            font-family: 'NewHelveticaRoman';
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 30px;
+            text-transform: uppercase;
+            margin-right: 1rem;
+            margin-left: 10px;
+            color: black;
+        }
+        .button_home {
+            padding: 10px 30px;
+            background-color: #34ccf4;
+            color: #000000;
+            border: none;
+            border-radius: 5px;
+            font-size: 25px;
+        }
+        .button_sound {
+            padding: 20px 30px;
+            background-color: #d3dada;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 10px;
+            width: 150px;
+        }
+        .button_sound_mute {
+            padding: 20px 30px;
+            background-color: #8e9292;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 10px;
+            width: 150px;
+        }
+        .button_back {
+            padding: 20px 30px;
+            background-color: #34ccf4;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 10px;
+            width: 150px;
+        }
+        .suivantretour {
+            width: 100%;
+            height: 80px;
+            background: #fff;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+            z-index: 100;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        .retour {
+            padding: 20px 30px;
+            background-color: #d3dada;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 0;
+            width: 150px;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        .suivant {
+            padding: 20px 30px;
+            background-color: #d3dada;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            width: 150px;
+            margin-left: 0;
+        }
+        .nombre {
+            width: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            flex-grow: 0;
+            margin: 0;
+            text-align: center;
+        }
+    </style>
+
+    <!----------------------------------------------------------------------------FONCTION JS -->
+    
+    <!-- NOUVEAU SCRIPT WEB LOCAL -->
+    <script>
+        function GoHome() {
+            window.location.href = "/menu";
+        }
+        function toggleNavbar() {
+            document.querySelector('.navbar2').classList.toggle('show');
+        }
+        function toggleNavbar2() {
+            document.querySelector('.navbar2').classList.remove('show');
+        }
+        function setVolume(val) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/setvolume', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({volume: val}));
+            toggleNavbar2();
+        }
+        function soundMin() { setVolume(30); }
+        function soundMoy() { setVolume(60); }
+        function soundMax() { setVolume(100); }
+        function soundMute() { setVolume(0); }
+
+        function Retour() {
+            window.location.href = "/veolia/presentation10.html";
+        }
+    </script>
+</head>
+
+<!-----------------------------------------NAVBAR--------------------------------->
+<nav>
+    <ul>
+        <li><button class="button_home" onclick="GoHome()"> <strong>ACCUEIL</strong> </button> </li>
+        <li><button class="button_home" onclick="toggleNavbar()"> <strong>REGLAGES</strong> </button> </li>
+    </ul>
+</nav>
+
+<div class="navbar2">
+    <li><button class="button_back" onclick="toggleNavbar2()"> <strong>FERMER </strong> </button> </li>
+    <div class="">--------------------------- </div>
+    <div class="setting_sound"><strong>VOLUME:</strong> </div>
+    <li><button class="button_sound" onclick="soundMin()"> <strong>MINIMUM</strong> </button> </li>
+    <li><button class="button_sound" onclick="soundMoy()"> <strong>MOYEN</strong> </button> </li>
+    <li><button class="button_sound" onclick="soundMax()"> <strong>MAXIMUM</strong> </button> </li>
+    <li><button class="button_sound_mute" onclick="soundMute()"> <strong>MUTE</strong> </button> </li>
+    <img src="logo.png" width="150" height="150" style="margin-top: 10px; margin-left: 10px;" onerror="this.style.display='none'">
+</div>
+
+<!-----------------------------------------BODY--------------------------------->
+
+<body>
+    <div id="page">
+        <div class="general">
+            <div class="contacts-container">
+                <div class="contacts-title">Numéros utiles</div>
+                <div class="contacts-columns">
+                    <div class="contacts-col">
+                        <b>STANDARD</b><br>01 85 57 70 00<br><br>
+                        <b>ACCUEIL PRINCIPAL</b><br>01 85 57 40 00<br><br>
+                        <b>CRU</b><br><span class="email-red">cru-v@veolia.com</span><br><br>
+                        <b>RELAIS SANTÉ</b><br>01 85 57 70 30<br>06 23 90 87 26
+                    </div>
+                    <div class="contacts-col">
+                        <b>COURRIER</b><br>courrier@veolia.com<br><br>
+                        <b>INFORMATIQUE</b><br>01 85 57 80 00<br><br>
+                        <b>PC SÉCURITÉ</b><br>01 85 57 71 00<br><span class="email">securite.v@veolia.com</span><br><br>
+                        <b>BUREAU DES BADGES</b><br>01 85 57 75 80
+                    </div>
+                </div>
+            </div>
+            <div class="contacts-bottom">
+                <div class="contacts-bottom-title">Actualités</div>
+                <div class="contacts-bottom-content">
+                    <span class="contacts-bottom-arrow">&#8594;</span>
+                    <div class="contacts-bottom-text">
+                        Pour ne rien rater<br>de l'actualité du V,<br>n'oubliez pas de consulter<br><b class="highlight">le site intranet du V</b>
+                    </div>
+                    <span class="contacts-bottom-arrow">&#8592;</span>
+                </div>
+            </div>
+            <div class="suivantretour">
+                <button class="retour" onclick="Retour()"><strong>RETOUR</strong></button>
+                <div class="nombre">11/11</div>
+                <!-- Le bouton FIN utilise GoHome() ce qui est parfait pour retourner au menu -->
+                <button class="suivant" onclick="GoHome()"><strong>FIN</strong></button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

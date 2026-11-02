@@ -13,9 +13,10 @@ venv*
 dialogue.log
 *.log
 .env
-env*
+*.wav
+divine-data-472416-c3-6107ddcf03d9.json
 env/*
-env\*
-env\Scripts\*
-stt_env*
-vosk-model-fr-0.22
+
+stt_env/*
+whisper_models/*
+vosk-model-fr-0.22/*

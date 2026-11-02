@@ -1,24 +1,18 @@
 # -*- coding: utf-8 -*-
-
-###########################################################
 # This module implements the main dialogue functionality for Pepper, based on ChatGPT.
-#
 # Syntax:
-#    python scriptname --pip <ip> --pport <port>
-#
-#    --pip <ip>: specify the IP of your robot (without specification it will use the ROBOT_IP defined below)
-#
+#   python scriptname --pip <ip> --pport <port>
+#   --pip <ip>: specify the IP of your robot (without specification it will use the ROBOT_IP defined below)
+
 # Author: Erik Billing, University of Skovde, etc.
 # Adapted for always-on, no autonomous life, always standing, animated speech, French accents handled.
 # License: MIT
-###########################################################
 
 ROBOT_PORT = 9559
-ROBOT_IP = "pepper.local"
+ROBOT_IP = "172.20.10.3" # Anciennement "pepper.local"
 
 from optparse import OptionParser
 import re
-import naoqi
 import time
 import sys, os
 import codecs
@@ -153,7 +147,7 @@ TTS_PHONETIC_MAP = {
 }
 
 # --- Robust UTF-8 decoder ---
-def safe_decode(s):
+def safedecode(s):
     if isinstance(s, unicode):
         return s
     elif isinstance(s, str):
@@ -205,10 +199,9 @@ if STARTPROMPT_PATH and os.path.isfile(STARTPROMPT_PATH):
     with codecs.open(STARTPROMPT_PATH, encoding='utf-8') as f:
         STARTPROMPT = f.read()
 else:
-    START_PROMPT = None
+    STARTPROMPT = None
 
-participantId = raw_input('Participant ID: ')
-
+participantId = raw_input("Participant ID: ")
 chatbot = OaiClient(user=participantId)
 chatbot.reset()
 
@@ -267,11 +260,11 @@ def update_tablet_interface(user_text, robot_text, status=None):
 
 
 class DialogueModule(naoqi.ALModule):
-    """
-    Main dialogue module. Depends on both the ChatGPT service and the Speech Recognition module.
-    """
+    """Main dialogue module. Depends on both the ChatGPT service and the Speech Recognition module."""
+
     def __init__(self, strModuleName, strNaoIp):
         self.misunderstandings = 0
+        self.processing = False
         self.log = codecs.open('dialogue.log', 'a', encoding='utf-8')
         
         # NOUVEAU : Variables d'etat pour gerer la tablette
@@ -294,37 +287,106 @@ class DialogueModule(naoqi.ALModule):
         
         try:
             naoqi.ALModule.__init__(self, strModuleName)
-            self.BIND_PYTHON(self.getName(), "callback")
+            self.BIND_PYTHON(self.getName(), "processRemote")
+            self.BIND_PYTHON(self.getName(), "onAppModeChanged") # Lier event app mode
+            self.BIND_PYTHON(self.getName(), "onRecogDisabled")  # Lier event desactiv_reco
             self.strNaoIp = strNaoIp
         except BaseException, err:
-            print(u"ERR: ReceiverModule: loading error: %s" % safe_decode(err))
+            print(u"ERR: ReceiverModule loading error: %s" % safedecode(err))
 
     def __del__(self):
-        print(u"INF: ReceiverModule.__del__: cleaning everything")
+        print(u"INF: ReceiverModule.__del__ cleaning everything")
         self.stop()
 
     def start(self):
         self.configureSpeechRecognition()
         self.memory = naoqi.ALProxy("ALMemory", self.strNaoIp, ROBOT_PORT)
         self.memory.subscribeToEvent("SpeechRecognition", self.getName(), "processRemote")
-        print(u"INF: ReceiverModule: started!")
+        
+        # S'abonner aux evenements de la tablette
+        self.memory.subscribeToEvent("PepperAppMode", self.getName(), "onAppModeChanged")
+        self.memory.subscribeToEvent("PepperRecogDisabled", self.getName(), "onRecogDisabled")
+        self.memory.subscribeToEvent("PepperVolumeSet", self.getName(), "onVolumeSet")
+        
+        # Demarrer la capture camera en arriere-plan
+        if CAMERA_ENABLED:
+            self._camera_running = True
+            self._camera_thread = threading.Thread(target=self._camera_loop)
+            self._camera_thread.daemon = True  # S'arrete automatiquement quand le programme quitte
+            self._camera_thread.start()
+            print(u"[CAM] Thread capture camera demarre (toutes les {}s)".format(CAMERA_INTERVAL))
+            
+            # Thread des commentaires proactifs sur l'environnement
+            if ENV_COMMENT_ENABLED:
+                _env_thread = threading.Thread(target=self._env_comment_loop)
+                _env_thread.daemon = True
+                _env_thread.start()
+        
+        print(u"INF: ReceiverModule started!")
+
+        # On essaie d'afficher la page sur la tablette des le debut
+        try:
+            self.tablet = ALProxy("ALTabletService", self.strNaoIp, ROBOT_PORT)
+            self.tablet.enableWifi() # S'assurer que le Wifi est actif
+            time.sleep(1)
+            
+            try:
+                stat = self.tablet.getWifiStatus()
+                print(">>> TABLET WIFI STATUS: " + str(stat))
+                if stat != "CONNECTED":
+                    print("ATTENTION: La tablette n'est pas connectee au Wifi !")
+                    print("Veuillez connecter la tablette au meme reseau que le robot via les parametres Android.")
+            except: pass
+            
+            # URL locale du PC hote (Pepper doit pouvoir acceder a cette IP)
+            pc_ip = get_local_ip()
+            url = "http://" + pc_ip + ":9091/"
+            print("Tentative d'affichage tablette url: " + url)
+            
+            # Force refresh
+            try:
+                self.tablet.hideWebview()
+                time.sleep(0.5)
+            except: pass
+            
+            self.tablet.showWebview(url)
+        except Exception as e:
+            print("Erreur initialisation tablette: " + str(e))
+
         try:
             self.posture = ALProxy("ALRobotPosture", self.strNaoIp, ROBOT_PORT)
             self.aup = ALProxy("ALAnimatedSpeech", self.strNaoIp, ROBOT_PORT)
+            self.tts = ALProxy("ALTextToSpeech", self.strNaoIp, ROBOT_PORT) # Ajout TTS standard
+            
+            # Ajouter le proxy pour les LEDs
+            self.leds = ALProxy("ALLeds", self.strNaoIp, ROBOT_PORT)
+            
+            # Ajouter le proxy pour les mouvements
+            self.motion = ALProxy("ALMotion", self.strNaoIp, ROBOT_PORT)
         except RuntimeError:
-            print(u"Can't connect to Naoqi at ip \"%s\" on port %d.\nPlease check your script arguments. Run with -h option for help." % (self.strNaoIp, ROBOT_PORT))
-        if START_PROMPT:
-            answer = safe_decode(chatbot.respond(START_PROMPT))
+            print(u"Can't connect to Naoqi at ip \"%s\" on port %d. \n"
+                  "Please check your script arguments. Run with -h option for help." % (self.strNaoIp, ROBOT_PORT))
+
+        try:
+            print("Mouvements naturels desactives (Breath)")
+        except Exception as e:
+            print(u"Erreur mouvements naturels: %s" % safedecode(e))
+
+        if STARTPROMPT:
+            answer = safedecode(chatbot.respond(STARTPROMPT))
             self.speak(answer)
+            
         self.listen(True)
-        print(u'Listening...')
+        print(u"Listening...")
 
     def stop(self):
-        print(u"INF: ReceiverModule: stopping...")
+        print(u"INF: ReceiverModule stopping...")
+        # Arreter le thread camera
+        self._camera_running = False
         self.memory.unsubscribe(self.getName())
-        print(u"INF: ReceiverModule: stopped!")
+        print(u"INF: ReceiverModule stopped!")
 
-    def version(self):
+    def versions(self):
         return "2.0"
 
     def onAppModeChanged(self, signalName, mode):
@@ -391,6 +453,7 @@ class DialogueModule(naoqi.ALModule):
 
     def configureSpeechRecognition(self):
         self.speechRecognition = ALProxy("SpeechRecognition")
+        
         AUTODEC = True
         if not AUTODEC:
             print(u"False, auto-detection not available")
@@ -399,78 +462,52 @@ class DialogueModule(naoqi.ALModule):
             self.speechRecognition.setMaxRecordingDuration(10)
         else:
             print(u"True, auto-detection selected")
-            self.speechRecognition.setHoldTime(2.5)
-            self.speechRecognition.setIdleReleaseTime(2.0)
+            self.speechRecognition.setHoldTime(0.8)
+            self.speechRecognition.setIdleReleaseTime(0.4)
             self.speechRecognition.setMaxRecordingDuration(10)
             self.speechRecognition.setLookaheadDuration(0.5)
-            self.speechRecognition.setLanguage("fr-fr")
-            self.speechRecognition.calibrate()
-            self.speechRecognition.setAutoDetectionThreshold(6)
+
+        self.speechRecognition.setLanguage("fr-fr")
+        self.speechRecognition.calibrate()
+        self.speechRecognition.setAutoDetectionThreshold(8)
         self.listen(False)
 
     def listen(self, enable):
+        # SECURITE : en mode quiz, jamais activer le micro (le quiz gere sa propre logique)
+        if self.app_mode in ["quiz", "quizz"]:
+            enable = False
+            
+        if self.force_recog_disabled:
+            enable = False
+            
         if enable:
+            print("[MIC] START LISTENING")
             self.speechRecognition.start()
             self.speechRecognition.enableAutoDetection()
+            self.setEyeColor("green")
+            update_tablet_interface(None, None, status="listening")
         else:
+            print("[MIC] STOP LISTENING")
             self.speechRecognition.disableAutoDetection()
             self.speechRecognition.pause()
+            self.setEyeColor("white")
+            update_tablet_interface(None, None, status="waiting")
 
-    def _parse_recognition_payload(self, message):
-        """Accepte l'ancien texte brut et le nouveau JSON STT avec languageCode."""
-        message_u = safedecode(message).strip()
-        if not message_u.startswith(u"{"):
-            return message_u, None
-
+    def setEyeColor(self, color):
         try:
-            payload = json.loads(message_u)
-            text = repair_mojibake(payload.get("text", message_u)).strip()
-            language_code = payload.get("languageCode")
-            if language_code:
-                language_code = safedecode(language_code)
-            return text, language_code
+            duration = 0.1 
+            if color == "green":
+                self.leds.fadeRGB("FaceLeds", 0x00FF00, duration)
+            elif color == "purple":
+                self.leds.fadeRGB("FaceLeds", 0x800080, duration)
+            elif color == "blue":
+                self.leds.fadeRGB("FaceLeds", 0x0000FF, duration)
+            elif color == "white":
+                self.leds.fadeRGB("FaceLeds", 0xFFFFFF, duration)
+            else:
+                self.leds.fadeRGB("FaceLeds", 0xFFFFFF, duration)
         except Exception as e:
-            print(u"[LANG] Payload STT non JSON, fallback texte brut: " + str(e))
-            return message_u, None
-
-    def _map_stt_language_to_naoqi(self, language_code):
-        if not language_code:
-            return DEFAULT_NAOQI_LANGUAGE
-        code = safedecode(language_code).replace(u"_", u"-").lower()
-        if code in BCP47_TO_NAOQI_LANGUAGE:
-            return BCP47_TO_NAOQI_LANGUAGE[code]
-        primary = code.split(u"-")[0]
-        return BCP47_TO_NAOQI_LANGUAGE.get(primary, DEFAULT_NAOQI_LANGUAGE)
-
-    def _detect_requested_tts_language(self, message_text):
-        normalized_message = u" " + normalize_lang_text(message_text) + u" "
-        for naoqi_language, aliases in LANGUAGE_NAME_ALIASES:
-            for alias in aliases:
-                normalized_alias = normalize_lang_text(alias)
-                if not normalized_alias:
-                    continue
-                if u" " + normalized_alias + u" " in normalized_message:
-                    return naoqi_language
-                # Langues CJK/arabe/coreen : les separateurs de mots ne sont pas fiables.
-                if normalized_alias in normalized_message and any(ord(ch) > 127 for ch in normalized_alias):
-                    return naoqi_language
-        return None
-
-    def _set_tts_language_for_current_input(self):
-        language_code = getattr(self, 'current_input_language_code', DEFAULT_STT_LANGUAGE_CODE)
-        naoqi_language = getattr(self, 'current_tts_language', None) or self._map_stt_language_to_naoqi(language_code)
-        try:
-            self.tts.setLanguage(naoqi_language)
-            print(u"[LANG] TTS NAOqi: {} depuis {}".format(naoqi_language, language_code))
-            return naoqi_language
-        except Exception as e:
-            print(u"[LANG] Avertissement: langue '{}' indisponible ({}). Fallback francais.".format(
-                naoqi_language, str(e)))
-            try:
-                self.tts.setLanguage(DEFAULT_NAOQI_LANGUAGE)
-            except Exception as e_fr:
-                print(u"[LANG] Avertissement: fallback francais impossible: " + str(e_fr))
-            return DEFAULT_NAOQI_LANGUAGE
+            print(u"Erreur leds : %s" % safedecode(e))
 
     def _parse_recognition_payload(self, message):
         """Accepte l'ancien texte brut et le nouveau JSON STT avec languageCode."""
@@ -1227,27 +1264,35 @@ class DialogueModule(naoqi.ALModule):
                 self.processRemote(signalName, pending_message)
 
     def react(self, s):
-        s = safe_decode(s)
-        if re.match(u".*je.*m.*asseoir.*", s):
+        s = safedecode(s)
+        if re.match(u".*je.*m.asseoir.*", s):
             self.posture.goToPosture("Sit", 1.0)
-        elif re.match(u".*je.*me l[e|ai]ve.*", s):
+        elif re.match(u".*je.*me.*lève.*", s):
             self.posture.goToPosture("Stand", 1.0)
-        elif re.match(u".*je.*m.*allonge.*", s):
+        elif re.match(u".*je.*m.allonge.*", s):
             self.posture.goToPosture("LyingBack", 1.0)
 
 def main():
     parser = OptionParser()
-    parser.add_option("--pip", help="Parent broker port. The IP address of your robot", dest="pip")
-    parser.add_option("--pport", help="Parent broker port. The port NAOqi is listening to", dest="pport", type="int")
-    parser.set_defaults(
-        pip=ROBOT_IP,
-        pport=ROBOT_PORT
-    )
+    parser.add_option("--pip",
+        help="IP/hostname of broker. Default is 192.168.1.103",
+        dest="pip", default=ROBOT_IP)
+    parser.add_option("--pport",
+        help="port of broker. Default is 9559",
+        dest="pport", default=ROBOT_PORT)
+    parser.add_option("--prompt",
+        help="prompt file name without .prompt extension. Default pepper",
+        dest="prompt", default="pepper")
+    
     (opts, args_) = parser.parse_args()
-    pip = opts.pip
+    pip   = opts.pip
     pport = opts.pport
 
-    myBroker = naoqi.ALBroker("myBroker", "0.0.0.0", 0, pip, pport)
+    myBroker = naoqi.ALBroker("myBroker",
+       "0.0.0.0",   # listen to anyone
+       0,           # find a free port and use it
+       pip,         # parent broker IP
+       pport)       # parent broker port
 
     try:
         p = ALProxy("dialogueModule")
@@ -1255,19 +1300,26 @@ def main():
     except:
         pass
 
-    audio = ALProxy("ALAudioDevice")
-    audio.setOutputVolume(70)
+    try:
+        audio = ALProxy("ALAudioDevice")
+        audio.setOutputVolume(70)
+    except: pass
 
-    # Toujours DESACTIVER AutonomousLife et mettre debout :
-    AutonomousLife = ALProxy('ALAutonomousLife')
-    if AutonomousLife.getState() != 'disabled':
-        AutonomousLife.setState('disabled')
-    RobotPosture = ALProxy('ALRobotPosture')
-    RobotPosture.goToPosture('Stand', 0.5)
-    print(u'Vie autonome désactivée. Robot debout, prêt à interagir avec gestuelle animée.')
+    # Toujours DESACTIVER AutonomousLife et mettre debout
+    try:
+        AutonomousLife = ALProxy('ALAutonomousLife')
+        if AutonomousLife.getState() != 'disabled':
+            AutonomousLife.setState('disabled')
 
-    TabletService = ALProxy('ALTabletService')
-    TabletService.goToSleep()
+        RobotPosture = ALProxy('ALRobotPosture')
+        RobotPosture.goToPosture('Stand', 0.5)
+        print(u"Vie autonome desactivee. Robot debout, pret a interagir avec gestuelle animee.")
+        
+        TabletService = ALProxy('ALTabletService')
+        try:
+            TabletService.wakeUp()
+        except: pass
+    except: pass
 
     global dialogueModule
     dialogueModule = DialogueModule("dialogueModule", pip)
@@ -1277,9 +1329,9 @@ def main():
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print(u"\nInterrompu par l'utilisateur, extinction")
+        print(u"Interrompu par l'utilisateur, extinction...")
         myBroker.shutdown()
         sys.exit(0)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

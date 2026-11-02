@@ -1,26 +1,35 @@
 # -*- coding: utf-8 -*-
 
 ###########################################################
-# The GPT-3 OpenAI chatbot class definition. Executes a local
-# text based chatbot interface using the GPT-3 chatbot. 
+# Gemini chat class - remplace OpenAI GPT.
+# Conserve la meme interface qu'avant (OaiChat) pour que
+# oaiserver.py, oaiclient.py et module_dialogue.py continuent
+# de fonctionner sans modification majeure.
 #
-# Syntax:
-#    python3 openaichat.py
+# Nouveau : supporte l'envoi d'image (camera Pepper) via image_data.
 #
-# Author: Erik Billing, University of Skovde
-# Created: June 2022. 
-# License: Copyright reserved to the author. 
+# Author: adapte depuis Erik Billing, University of Skovde
+# Requires: pip install google-genai pillow
 ###########################################################
 import os, sys, codecs, json
 from datetime import datetime
-from threading import Thread
 from oaichat.oairesponse import OaiResponse
 
 import dotenv
 dotenv.load_dotenv()
 
+# Charger les variables d'environnement depuis config.env
+try:
+    with open('config.env', 'r') as f:
+        for line in f:
+            if '=' in line and not line.startswith('#'):
+                key, value = line.strip().split('=', 1)
+                os.environ[key] = value
+except:
+    pass
+
 if sys.version_info[0] < 3:
-    raise ImportError('OpenAI Chat requires Python 3')
+    raise ImportError('Gemini Chat requires Python 3')
 
 from google import genai
 from google.genai import types
@@ -420,16 +429,14 @@ class OaiChat:
 
 
 if __name__ == '__main__':
-  chat = OaiChat()
-
-  while True:
-    try:
-      s = input('> ')
-    except KeyboardInterrupt:
-      break
-    if s:
-      print(chat.history)
-      print(chat.respond(s).getText())
-    else:
-        break
-  print('Closing GPT Server')
+    chat = OaiChat('test')
+    while True:
+        try:
+            s = input('> ')
+        except KeyboardInterrupt:
+            break
+        if s:
+            print(chat.respond(s).getText())
+        else:
+            break
+    print('Closing Gemini Chat')

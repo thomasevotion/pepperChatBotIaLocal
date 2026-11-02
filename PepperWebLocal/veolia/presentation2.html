@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <meta name="viewport" content="initial-scale = 1.333, minimum-scale = 1.333, maximum-scale = 1.333" />
+    <meta name="viewport" content="width=980, height=613, user-scalable=no" />
+    <title>Presentation</title>
+
+    <!---------------------------------------------------------------------- STYLE CSS -->
+    <style type="text/css">
+        body {
+            border: 1px solid black;
+            margin: 0px 0px;
+            width: 1000px;
+            height: 800px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* PAGE GENERAL */
+        #page {
+            font-family: 'NewHelveticaRoman', Arial, sans-serif;
+            margin-top: 90px;
+            width: 1000px;
+            height: 710px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .general {
+            width: 100%;
+            height: calc(100% - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            background: #fff;
+            overflow-y: auto;
+            margin: 0 auto;
+            position: relative;
+            padding-bottom: 80px;
+        }
+
+        .image{
+            width: auto;
+            max-width: 90%;
+            max-height: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .texte{
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        /* NAVBARS */
+        nav {
+            font-family: 'NewHelveticaRoman';
+            font-weight: bold;
+            background-color: #0a3148;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            z-index: 100;
+        }
+
+        nav ul,
+        .navbar2 ul {
+            display: flex;
+            justify-content: space-between;
+            list-style: none;
+            margin: 0;
+            padding: 20px 40px;
+        }
+
+        nav li,
+        .navbar2 ul {
+            margin: 0;
+        }
+
+        .navbar2 {
+            font-family: 'NewHelveticaRoman';
+            font-weight: bold;
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 210px;
+            height: 100%;
+            background-color: #FFA500;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: right 0.5s ease-in-out;
+            z-index: 101;
+        }
+
+        .navbar2.show {
+            right: 0;
+        }
+
+        .setting_sound {
+            font-family: 'NewHelveticaRoman';
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 30px;
+            text-transform: uppercase;
+            margin-right: 1rem;
+            margin-left: 10px;
+            color: black;
+        }
+
+        /* BOUTONS */
+        .button_home {
+            padding: 10px 30px;
+            background-color: #34ccf4;
+            color: #000000;
+            border: none;
+            border-radius: 5px;
+            font-size: 25px;
+        }
+
+        .button_sound {
+            padding: 20px 30px;
+            background-color: #d3dada;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 10px;
+            width: 150px;
+        }
+
+        .button_sound_mute {
+            padding: 20px 30px;
+            background-color: #8e9292;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 10px;
+            width: 150px;
+        }
+
+        .button_back {
+            padding: 20px 30px;
+            background-color: #34ccf4;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 10px;
+            width: 150px;
+        }
+
+        .suivantretour {
+            width: 100%;
+            height: 80px;
+            background: #fff;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+            z-index: 100;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .retour {
+            padding: 20px 30px;
+            background-color: #d3dada;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            margin-top: 0;
+            width: 150px;
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .suivant {
+            padding: 20px 30px;
+            background-color: #d3dada;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            font-size: 20px;
+            width: 150px;
+            margin-left: 0;
+        }
+
+        .nombre {
+            width: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            flex-grow: 0;
+            margin: 0;
+            text-align: center;
+        }
+
+        @media (max-width: 900px) {
+            .suivantretour {
+                padding: 0 8px 0 0;
+            }
+            .retour, .suivant {
+                width: 110px;
+                font-size: 16px;
+                padding: 12px 10px;
+            }
+            .nombre {
+                font-size: 20px;
+                padding: 4px 10px;
+            }
+        }
+    </style>
+
+    <!----------------------------------------------------------------------------FONCTION JS -->
+    
+    <!-- PLUS BESOIN DE QIMESSAGING ICI, NOTRE SERVEUR PYTHON GERE TOUT -->
+    <script>
+        function GoHome() {
+            window.location.href = "/menu";
+        }
+
+        function toggleNavbar() {
+            document.querySelector('.navbar2').classList.toggle('show');
+        }
+
+        function toggleNavbar2() {
+            document.querySelector('.navbar2').classList.remove('show');
+        }
+
+        // Le réglage du volume passe désormais par le serveur Python local
+        function setVolume(val) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/setvolume', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({volume: val}));
+            toggleNavbar2();
+        }
+
+        function soundMin() { setVolume(30); }
+        function soundMoy() { setVolume(60); }
+        function soundMax() { setVolume(100); }
+        function soundMute() { setVolume(0); }
+
+        function Suivant() {
+            window.location.href = "/veolia/presentation3.html";
+        }
+
+        function Retour() {
+            window.location.href = "/veolia/presentation1.html";
+        }
+    </script>
+
+</head>
+
+<!-----------------------------------------NAVBAR--------------------------------->
+<nav>
+    <ul>
+        <li><button class="button_home" onclick="GoHome()"> <strong>ACCUEIL</strong> </button> </li>
+        <li><button class="button_home" onclick="toggleNavbar()"> <strong>REGLAGES</strong> </button> </li>
+    </ul>
+</nav>
+
+<div class="navbar2">
+    <li><button class="button_back" onclick="toggleNavbar2()"> <strong>FERMER </strong> </button> </li>
+    <div class="">--------------------------- </div>
+    <div class="setting_sound"><strong>VOLUME:</strong> </div>
+    <li><button class="button_sound" onclick="soundMin()"> <strong>MINIMUM</strong> </button> </li>
+    <li><button class="button_sound" onclick="soundMoy()"> <strong>MOYEN</strong> </button> </li>
+    <li><button class="button_sound" onclick="soundMax()"> <strong>MAXIMUM</strong> </button> </li>
+    <li><button class="button_sound_mute" onclick="soundMute()"> <strong>MUTE</strong> </button> </li>
+    <img src="logo.png" width="150" height="150" style="margin-top: 10px; margin-left: 10px;" onerror="this.style.display='none'">
+</div>
+
+<!-----------------------------------------BODY--------------------------------->
+
+<body>
+    <div id="page">
+        <div class="general">
+            <img class="image" src="alentours.png">
+        </div>
+
+        <div class="suivantretour">
+            <button class="retour" onclick="Retour()"><strong>RETOUR</strong></button>
+            <div class="nombre">2/11</div>
+            <button class="suivant" onclick="Suivant()"><strong>SUIVANT</strong></button>
+        </div>
+    </div>
+</body>
+
+</html>

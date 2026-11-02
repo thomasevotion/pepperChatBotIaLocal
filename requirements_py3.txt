@@ -1,0 +1,10 @@
+# PepperChat — Python 3.10 dependencies
+# Services: google_stt_server.py, startDialogueServer_background.py, oaichat/
+python-dotenv
+pyzmq
+google-genai
+Pillow
+numpy
+google-cloud-speech
+grpcio
+google-api-core

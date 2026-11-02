@@ -1,0 +1,48 @@
+# ============================================================
+# docker-compose.yml — PepperChat  (services Python 3 uniquement)
+#
+# Les modules NaoQI (Python 2.7) sont lancés séparément
+# par START_APP.bat sur la machine Windows hôte.
+#
+# Lancement manuel :  docker compose up -d
+# Arrêt manuel :      docker compose down
+# Logs :              docker compose logs -f
+# ============================================================
+
+version: '3.8'
+
+services:
+
+  # ── ÉTAPE 1a ── Serveur STT Google ──────────────────────
+  google-stt:
+    build: .
+    container_name: pepper_google_stt
+    command: python google_stt_server.py
+    restart: unless-stopped
+    env_file: [.env]
+    volumes:
+      - ./credentials.json:/app/credentials.json:ro
+    network_mode: host
+
+  # ── ÉTAPE 1b ── Serveur IA Gemini (ZMQ) ─────────────────
+  dialogue-server:
+    build: .
+    container_name: pepper_dialogue_server
+    command: python startDialogueServer_background.py --prompt pepper
+    restart: unless-stopped
+    env_file: [.env]
+    network_mode: host
+
+  # ── ÉTAPE 2 ── Interface Web tablette (attend 5s) ────────
+  web-server:
+    build: .
+    container_name: pepper_web_server
+    command: >
+      sh -c "sleep 5 &&
+             python PepperWebLocal/main.py --ip ${ROBOT_IP:-192.168.1.76}"
+    restart: unless-stopped
+    env_file: [.env]
+    depends_on:
+      - google-stt
+      - dialogue-server
+    network_mode: host
