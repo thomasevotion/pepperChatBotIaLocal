@@ -139,6 +139,7 @@ TTS_PHONETIC_MAP = {
     u"Encore plus" : u"Encore plusse",
     u"IATECH" : u"Iatech",
     u"ARAMYS" : u"ARAMISSE",
+    u"hmm" : u"heum",
 }
 
 # --- Robust UTF-8 decoder ---
