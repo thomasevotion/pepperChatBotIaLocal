@@ -669,8 +669,8 @@ def render_quiz(speak_question=True):
             "  .btn-answer:active { transform: scale(0.99); background: #f0f8fa; }",
             "  #feedback-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:5000; flex-direction:column; align-items:center; justify-content:center; }",
             "  #feedback-text { font-size:36px; font-weight:bold; padding:30px 50px; border-radius:20px; max-width:80%; text-align:center; }",
-            "  .quiz-back-btn { position: fixed; top: 96px; top: calc(38px + 9vh); left: 24px; z-index: 1110; padding: 10px 24px; font-size: 15px; font-weight: bold; color: white; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 20px; text-decoration: none; transition: background 0.2s; }",
-            "  .quiz-back-btn:active { background: rgba(255, 255, 255, 0.2); }",
+            "  .quiz-back-btn { position: fixed; top: 96px; top: calc(38px + 9vh); left: 24px; z-index: 1110; padding: 14px 30px; font-size: 20px; font-weight: bold; color: " + THEME_PRIMARY + "; background: white; border: 2px solid white; border-radius: 30px; box-shadow: 0 6px 16px rgba(0,0,0,0.25); text-decoration: none; transition: background 0.2s; }",
+            "  .quiz-back-btn:active { background: #e6e6e6; }",
             "  .hamburger span { background-color: " + THEME_SURFACE + "; !important; }",
             "</style>",
             "<script>",
@@ -693,7 +693,7 @@ def render_quiz(speak_question=True):
             "    fbText.innerText = msg;",
             "  }",
             "  overlay.style.display = 'flex';",
-            "  setTimeout(function() { window.location.href = '/quiz/answer/' + idx + '?t=' + new Date().getTime(); }, 3000);",
+            "  setTimeout(function() { window.location.href = '/quiz/answer/' + idx + '?t=' + new Date().getTime(); }, 4000);",
             "}",
             "</script></head><body>", HEADER_HTML,
             "<div id='feedback-overlay'><div id='feedback-text' style='color:white;'></div></div>",
@@ -778,7 +778,7 @@ def action_say_then(text1, text2):
                 print("[ROBOT] Avertissement langue: " + str(e_lang))
             print("[ROBOT] Say feedback: " + text1)
             tts.say(tts_fix(text1))
-            time.sleep(0.5)
+            time.sleep(1.0)
             print("[ROBOT] Say question: " + text2)
             tts.say(tts_fix(text2))
         except: pass

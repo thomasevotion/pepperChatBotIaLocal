@@ -149,6 +149,7 @@ TTS_PHONETIC_MAP = {
     u"Bibendum" : u"Bibindome",
     u"bibendum" : u"bibindome",
     u"Sister Act" : u"Sisteur Akte",
+    u"AOP" : u"A O Pé",
 }
 
 # --- Robust UTF-8 decoder ---
