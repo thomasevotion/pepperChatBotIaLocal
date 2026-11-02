@@ -14,9 +14,15 @@
 #
 ###########################################################
 import socket
-
-from raw_to_wav import rawToWav
-
+import os
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+import time
+import threading
+import traceback
+import json
+import numpy as np
 from optparse import OptionParser
 import naoqi
 import numpy as np
@@ -277,51 +283,111 @@ class SpeechRecognitionModule(naoqi.ALModule):
         return
 
     def stopRecordingAndRecognize(self):
-        if(self.isRecording == False):
-            print("INF: SpeechRecognitionModule.stopRecordingAndRecognize: not recording")
-            return
-
-        print("INF: stopping recording and recognizing")
-
-        # TODO: choose which mic channel to use
-        # can we use the sound direction module for this?
-
-        # buffer is a list of nparrays we now concat into one array
-        # and the slice out the first mic channel
-        
-        slice = np.concatenate(self.buffer, axis=1)[0]
-
-        # initialize preBuffer with last samples to fix cut off words
-        # loop through buffer and count samples until prebuffer is full
-        # TODO: performance issues!
-        if (PREBUFFER_WHEN_STOP):
-            sampleCounter = 0
-            itemCounter = 0
-
-            for i in reversed(self.preBuffer):
-                sampleCounter += len(i[0])
-
-                if(sampleCounter > self.lookaheadBufferSize):
-                    break
-
-                itemCounter += 1
-
-            start = len(self.buffer) - itemCounter
-            self.preBuffer = self.buffer[start:]
-        else:
-            # don't copy to prebuffer
-            self.preBuffer = []
-
-        # start new worker thread to do the http call and some processing
-        # copy slice to be thread safe!
-        # TODO: make a job queue so we don't start a new thread for each recognition
-        threading.Thread(target=self.recognize, args=(slice.copy(), )).start()
-
-        # reset flag
+        if(self.isRecording == False): return
+        print("INF: stopping recording (end of stream)")
         self.isRecording = False
+        self.memory.raiseEvent("SpeechRecognitionStatus", "processing")
+        
+        # Close write end of socket to signal EOF to server
+        with self.socket_lock:
+            if self.streaming_socket:
+                try:
+                    # Shutdown WR signals EOF to the remote read
+                    self.streaming_socket.shutdown(socket.SHUT_WR)
+                except Exception as e:
+                    print("ERR: Socket shutdown failed: " + str(e))
+                    self.close_socket()
+        
+        # Force re-listening immediately if no response within 2 seconds
+        # This is a safety mechanism
+        threading.Timer(2.0, self.check_if_stuck).start()
 
-        return
+    def check_if_stuck(self):
+        """Safety check to ensure we don't get stuck in processing state"""
+        # If we are not recording and not started again, maybe we are stuck waiting for Google
+        # But we can't easily check 'processing' state here without more flags.
+        # For now, let's rely on the server response.
+        pass
 
+    def connect_socket(self):
+        self.close_socket() # Ensure clean slate
+        try:
+            self.streaming_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.streaming_socket.connect(('localhost', 8889))
+            print("INF: Streaming socket connected!")
+            
+            # Start listener thread
+            self.listener_thread = threading.Thread(target=self.listen_response)
+            self.listener_thread.start()
+        except Exception as e:
+            print("ERR: Connection failed: " + str(e))
+            self.streaming_socket = None
+
+    def close_socket(self):
+        with self.socket_lock:
+            if self.streaming_socket:
+                try:
+                    self.streaming_socket.close()
+                except:
+                    pass
+                self.streaming_socket = None
+
+    def listen_response(self):
+        """Thread to listen for transcripts from server"""
+        print("INF: Response listener started")
+        full_response = ""
+        try:
+            while True:
+                # We need to access socket without lock if possible, or careful lock
+                # recv is blocking.
+                sock = self.streaming_socket # local copy ref
+                if not sock: break
+                
+                data = sock.recv(4096)
+                if not data:
+                    break # EOF
+                
+                text = data.decode('utf-8')
+                if text.startswith("FINAL_JSON:"):
+                    payload_text = text.replace("FINAL_JSON:", "", 1).strip()
+                    payload = json.loads(payload_text)
+                    final_text = payload.get("transcript", u"").strip()
+                    language_code = payload.get("languageCode", DEFAULT_LANGUAGE)
+                    print("INF: FINAL RESULT RECEIVED [{}]: {}".format(language_code, final_text))
+                    self.memory.raiseEvent("SpeechRecognition", json.dumps({
+                        "text": final_text,
+                        "languageCode": language_code
+                    }).encode('utf-8'))
+                    break # We are done after final result
+                elif text.startswith("FINAL:"):
+                    final_text = text.replace("FINAL:", "", 1).strip()
+                    print("INF: FINAL RESULT RECEIVED: " + final_text)
+                    self.memory.raiseEvent("SpeechRecognition", final_text.encode('utf-8'))
+                    break # We are done after final result
+                elif text.startswith("PARTIAL:"):
+                    # We can use this for UI feedback later
+                    pass
+                    
+        except Exception as e:
+            print("ERR: Listener error: " + str(e))
+        finally:
+            self.close_socket()
+            print("INF: Response listener finished")
+
+    # --- UTILS ---
+    def calcRMSLevel(self, data):
+        return (sqrt(mean(square(data))))
+
+    def convertStr2SignedInt(self, data):
+        lsb = data[0::2]
+        msb = data[1::2]
+        rms_data = np.add(lsb, np.multiply(msb, 256.0))
+        sign_correction = np.select([rms_data>=32768], [-65536])
+        rms_data = np.add(rms_data, sign_correction)
+        rms_data = np.divide(rms_data, 32768.0)
+        return rms_data
+
+    # --- API ---
     def calibrate(self):
         self.isCalibrating = True
         self.framesCount = 0

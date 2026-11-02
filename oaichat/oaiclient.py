@@ -29,6 +29,10 @@ class OaiClient:
         self.name = name
         self.user = user
         self.context = zmq.Context()
+        # emotion_tag choisi par le LLM pour le tour de dialogue en cours (voir respond_stream) :
+        # deja connu des le premier chunk recu, module_dialogue.py peut le lire immediatement
+        # pour lancer l'animation en parallele du TTS.
+        self.last_emotion_tag = None
 
         self.log = None
         if user:
@@ -46,7 +50,46 @@ class OaiClient:
     def respond(self,s):
         return OaiResponse(self.send({'input':s})).getText()
 
+<<<<<<< HEAD
     def send(self,o):
+=======
+        image_data (optionnel) : dict avec les cles 'raw', 'width', 'height'
+                                 (sortie de capture_camera_image dans module_dialogue.py)
+        """
+        msg = {'input': s}
+        if image_data:
+            msg['image_data'] = image_data
+        return OaiResponse(self.send(msg)).getText()
+
+    def respond_stream(self, s, image_data=None):
+        """
+        Envoie un message en mode streaming. Retourne un generateur de chunks texte.
+
+        image_data (optionnel) : idem que respond()
+        """
+        msg = {'input': s, 'stream': True}
+        if image_data:
+            msg['image_data'] = image_data
+
+        # Demarrer le stream
+        self.send(msg)
+
+        while True:
+            r = self.send({'next_chunk': True})
+            if 'emotion_tag' in r:
+                self.last_emotion_tag = r['emotion_tag']
+            if r.get('stream_finished'):
+                break
+            if r.get('error'):
+                print("Stream error:", r['error'])
+                break
+
+            chunk = r.get('chunk', '')
+            if chunk:
+                yield chunk
+
+    def send(self, o):
+>>>>>>> Groupama
         o['time'] = datetime.now().isoformat()
         if self.log: 
             json.dump({'sending':o},self.log)

@@ -52,9 +52,79 @@ class OaiServer(OaiChat):
                         self.history.append(row.strip())
                     response['history']='ok'
                 if 'input' in i:
-                    r = self.respond(i['input'])
-                    for k,v in r.json.items():
-                        response[k] = v        
+                    # Recuperer l'image si presente (envoyee par module_dialogue.py)
+                    image_data = i.get('image_data', None)
+
+                    if i.get('stream'):
+                        print('Starting stream for input:', i['input'])
+                        # Sauvegarder l'input pour l'historique apres le stream
+                        self.current_stream_input = i['input']
+                        try:
+                            # respond_stream() (pas respond()) : tour de dialogue principal.
+                            # Generateur "paresseux" : rien ne s'execute avant le premier
+                            # next_chunk (voir plus bas), qui declenche la classification de
+                            # l'emotion_tag PUIS ouvre le vrai stream reseau Gemini pour "speech".
+                            self.stream_generator = self.respond_stream(
+                                i['input'], image_data=image_data
+                            )
+                            self.full_stream_response = ""
+                            response['stream'] = 'started'
+                        except Exception as e_stream_start:
+                            print("Erreur demarrage stream Gemini:", e_stream_start)
+                            response['error'] = str(e_stream_start)
+                            self.stream_generator = None
+                    else:
+                        try:
+                            # respond() (pas respond_stream()) : appel non-streaming classique
+                            # (accueil, commentaire environnement...), retourne un OaiResponse
+                            # avec .json, pas un generateur.
+                            r = self.respond(i['input'], image_data=image_data)
+                            for k, v in r.json.items():
+                                response[k] = v
+                        except Exception as e_respond:
+                            # 503 UNAVAILABLE, 429 quota, etc. → ne pas planter le serveur
+                            print("Erreur respond Gemini (non-stream):", e_respond)
+                            response['error'] = str(e_respond)
+                            response['response'] = "Désole, Gemini est temporairement indisponible."
+
+                elif 'next_chunk' in i:
+                    if self.stream_generator:
+                        try:
+                            chunk = next(self.stream_generator)
+                            # Format Gemini : chunk.text (et non chunk.choices[0].delta.content)
+                            try:
+                                content = chunk.text if chunk.text else ""
+                            except (AttributeError, ValueError):
+                                content = ""
+
+                            if content:
+                                response['chunk'] = content
+                                self.full_stream_response += content
+                            else:
+                                response['chunk'] = ""
+
+                        except StopIteration:
+                            response['stream_finished'] = True
+                            # Mettre a jour l'historique avec l'echange complet
+                            self.add_to_history(
+                                self.current_stream_input,
+                                self.full_stream_response
+                            )
+                            self.stream_generator = None
+
+                        except Exception as e:
+                            print("Stream error:", e)
+                            response['error'] = str(e)
+                            self.stream_generator = None
+                    else:
+                        response['error'] = "No active stream"
+                        response['stream_finished'] = True
+
+                # emotion_tag choisi par le LLM (voir OaiChat.respond_stream) : deja connu
+                # avant meme le premier chunk, donc toujours present des la 1ere reponse
+                # au client pour qu'il puisse lancer l'animation en parallele du TTS.
+                response['emotion_tag'] = getattr(self, 'last_emotion_tag', None)
+
                 response['time'] = datetime.datetime.now().isoformat()
                 print('Sending response:',response)        
                 self.send(response)
